@@ -13,12 +13,15 @@
         .calendar-container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 15px;
         }
         .calendar-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
         .calendar-grid {
             display: grid;
@@ -32,6 +35,7 @@
             padding: 10px;
             cursor: pointer;
             user-select: none;
+            overflow: hidden;
         }
         .day-header {
             background-color: #f8f9fa;
@@ -51,16 +55,22 @@
             margin-bottom: 2px;
             font-size: 12px;
             cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .nav-button {
             background-color: #fff;
             border: 1px solid #ddd;
             padding: 8px 16px;
             cursor: pointer;
+            width: auto;
+            min-width: 100px;
         }
         .current-month {
             font-size: 20px;
             font-weight: bold;
+            text-align: center;
         }
         .event-form {
             position: fixed;
@@ -72,7 +82,8 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: none;
-            width: 300px;
+            width: 90%;
+            max-width: 300px;
             z-index: 1000;
         }
         .event-form input {
@@ -81,6 +92,7 @@
             margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;
         }
         .event-form h3 {
             margin-top: 0;
@@ -88,7 +100,7 @@
         }
         .color-picker {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(25px, 1fr));
             gap: 5px;
             margin: 10px 0;
         }
@@ -104,11 +116,13 @@
         }
         .time-inputs {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             margin: 10px 0;
         }
         .time-inputs div {
             flex: 1;
+            min-width: 120px;
         }
         .time-inputs label {
             display: block;
@@ -117,6 +131,7 @@
         }
         .event-actions {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             margin-top: 15px;
         }
@@ -126,6 +141,7 @@
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            min-width: 80px;
         }
         .event-actions button:first-child {
             background: #4285f4;
@@ -133,6 +149,10 @@
         }
         .event-actions button:last-child {
             background: #ddd;
+        }
+        .delete-event-btn {
+            background: #dc3545 !important;
+            color: white;
         }
         .journal-form {
             position: fixed;
@@ -144,8 +164,10 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: none;
-            width: 80%;
+            width: 90%;
             max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
             z-index: 1000;
         }
         .journal-textarea {
@@ -154,6 +176,7 @@
             margin: 10px 0;
             padding: 10px;
             resize: vertical;
+            box-sizing: border-box;
         }
         .other-month {
             background-color: #f5f5f5;
@@ -170,6 +193,8 @@
             align-items: center;
             padding: 5px;
             border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            gap: 5px;
         }
         .task-item input[type="checkbox"] {
             margin-right: 10px;
@@ -180,6 +205,7 @@
             margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;
         }
         .add-task-btn {
             background: #4285f4;
@@ -189,6 +215,7 @@
             border-radius: 4px;
             cursor: pointer;
             margin-bottom: 10px;
+            width: 100%;
         }
         .completed-task {
             text-decoration: line-through;
@@ -201,15 +228,18 @@
         }
         .task-toggle {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 10px;
         }
         .task-toggle button {
+            flex: 1;
             padding: 8px 16px;
             border: 1px solid #ddd;
             background: #fff;
             cursor: pointer;
             border-radius: 4px;
+            min-width: 120px;
         }
         .task-toggle button.active {
             background: #4285f4;
@@ -234,6 +264,73 @@
             border-radius: 4px;
             cursor: pointer;
             margin-top: 10px;
+            width: 100%;
+        }
+
+        /* Responsive Design Media Queries */
+        @media screen and (max-width: 768px) {
+            .calendar-grid {
+                font-size: 14px;
+            }
+            
+            .calendar-cell {
+                min-height: 80px;
+                padding: 5px;
+            }
+
+            .event {
+                font-size: 10px;
+                padding: 1px 3px;
+            }
+
+            .current-month {
+                font-size: 16px;
+                width: 100%;
+                text-align: center;
+                order: -1;
+            }
+
+            .nav-button {
+                padding: 6px 12px;
+                min-width: auto;
+                flex: 1;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .calendar-cell {
+                min-height: 60px;
+            }
+
+            .day-header {
+                padding: 5px;
+                font-size: 12px;
+            }
+
+            .date-number {
+                font-size: 12px;
+            }
+
+            .event {
+                margin-bottom: 1px;
+            }
+
+            .event-form, .journal-form {
+                width: 95%;
+                padding: 15px;
+            }
+
+            .time-inputs div {
+                flex: 100%;
+            }
+
+            .task-toggle button {
+                flex: 100%;
+            }
         }
     </style>
 </head>
@@ -278,6 +375,7 @@
         <div class="event-actions">
             <button onclick="saveEvent()">Save Event</button>
             <button onclick="closeEventForm()">Cancel</button>
+            <button onclick="deleteEvent()" class="delete-event-btn">Delete</button>
         </div>
     </div>
 
@@ -456,6 +554,9 @@
             eventForm.style.display = 'block';
             initializeColorPicker();
             
+            // Hide delete button for new events
+            document.querySelector('.delete-event-btn').style.display = 'none';
+            
             // Close journal form when opening event form
             document.getElementById('journalForm').style.display = 'none';
         }
@@ -471,6 +572,9 @@
             eventForm.style.display = 'block';
             initializeColorPicker();
             
+            // Show delete button for existing events
+            document.querySelector('.delete-event-btn').style.display = 'block';
+            
             const colorOptions = document.querySelectorAll('.color-option');
             colorOptions.forEach(opt => {
                 if (opt.style.backgroundColor === event.color) {
@@ -480,6 +584,18 @@
             
             // Close journal form when opening event form
             document.getElementById('journalForm').style.display = 'none';
+        }
+
+        function deleteEvent() {
+            const eventId = document.getElementById('eventId').value;
+            if (eventId !== '') {
+                events.splice(parseInt(eventId), 1);
+                localStorage.setItem('events', JSON.stringify(events));
+                closeEventForm();
+                generateCalendar();
+                const date = document.getElementById('eventDate').value;
+                updateDailyEventsList(date);
+            }
         }
 
         function openJournal(date) {
