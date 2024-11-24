@@ -163,6 +163,23 @@
             gap: 10px;
             margin-top: 10px;
         }
+        .task-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .task-toggle button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .task-toggle button.active {
+            background: #4285f4;
+            color: white;
+            border-color: #4285f4;
+        }
     </style>
 </head>
 <body>
@@ -216,6 +233,10 @@
         
         <div class="task-container">
             <h3>Tasks</h3>
+            <div class="task-toggle">
+                <button onclick="switchTaskList('personal')" id="personalTasksBtn" class="active">Personal Tasks</button>
+                <button onclick="switchTaskList('work')" id="workTasksBtn">Work Tasks</button>
+            </div>
             <input type="text" id="taskInput" class="task-input" placeholder="Add a new task">
             <button class="add-task-btn" onclick="addTask()">Add Task</button>
             <ul class="task-list" id="taskList">
@@ -233,7 +254,9 @@
         let selectedColor = '#4285f4';
         let journalEntries = {};
         let pressTimer;
-        let tasks = [];
+        let personalTasks = [];
+        let workTasks = [];
+        let currentTaskList = 'personal';
 
         const colors = [
             '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
@@ -242,40 +265,63 @@
             '#27AE60', '#F39C12', '#16A085', '#C0392B', '#7F8C8D'
         ];
 
+        function switchTaskList(type) {
+            currentTaskList = type;
+            document.getElementById('personalTasksBtn').classList.toggle('active', type === 'personal');
+            document.getElementById('workTasksBtn').classList.toggle('active', type === 'work');
+            renderTasks();
+        }
+
         function addTask() {
             const taskInput = document.getElementById('taskInput');
             const taskText = taskInput.value.trim();
             
             if (taskText) {
-                tasks.push({
+                const newTask = {
                     text: taskText,
                     completed: false,
                     id: Date.now()
-                });
-                localStorage.setItem('tasks', JSON.stringify(tasks));
+                };
+
+                if (currentTaskList === 'personal') {
+                    personalTasks.push(newTask);
+                    localStorage.setItem('personalTasks', JSON.stringify(personalTasks));
+                } else {
+                    workTasks.push(newTask);
+                    localStorage.setItem('workTasks', JSON.stringify(workTasks));
+                }
+                
                 renderTasks();
                 taskInput.value = '';
             }
         }
 
         function toggleTask(taskId) {
+            const tasks = currentTaskList === 'personal' ? personalTasks : workTasks;
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.completed = !task.completed;
-                localStorage.setItem('tasks', JSON.stringify(tasks));
+                localStorage.setItem(currentTaskList + 'Tasks', JSON.stringify(tasks));
                 renderTasks();
             }
         }
 
         function deleteTask(taskId) {
-            tasks = tasks.filter(t => t.id !== taskId);
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+            if (currentTaskList === 'personal') {
+                personalTasks = personalTasks.filter(t => t.id !== taskId);
+                localStorage.setItem('personalTasks', JSON.stringify(personalTasks));
+            } else {
+                workTasks = workTasks.filter(t => t.id !== taskId);
+                localStorage.setItem('workTasks', JSON.stringify(workTasks));
+            }
             renderTasks();
         }
 
         function renderTasks() {
             const taskList = document.getElementById('taskList');
             taskList.innerHTML = '';
+            
+            const tasks = currentTaskList === 'personal' ? personalTasks : workTasks;
             
             tasks.forEach(task => {
                 const li = document.createElement('li');
@@ -547,7 +593,8 @@
         function loadSavedData() {
             const savedEvents = localStorage.getItem('events');
             const savedJournalEntries = localStorage.getItem('journalEntries');
-            const savedTasks = localStorage.getItem('tasks');
+            const savedPersonalTasks = localStorage.getItem('personalTasks');
+            const savedWorkTasks = localStorage.getItem('workTasks');
             
             if (savedEvents) {
                 events = JSON.parse(savedEvents);
@@ -557,8 +604,12 @@
                 journalEntries = JSON.parse(savedJournalEntries);
             }
 
-            if (savedTasks) {
-                tasks = JSON.parse(savedTasks);
+            if (savedPersonalTasks) {
+                personalTasks = JSON.parse(savedPersonalTasks);
+            }
+
+            if (savedWorkTasks) {
+                workTasks = JSON.parse(savedWorkTasks);
             }
         }
 
