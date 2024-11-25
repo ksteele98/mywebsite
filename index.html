@@ -58,6 +58,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-align: center; /* Center the event text */
         }
         .nav-button {
             background-color: #fff;
@@ -763,7 +764,7 @@
                     const eventDiv = document.createElement('div');
                     eventDiv.className = 'event';
                     eventDiv.style.backgroundColor = event.color;
-                    eventDiv.textContent = `${event.startTime}-${event.endTime} ${event.description}`;
+                    eventDiv.textContent = event.description; // Only show event description
                     eventDiv.onclick = (e) => {
                         e.stopPropagation();
                         editEvent(event, index);
