@@ -195,6 +195,11 @@
             border-bottom: 1px solid #eee;
             flex-wrap: wrap;
             gap: 5px;
+            transition: opacity 5s ease;
+            opacity: 1;
+        }
+        .task-item.fade-out {
+            opacity: 0;
         }
         .task-item input[type="checkbox"] {
             margin-right: 10px;
@@ -331,6 +336,12 @@
             .task-toggle button {
                 flex: 100%;
             }
+
+            .journal-form button {
+                margin-bottom: 20px;
+                padding: 12px;
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -461,8 +472,14 @@
             const task = tasks.find(t => t.id === taskId);
             if (task) {
                 task.completed = !task.completed;
+                if (task.completed) {
+                    const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+                    taskElement.classList.add('fade-out');
+                    setTimeout(() => {
+                        deleteTask(taskId);
+                    }, 5000);
+                }
                 localStorage.setItem(currentTaskList + 'Tasks', JSON.stringify(tasks));
-                renderTasks();
             }
         }
 
@@ -486,6 +503,7 @@
             tasks.forEach(task => {
                 const li = document.createElement('li');
                 li.className = 'task-item';
+                li.setAttribute('data-task-id', task.id);
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
