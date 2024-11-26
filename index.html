@@ -188,6 +188,7 @@
             margin: 10px 0;
             max-height: 200px;
             overflow-y: auto;
+            position: relative;
         }
         .task-item {
             display: flex;
@@ -231,6 +232,7 @@
             margin-top: 20px;
             border-top: 1px solid #ddd;
             padding-top: 20px;
+            position: relative;
         }
         .task-toggle {
             display: flex;
@@ -435,6 +437,24 @@
             '#90EE90', '#2ECC71', '#27AE60', '#16A085', '#96CEB4', '#4ECDC4',
             '#45B7D1', '#3498DB', '#2980B9', '#0000FF', '#8E44AD', '#9B59B6', '#D4A5A5'
         ];
+
+        function formatTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':');
+            let period = 'AM';
+            let hour = parseInt(hours);
+            
+            if (hour >= 12) {
+                period = 'PM';
+                if (hour > 12) {
+                    hour -= 12;
+                }
+            }
+            if (hour === 0) {
+                hour = 12;
+            }
+            
+            return `${hour}:${minutes} ${period}`;
+        }
 
         function switchTaskList(type) {
             currentTaskList = type;
@@ -642,7 +662,7 @@
                 const eventDiv = document.createElement('div');
                 eventDiv.className = 'event';
                 eventDiv.style.backgroundColor = event.color;
-                eventDiv.textContent = `${event.startTime}-${event.endTime} ${event.description}`;
+                eventDiv.textContent = `${formatTime(event.startTime)}-${formatTime(event.endTime)} ${event.description}`;
                 eventDiv.onclick = () => editEvent(event, events.indexOf(event));
                 dailyEventsList.appendChild(eventDiv);
             });
@@ -763,7 +783,7 @@
                     const eventDiv = document.createElement('div');
                     eventDiv.className = 'event';
                     eventDiv.style.backgroundColor = event.color;
-                    eventDiv.textContent = event.description; // Only show event description
+                    eventDiv.textContent = event.description;  // Removed time display
                     eventDiv.onclick = (e) => {
                         e.stopPropagation();
                         editEvent(event, index);
