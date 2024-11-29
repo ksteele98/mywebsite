@@ -58,7 +58,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-align: center; /* Center the event text */
+            text-align: center;
         }
         .nav-button {
             background-color: #fff;
@@ -274,6 +274,33 @@
             margin-top: 10px;
             width: 100%;
         }
+        .new-list-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: auto;
+            min-width: auto;
+            flex: 0;
+        }
+        .delete-list-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            min-width: auto;
+            flex: 0;
+        }
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
 
         /* Responsive Design Media Queries */
         @media screen and (max-width: 768px) {
@@ -407,7 +434,13 @@
         <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
         
         <div class="task-container">
-            <h3>Tasks</h3>
+            <div class="tasks-header">
+                <h3>Tasks</h3>
+                <div>
+                    <button class="new-list-btn" onclick="createNewList()">+ New List</button>
+                    <button class="delete-list-btn" onclick="deleteCurrentList()">Delete List</button>
+                </div>
+            </div>
             <div class="task-toggle">
                 <button onclick="switchTaskList('personal')" id="personalTasksBtn" class="active">Personal Tasks</button>
                 <button onclick="switchTaskList('work')" id="workTasksBtn">Work Tasks</button>
@@ -428,8 +461,10 @@
         let events = [];
         let selectedColor = '#4285f4';
         let journalEntries = {};
-        let personalTasks = [];
-        let workTasks = [];
+        let taskLists = {
+            personal: [],
+            work: []
+        };
         let currentTaskList = 'personal';
 
         const colors = [
@@ -458,9 +493,61 @@
 
         function switchTaskList(type) {
             currentTaskList = type;
-            document.getElementById('personalTasksBtn').classList.toggle('active', type === 'personal');
-            document.getElementById('workTasksBtn').classList.toggle('active', type === 'work');
+            document.querySelectorAll('.task-toggle button').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(type));
+            });
             renderTasks();
+        }
+
+        function deleteCurrentList() {
+            if (confirm(`Are you sure you want to delete the "${currentTaskList}" list?`)) {
+                if (currentTaskList === 'personal' || currentTaskList === 'work') {
+                    alert("Cannot delete default lists!");
+                    return;
+                }
+                
+                // Find and remove the button for this list
+                const buttonToRemove = Array.from(document.querySelector('.task-toggle').children)
+                    .find(btn => btn.textContent.toLowerCase() === currentTaskList.replace(/-/g, ' '));
+                if (buttonToRemove) {
+                    buttonToRemove.remove();
+                }
+                
+                // Delete the list from taskLists object
+                delete taskLists[currentTaskList];
+                
+                // Switch to personal list
+                currentTaskList = 'personal';
+                document.getElementById('personalTasksBtn').classList.add('active');
+                
+                // Save changes and render
+                localStorage.setItem('taskLists', JSON.stringify(taskLists));
+                renderTasks();
+            }
+        }
+
+        function createNewList() {
+            const listName = prompt("Enter name for new list:");
+            if (listName && listName.trim()) {
+                const listKey = listName.toLowerCase().replace(/\s+/g, '-');
+                
+                if (!taskLists[listKey]) {
+                    taskLists[listKey] = [];
+                    
+                    const newBtn = document.createElement('button');
+                    newBtn.textContent = listName;
+                    newBtn.onclick = () => switchTaskList(listKey);
+                    
+                    const taskToggle = document.querySelector('.task-toggle');
+                    taskToggle.appendChild(newBtn);
+                    
+                    switchTaskList(listKey);
+                    
+                    localStorage.setItem('taskLists', JSON.stringify(taskLists));
+                } else {
+                    alert("A list with this name already exists!");
+                }
+            }
         }
 
         function addTask() {
@@ -474,51 +561,19 @@
                     id: Date.now()
                 };
 
-                if (currentTaskList === 'personal') {
-                    personalTasks.push(newTask);
-                    localStorage.setItem('personalTasks', JSON.stringify(personalTasks));
-                } else {
-                    workTasks.push(newTask);
-                    localStorage.setItem('workTasks', JSON.stringify(workTasks));
-                }
+                taskLists[currentTaskList].push(newTask);
+                localStorage.setItem('taskLists', JSON.stringify(taskLists));
                 
                 renderTasks();
                 taskInput.value = '';
             }
         }
 
-        function toggleTask(taskId) {
-            const tasks = currentTaskList === 'personal' ? personalTasks : workTasks;
-            const task = tasks.find(t => t.id === taskId);
-            if (task) {
-                task.completed = !task.completed;
-                if (task.completed) {
-                    const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-                    taskElement.classList.add('fade-out');
-                    setTimeout(() => {
-                        deleteTask(taskId);
-                    }, 5000);
-                }
-                localStorage.setItem(currentTaskList + 'Tasks', JSON.stringify(tasks));
-            }
-        }
-
-        function deleteTask(taskId) {
-            if (currentTaskList === 'personal') {
-                personalTasks = personalTasks.filter(t => t.id !== taskId);
-                localStorage.setItem('personalTasks', JSON.stringify(personalTasks));
-            } else {
-                workTasks = workTasks.filter(t => t.id !== taskId);
-                localStorage.setItem('workTasks', JSON.stringify(workTasks));
-            }
-            renderTasks();
-        }
-
         function renderTasks() {
             const taskList = document.getElementById('taskList');
             taskList.innerHTML = '';
             
-            const tasks = currentTaskList === 'personal' ? personalTasks : workTasks;
+            const tasks = taskLists[currentTaskList];
             
             tasks.forEach(task => {
                 const li = document.createElement('li');
@@ -548,6 +603,28 @@
             });
         }
 
+        function toggleTask(taskId) {
+            const tasks = taskLists[currentTaskList];
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                if (task.completed) {
+                    const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+                    taskElement.classList.add('fade-out');
+                    setTimeout(() => {
+                        deleteTask(taskId);
+                    }, 5000);
+                }
+                localStorage.setItem('taskLists', JSON.stringify(taskLists));
+            }
+        }
+
+        function deleteTask(taskId) {
+            taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id !== taskId);
+            localStorage.setItem('taskLists', JSON.stringify(taskLists));
+            renderTasks();
+        }
+
         function initializeColorPicker() {
             const colorPicker = document.getElementById('colorPicker');
             colorPicker.innerHTML = '';
@@ -564,7 +641,6 @@
                 colorPicker.appendChild(colorOption);
             });
 
-            // Select first color by default
             const firstColor = colorPicker.firstChild;
             if (firstColor) {
                 firstColor.classList.add('selected');
@@ -592,10 +668,8 @@
             eventForm.style.display = 'block';
             initializeColorPicker();
             
-            // Hide delete button for new events
             document.querySelector('.delete-event-btn').style.display = 'none';
             
-            // Close journal form when opening event form
             document.getElementById('journalForm').style.display = 'none';
         }
 
@@ -610,7 +684,6 @@
             eventForm.style.display = 'block';
             initializeColorPicker();
             
-            // Show delete button for existing events
             document.querySelector('.delete-event-btn').style.display = 'block';
             
             const colorOptions = document.querySelectorAll('.color-option');
@@ -620,7 +693,6 @@
                 }
             });
             
-            // Close journal form when opening event form
             document.getElementById('journalForm').style.display = 'none';
         }
 
@@ -783,7 +855,7 @@
                     const eventDiv = document.createElement('div');
                     eventDiv.className = 'event';
                     eventDiv.style.backgroundColor = event.color;
-                    eventDiv.textContent = event.description;  // Removed time display
+                    eventDiv.textContent = event.description;
                     eventDiv.onclick = (e) => {
                         e.stopPropagation();
                         editEvent(event, index);
@@ -806,8 +878,7 @@
         function loadSavedData() {
             const savedEvents = localStorage.getItem('events');
             const savedJournalEntries = localStorage.getItem('journalEntries');
-            const savedPersonalTasks = localStorage.getItem('personalTasks');
-            const savedWorkTasks = localStorage.getItem('workTasks');
+            const savedTaskLists = localStorage.getItem('taskLists');
             
             if (savedEvents) {
                 events = JSON.parse(savedEvents);
@@ -817,12 +888,17 @@
                 journalEntries = JSON.parse(savedJournalEntries);
             }
 
-            if (savedPersonalTasks) {
-                personalTasks = JSON.parse(savedPersonalTasks);
-            }
-
-            if (savedWorkTasks) {
-                workTasks = JSON.parse(savedWorkTasks);
+            if (savedTaskLists) {
+                taskLists = JSON.parse(savedTaskLists);
+                const taskToggle = document.querySelector('.task-toggle');
+                Object.keys(taskLists).forEach(listKey => {
+                    if (listKey !== 'personal' && listKey !== 'work') {
+                        const newBtn = document.createElement('button');
+                        newBtn.textContent = listKey.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        newBtn.onclick = () => switchTaskList(listKey);
+                        taskToggle.appendChild(newBtn);
+                    }
+                });
             }
         }
 
