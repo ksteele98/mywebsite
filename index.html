@@ -170,6 +170,16 @@
             max-height: 90vh;
             overflow-y: auto;
             z-index: 1000;
+        
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
         }
         .journal-textarea {
             width: 100%;
@@ -301,6 +311,42 @@
             align-items: center;
             margin-bottom: 10px;
         }
+        .change-habit-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .habit-form {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 1000;
+            
+        }
+        .water-tracker {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .water-tracker button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
 
         /* Responsive Design Media Queries */
         @media screen and (max-width: 768px) {
@@ -421,6 +467,7 @@
     </div>
 
     <div class="journal-form" id="journalForm">
+        <button class="change-habit-btn" onclick="changeToHabit()">Change to Habit</button>
         <h3>Daily Overview</h3>
         <div id="journalDate" style="margin-bottom: 10px;"></div>
         
@@ -456,6 +503,19 @@
         <button onclick="closeJournalForm()">Cancel</button>
     </div>
 
+    <div class="habit-form" id="habitForm" style="display: none;" data-date="">
+        <button class="change-habit-btn" onclick="changeToJournal()">Change to Journal</button>
+        <h3>Habit Tracker</h3>
+        <div class="water-tracker">
+            <h4>Water Intake</h4>
+            <p>Bottles of water consumed today: <span id="waterCount">0</span></p>
+            <button onclick="increaseWaterCount()">+</button>
+            <button onclick="decreaseWaterCount()">-</button>
+        </div>
+        <button onclick="saveHabitTracker()">Save</button>
+        <button onclick="cancelHabitTracker()">Cancel</button>
+    </div>
+
     <script>
         let currentDate = new Date();
         let events = [];
@@ -472,6 +532,8 @@
             '#90EE90', '#2ECC71', '#27AE60', '#16A085', '#96CEB4', '#4ECDC4',
             '#45B7D1', '#3498DB', '#2980B9', '#0000FF', '#8E44AD', '#9B59B6', '#D4A5A5'
         ];
+
+        let waterCounts = JSON.parse(localStorage.getItem('waterCounts')) || {};
 
         function formatTime(timeStr) {
             const [hours, minutes] = timeStr.split(':');
@@ -904,6 +966,78 @@
 
         loadSavedData();
         generateCalendar();
+
+        function changeToHabit() {
+            const journalForm = document.getElementById('journalForm');
+            const habitForm = document.getElementById('habitForm');
+            
+            // Transfer the date from journal form to habit form
+            habitForm.dataset.date = journalForm.dataset.date;
+            
+            journalForm.style.display = 'none';
+            habitForm.style.display = 'block';
+            
+            // Update display for the specific date
+            updateWaterCountDisplay();
+        }
+
+        function changeToJournal() {
+            document.getElementById('habitForm').style.display = 'none';
+            document.getElementById('journalForm').style.display = 'block';
+        }
+
+        function getCurrentDateKey() {
+            // Get the date from the currently opened journal/habit form
+            const dateFromForm = document.getElementById('habitForm').dataset.date;
+            return dateFromForm || new Date().toISOString().split('T')[0];
+        }
+
+        function increaseWaterCount() {
+            const dateKey = getCurrentDateKey();
+            // Initialize count for this specific date if it doesn't exist
+            if (!waterCounts[dateKey]) {
+                waterCounts[dateKey] = 0;
+            }
+            waterCounts[dateKey]++;
+            updateWaterCountDisplay();
+            saveWaterCounts();
+            console.log("Water counts after increase:", waterCounts); // Debug log
+        }
+
+        function decreaseWaterCount() {
+            const dateKey = getCurrentDateKey();
+            // Only decrease if there's a count for this date and it's greater than 0
+            if (waterCounts[dateKey] && waterCounts[dateKey] > 0) {
+                waterCounts[dateKey]--;
+                updateWaterCountDisplay();
+                saveWaterCounts();
+            }
+            console.log("Water counts after decrease:", waterCounts); // Debug log
+        }
+
+        function updateWaterCountDisplay() {
+            const dateKey = getCurrentDateKey();
+            // Show 0 if no count exists for this date
+            const count = waterCounts[dateKey] || 0;
+            document.getElementById('waterCount').textContent = count;
+        }
+
+        function saveWaterCounts() {
+            localStorage.setItem('waterCounts', JSON.stringify(waterCounts));
+        }
+
+        function saveHabitTracker() {
+            saveWaterCounts();
+            alert('Habit tracker saved!');
+            document.getElementById('habitForm').style.display = 'none';
+        }
+
+        function cancelHabitTracker() {
+            document.getElementById('habitForm').style.display = 'none';
+        }
+
+        // Initialize the display when loading the page
+        updateWaterCountDisplay();
     </script>
 </body>
 </html>
