@@ -347,6 +347,12 @@
             font-size: 16px;
             cursor: pointer;
         }
+        #habitDate {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 14px;
+        }
 
         /* Responsive Design Media Queries */
         @media screen and (max-width: 768px) {
@@ -504,6 +510,7 @@
     </div>
 
     <div class="habit-form" id="habitForm" style="display: none;" data-date="">
+        <div id="habitDate" style="margin-bottom: 10px;"></div>
         <button class="change-habit-btn" onclick="changeToJournal()">Change to Journal</button>
         <h3>Habit Tracker</h3>
         <div class="water-tracker">
@@ -973,6 +980,10 @@
             
             // Transfer the date from journal form to habit form
             habitForm.dataset.date = journalForm.dataset.date;
+            
+            // Update the date display
+            const displayDate = new Date(habitForm.dataset.date + 'T00:00:00');
+            document.getElementById('habitDate').textContent = displayDate.toLocaleDateString();
             
             journalForm.style.display = 'none';
             habitForm.style.display = 'block';
