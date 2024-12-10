@@ -368,6 +368,8 @@
                 }
 
         @media screen and (max-width: 768px) {
+
+            
             .calendar-grid {
                 font-size: 14px;
             }
@@ -407,7 +409,23 @@
             body {
                 padding: 10px;
             }
-            
+            @media screen and (max-width: 480px) {
+    .journal-form {
+        position: static; /* Let the form flow instead of fixing it */
+        transform: none;
+        width: 95%; /* Make it fit almost the entire screen width */
+        max-width: none; /* Remove fixed max-width so it doesn't overflow */
+        max-height: none; /* Let it grow as needed, user can scroll the page */
+        margin: 10px auto; /* Center it within the page's flow */
+        padding: 10px; /* Reduce padding to save screen space */
+    }
+
+    /* Optionally adjust font sizes or hide unnecessary elements */
+    .journal-form h3, .journal-form button {
+        font-size: 14px;
+    }
+}
+
 
             .calendar-cell {
                 min-height: 60px;
