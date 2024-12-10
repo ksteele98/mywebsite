@@ -552,9 +552,11 @@ transform: translate(-50%, -50%); background: white; padding: 20px; border-radiu
 box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; z-index: 1000;">
 
     <!-- Replace the '×' close button with a "Go to Journal" button -->
-    <button onclick="closeGoalsForm()" style="position: absolute; top: 10px; right: 10px; background:#4285f4; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">
-        Go to Journal
-    </button>
+    <button onclick="goToJournalFromGoals()" 
+    style="position: absolute; top: 10px; right: 10px; background:#4285f4; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">
+Go to Journal
+</button>
+
     
     <h3>Goals</h3>
     <p>Write your goals here...</p>
@@ -1372,6 +1374,11 @@ function closeGoalsForm() {
     document.getElementById('goalsForm').style.display = 'none';
     document.getElementById('journalForm').style.display = 'none';
 }
+function goToJournalFromGoals() {
+    document.getElementById('goalsForm').style.display = 'none';
+    document.getElementById('journalForm').style.display = 'block';
+}
+
 
 
 
