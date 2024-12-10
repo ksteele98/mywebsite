@@ -315,10 +315,12 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: none;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
+            background: #4285f4;
+                color: white;
+                 border: none;
+                 padding: 8px 16px;
+                 border-radius: 4px;
+                cursor: pointer;
         }
         .habit-form {
             position: fixed;
@@ -356,6 +358,14 @@
         .habit-type-options label {
             margin-right: 10px;
         }
+        .goals-btn {
+                background: #4285f4;
+                color: white;
+                 border: none;
+                 padding: 8px 16px;
+                 border-radius: 4px;
+                cursor: pointer;
+                }
 
         @media screen and (max-width: 768px) {
             .calendar-grid {
@@ -384,6 +394,7 @@
                 min-width: auto;
                 flex: 1;
             }
+            
         }
 
         @media screen and (max-width: 480px) {
@@ -426,6 +437,7 @@
                 padding: 12px;
                 font-size: 16px;
             }
+
         }
     </style>
 </head>
@@ -473,6 +485,10 @@
     </div>
 
     <div class="journal-form" id="journalForm">
+        <button class="goals-btn" onclick="goToGoalsPage()">Go To Goals</button>
+ 
+            
+        
         <button class="change-habit-btn" onclick="changeToHabit()">Change to Habit</button>
         <h3>Daily Overview</h3>
         <div id="journalDate" style="margin-bottom: 10px;"></div>
@@ -482,7 +498,7 @@
             <div id="dailyEventsList"></div>
             <button class="add-event-btn" onclick="addEvent(document.getElementById('journalForm').dataset.date)">Add Event</button>
         </div>
-
+    
         <h4>Journal Entry</h4>
         <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
         
@@ -506,6 +522,7 @@
         <button onclick="saveJournal()">Save</button>
         <button onclick="closeJournalForm()">Cancel</button>
     </div>
+    
 
     <div class="habit-form" id="habitForm" style="display: none;" data-date="">
         <div id="habitDate" style="margin-bottom: 10px;"></div>
@@ -529,6 +546,32 @@
             <button onclick="cancelAddHabit()">Cancel</button>
         </div>
     </div>
+    <!-- Add this new goals form div similar to journalForm in your HTML -->
+    <div class="goals-form" id="goalsForm" style="display: none; position: fixed; top: 50%; left: 50%;
+transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; 
+box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; z-index: 1000;">
+
+    <!-- Replace the '×' close button with a "Go to Journal" button -->
+    <button onclick="closeGoalsForm()" style="position: absolute; top: 10px; right: 10px; background:#4285f4; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">
+        Go to Journal
+    </button>
+    
+    <h3>Goals</h3>
+    <p>Write your goals here...</p>
+    
+    <textarea id="goalsText" style="width:100%; height:100px;" placeholder="Your goals..."></textarea>
+    
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button onclick="saveGoals()" style="flex:1; background:#4285f4; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">
+            Save
+        </button>
+        <button onclick="closeGoalsForm()" style="flex:1; background:#ddd; border:none; padding:10px; border-radius:4px; cursor:pointer;">
+            Cancel
+        </button>
+    </div>
+</div>
+
+
 
     <script>
         let currentDate = new Date();
@@ -1217,65 +1260,89 @@
         }
 
         function drawHabitGraph(habitName) {
-            const canvas = document.getElementById(`graph-${habitName}`);
-            const ctx = canvas.getContext('2d');
+    const canvas = document.getElementById(`graph-${habitName}`);
+    const ctx = canvas.getContext('2d');
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Increase canvas height in HTML/CSS or dynamically
+    // For example, if the canvas was originally 300x100,
+    // change it to 300x130 to add more space for labels.
+    // canvas.height = 130; // If done dynamically
 
-            // Get the last 7 days of data
-            const endDate = parseDateKey(getCurrentDateKey());
-            const dates = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date(endDate);
-                d.setDate(d.getDate() - i);
-                const dateKey = d.toISOString().split('T')[0];
-                dates.push(dateKey);
-            }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            const values = dates.map(d => {
-                if (habitTracker[d] && habitTracker[d][habitName]) {
-                    const habitData = habitTracker[d][habitName];
-                    return habitData.type === 'count' 
-                        ? habitData.value 
-                        : (habitData.value === true ? 1 : 0);
-                } else {
-                    return 0;
-                }
-            });
+    const endDate = parseDateKey(getCurrentDateKey());
+    const dates = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(endDate);
+        d.setDate(d.getDate() - i);
+        const dateKey = d.toISOString().split('T')[0];
+        dates.push(dateKey);
+    }
 
-            // Draw axes
-            ctx.strokeStyle = '#333';
-            ctx.beginPath();
-            ctx.moveTo(30, 10);
-            ctx.lineTo(30, 90); // y-axis
-            ctx.lineTo(290, 90); // x-axis
-            ctx.stroke();
-
-            // Plot values
-            const maxVal = Math.max(...values, 1);
-            const xStep = (290 - 30) / 6;
-            const yScale = (90 - 10) / maxVal;
-            
-            ctx.strokeStyle = '#4285f4';
-            ctx.beginPath();
-            values.forEach((v, i) => {
-                const x = 30 + i * xStep;
-                const y = 90 - v * yScale;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-
-            // Data points
-            ctx.fillStyle = '#4285f4';
-            values.forEach((v, i) => {
-                const x = 30 + i * xStep;
-                const y = 90 - v * yScale;
-                ctx.beginPath();
-                ctx.arc(x, y, 3, 0, Math.PI * 2, true);
-                ctx.fill();
-            });
+    const values = dates.map(d => {
+        if (habitTracker[d] && habitTracker[d][habitName]) {
+            const habitData = habitTracker[d][habitName];
+            return habitData.type === 'count' 
+                ? habitData.value 
+                : (habitData.value === true ? 1 : 0);
+        } else {
+            return 0;
         }
+    });
+
+    // Adjusting axes to allow more bottom space:
+    const leftMargin = 30;
+    const bottomMargin = 30; // Increased from 10 to 30
+    const topMargin = 10;
+    const rightMargin = 290;
+
+    // Draw axes
+    ctx.strokeStyle = '#333';
+    ctx.beginPath();
+    ctx.moveTo(leftMargin, topMargin);
+    ctx.lineTo(leftMargin, canvas.height - bottomMargin); // y-axis
+    ctx.lineTo(rightMargin, canvas.height - bottomMargin); // x-axis
+    ctx.stroke();
+
+    // Plot values
+    const maxVal = Math.max(...values, 1);
+    const xStep = (rightMargin - leftMargin) / 6;
+    const yScale = (canvas.height - bottomMargin - topMargin) / maxVal;
+
+    ctx.strokeStyle = '#4285f4';
+    ctx.beginPath();
+    values.forEach((v, i) => {
+        const x = leftMargin + i * xStep;
+        const y = (canvas.height - bottomMargin) - v * yScale;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Data points
+    ctx.fillStyle = '#4285f4';
+    values.forEach((v, i) => {
+        const x = leftMargin + i * xStep;
+        const y = (canvas.height - bottomMargin) - v * yScale;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2, true);
+        ctx.fill();
+    });
+
+    // Draw date labels
+    ctx.fillStyle = '#333';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top'; // So the text starts at the given y
+    dates.forEach((dateStr, i) => {
+        const x = leftMargin + i * xStep;
+        const [year, month, day] = dateStr.split('-');
+        const dateLabel = `${month}-${day}`;
+        // Place the label slightly below the x-axis line
+        ctx.fillText(dateLabel, x, canvas.height - bottomMargin + 5);
+    });
+}
+
 
         function saveHabitTracker() {
             localStorage.setItem('habitTracker', JSON.stringify(habitTracker));
@@ -1289,6 +1356,26 @@
 
         // Initialize tasks on load
         renderTasks();
+function goToGoalsPage() {
+    closeJournalForm();  // Ensure all journal cleanup is done
+    document.getElementById('goalsForm').style.display = 'block';
+}
+
+function saveGoals() {
+    const goalsText = document.getElementById('goalsText').value.trim();
+    // Implement your saving logic here, for example:
+    // localStorage.setItem('userGoals', goalsText);
+    closeGoalsForm();
+}
+
+function closeGoalsForm() {
+    document.getElementById('goalsForm').style.display = 'none';
+    document.getElementById('journalForm').style.display = 'none';
+}
+
+
+
+        
     </script>
 </body>
 </html>
