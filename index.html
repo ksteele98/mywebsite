@@ -488,6 +488,7 @@
     </div>
 
     <div class="journal-form" id="journalForm">
+        <!-- No nav buttons here now -->
         <button class="goals-btn" onclick="goToGoalsPage()">Go To Goals</button>
         <button class="change-habit-btn" onclick="changeToHabit()">Change to Habit</button>
         <h3>Daily Overview</h3>
@@ -570,7 +571,17 @@ Go to Journal
     </div>
 </div>
 
+<!-- NEW CODE: Navigation buttons outside the journal form -->
+<button id="prevDayButton" 
+        class="nav-button" 
+        style="display:none; position:fixed; left:20px; top:50%; transform:translateY(-50%); z-index:1001;" 
+        onclick="changeJournalDay(-1)">&lt;</button>
 
+<button id="nextDayButton" 
+        class="nav-button" 
+        style="display:none; position:fixed; right:20px; top:50%; transform:translateY(-50%); z-index:1001;" 
+        onclick="changeJournalDay(1)">&gt;</button>
+<!-- END NEW CODE -->
 
     <script>
         let currentDate = new Date();
@@ -838,6 +849,10 @@ Go to Journal
             
             updateDailyEventsList(date);
             renderTasks();
+
+            // NEW CODE: Show nav buttons when journal is open
+            document.getElementById('prevDayButton').style.display = 'block';
+            document.getElementById('nextDayButton').style.display = 'block';
         }
 
         function updateDailyEventsList(date) {
@@ -869,6 +884,10 @@ Go to Journal
 
         function closeJournalForm() {
             document.getElementById('journalForm').style.display = 'none';
+
+            // NEW CODE: Hide nav buttons when journal is closed
+            document.getElementById('prevDayButton').style.display = 'none';
+            document.getElementById('nextDayButton').style.display = 'none';
         }
 
         function saveEvent() {
@@ -1039,11 +1058,17 @@ Go to Journal
             habitForm.style.display = 'block';
             
             updateHabitDisplay();
+            // Hide nav buttons when switching to habit
+            document.getElementById('prevDayButton').style.display = 'none';
+            document.getElementById('nextDayButton').style.display = 'none';
         }
 
         function changeToJournal() {
             document.getElementById('habitForm').style.display = 'none';
             document.getElementById('journalForm').style.display = 'block';
+            // Show nav buttons again when switching back to journal
+            document.getElementById('prevDayButton').style.display = 'block';
+            document.getElementById('nextDayButton').style.display = 'block';
         }
 
         function getCurrentDateKey() {
@@ -1199,202 +1224,4 @@ Go to Journal
                 timeFrameContainer.style.display = 'flex';
                 timeFrameContainer.style.gap = '5px';
 
-                const weeklyBtn = document.createElement('button');
-                weeklyBtn.textContent = '7 Days';
-                weeklyBtn.onclick = () => {
-                    drawHabitGraph(habitName, 7);
-                };
-
-                const monthlyBtn = document.createElement('button');
-                monthlyBtn.textContent = '30 Days';
-                monthlyBtn.onclick = () => {
-                    drawHabitGraph(habitName, 30);
-                };
-
-                timeFrameContainer.appendChild(weeklyBtn);
-                timeFrameContainer.appendChild(monthlyBtn);
-
-                // Store timeFrameContainer as a property so we can show it later
-                controlsContainer.timeFrameContainer = timeFrameContainer;
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.style.marginLeft = '10px';
-                deleteBtn.onclick = () => {
-                    if (confirm(`Delete habit "${habitName}" for all future dates as well?`)) {
-                        deleteHabitFromGlobal(habitName);
-                        updateHabitDisplay();
-                    }
-                };
-                controlsContainer.appendChild(deleteBtn);
-
-                topRow.appendChild(nameSpan);
-                topRow.appendChild(controlsContainer);
-
-                const graphContainer = document.createElement('div');
-                graphContainer.style.display = 'none';
-                graphContainer.style.marginTop = '10px';
-                const canvas = document.createElement('canvas');
-                canvas.id = `graph-${habitName}`;
-                canvas.width = 300;
-                canvas.height = 100;
-                graphContainer.appendChild(canvas);
-
-                habitDiv.appendChild(topRow);
-                habitDiv.appendChild(controlsContainer.timeFrameContainer); // append here so it's in the DOM
-                habitDiv.appendChild(graphContainer);
-
-                habitList.appendChild(habitDiv);
-            });
-        }
-
-        function deleteHabitFromGlobal(habitName) {
-            const dateKey = getCurrentDateKey();
-            delete habitTracker[dateKey][habitName];
-
-            globalHabits = globalHabits.filter(h => h.name.toLowerCase() !== habitName.toLowerCase());
-            localStorage.setItem('globalHabits', JSON.stringify(globalHabits));
-
-            const currentDateObj = parseDateKey(dateKey);
-            for (const dateKeyInTracker of Object.keys(habitTracker)) {
-                const dateObj = parseDateKey(dateKeyInTracker);
-                if (dateObj > currentDateObj && habitTracker[dateKeyInTracker][habitName]) {
-                    delete habitTracker[dateKeyInTracker][habitName];
-                }
-            }
-
-            localStorage.setItem('habitTracker', JSON.stringify(habitTracker));
-        }
-
-        function toggleHabitGraph(habitName) {
-            const graphContainer = document.getElementById(`graph-${habitName}`).parentElement;
-            // Find the controls container from the DOM structure
-            const topRow = graphContainer.parentElement.firstChild;
-            const controlsContainer = topRow.lastChild;
-            
-            graphContainer.style.display = (graphContainer.style.display === 'none') ? 'block' : 'none';
-            if (graphContainer.style.display === 'block') {
-                drawHabitGraph(habitName, 7); 
-                // CHANGED: Show the time frame buttons only after pressing View Progress
-                controlsContainer.timeFrameContainer.style.display = 'flex'; 
-            } else {
-                // Hide the time frame buttons when closing the graph
-                controlsContainer.timeFrameContainer.style.display = 'none';
-            }
-        }
-
-        function drawHabitGraph(habitName, daysRange = 7) {
-            const canvas = document.getElementById(`graph-${habitName}`);
-            const ctx = canvas.getContext('2d');
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            const endDate = parseDateKey(getCurrentDateKey());
-            const dates = [];
-            for (let i = daysRange - 1; i >= 0; i--) {
-                const d = new Date(endDate);
-                d.setDate(d.getDate() - i);
-                const dateKey = d.toISOString().split('T')[0];
-                dates.push(dateKey);
-            }
-
-            const values = dates.map(d => {
-                if (habitTracker[d] && habitTracker[d][habitName]) {
-                    const habitData = habitTracker[d][habitName];
-                    return habitData.type === 'count' 
-                        ? habitData.value 
-                        : (habitData.value === true ? 1 : 0);
-                } else {
-                    return 0;
-                }
-            });
-
-            const leftMargin = 30;
-            const bottomMargin = 30;
-            const topMargin = 10;
-            const rightMargin = canvas.width - 10; 
-            
-            ctx.strokeStyle = '#333';
-            ctx.beginPath();
-            ctx.moveTo(leftMargin, topMargin);
-            ctx.lineTo(leftMargin, canvas.height - bottomMargin);
-            ctx.lineTo(rightMargin, canvas.height - bottomMargin);
-            ctx.stroke();
-
-            const maxVal = Math.max(...values, 1);
-            const dataPoints = values.length;
-            const xStep = (rightMargin - leftMargin) / (dataPoints - 1);
-            const yScale = (canvas.height - bottomMargin - topMargin) / maxVal;
-
-            ctx.strokeStyle = '#4285f4';
-            ctx.beginPath();
-            values.forEach((v, i) => {
-                const x = leftMargin + i * xStep;
-                const y = (canvas.height - bottomMargin) - v * yScale;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-
-            ctx.fillStyle = '#4285f4';
-            values.forEach((v, i) => {
-                const x = leftMargin + i * xStep;
-                const y = (canvas.height - bottomMargin) - v * yScale;
-                ctx.beginPath();
-                ctx.arc(x, y, 3, 0, Math.PI * 2, true);
-                ctx.fill();
-            });
-
-            ctx.fillStyle = '#333';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-
-            // CHANGED: For 30-day chart, label less frequently to avoid clutter
-            const labelInterval = daysRange === 30 ? 5 : 1;
-            dates.forEach((dateStr, i) => {
-                if (i % labelInterval === 0) {
-                    const x = leftMargin + i * xStep;
-                    const [year, month, day] = dateStr.split('-');
-                    const dateLabel = `${month}-${day}`;
-                    ctx.fillText(dateLabel, x, canvas.height - bottomMargin + 5);
-                }
-            });
-        }
-
-        function saveHabitTracker() {
-            localStorage.setItem('habitTracker', JSON.stringify(habitTracker));
-            localStorage.setItem('globalHabits', JSON.stringify(globalHabits));
-            document.getElementById('habitForm').style.display = 'none';
-        }
-
-        function cancelHabitTracker() {
-            document.getElementById('habitForm').style.display = 'none';
-        }
-
-        renderTasks();
-
-        function goToGoalsPage() {
-            closeJournalForm();
-            document.getElementById('goalsForm').style.display = 'block';
-        }
-
-        function saveGoals() {
-            const goalsText = document.getElementById('goalsText').value.trim();
-            localStorage.setItem('userGoals', goalsText);
-            closeGoalsForm();
-        }
-
-        function closeGoalsForm() {
-            document.getElementById('goalsForm').style.display = 'none';
-            document.getElementById('journalForm').style.display = 'none';
-        }
-
-        function goToJournalFromGoals() {
-            document.getElementById('goalsForm').style.display = 'none';
-            document.getElementById('journalForm').style.display = 'block';
-        }
-
-    </script>
-</body>
-</html>
+                const weeklyBtn 
