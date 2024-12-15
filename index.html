@@ -1010,6 +1010,11 @@ Go to Journal
             const savedEvents = localStorage.getItem('events');
             const savedJournalEntries = localStorage.getItem('journalEntries');
             const savedTaskLists = localStorage.getItem('taskLists');
+            const savedGoals = localStorage.getItem('userGoals');
+            
+            if (savedGoals) {
+                document.getElementById('goalsText').value = savedGoals;
+            }
             
             if (savedEvents) {
                 events = JSON.parse(savedEvents);
@@ -1372,10 +1377,10 @@ function goToGoalsPage() {
 
 function saveGoals() {
     const goalsText = document.getElementById('goalsText').value.trim();
-    // Implement your saving logic here, for example:
-    // localStorage.setItem('userGoals', goalsText);
+    localStorage.setItem('userGoals', goalsText);
     closeGoalsForm();
 }
+
 
 function closeGoalsForm() {
     document.getElementById('goalsForm').style.display = 'none';
