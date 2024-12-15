@@ -170,7 +170,6 @@
             max-height: 90vh;
             overflow-y: auto;
             z-index: 1000;
-        
         }
         .close-btn {
             position: absolute;
@@ -358,13 +357,13 @@
             margin-right: 10px;
         }
         .goals-btn {
-                background: #4285f4;
-                color: white;
-                 border: none;
-                 padding: 8px 16px;
-                 border-radius: 4px;
-                cursor: pointer;
-                }
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
 
         @media screen and (max-width: 768px) {
             .calendar-grid {
@@ -488,12 +487,11 @@
     </div>
 
     <div class="journal-form" id="journalForm">
-        <!-- No nav buttons here now -->
         <button class="goals-btn" onclick="goToGoalsPage()">Go To Goals</button>
         <button class="change-habit-btn" onclick="changeToHabit()">Change to Habit</button>
         <h3>Daily Overview</h3>
         <div id="journalDate" style="margin-bottom: 10px;"></div>
-        
+
         <div class="daily-events">
             <h4>Events</h4>
             <div id="dailyEventsList"></div>
@@ -523,7 +521,18 @@
         <button onclick="saveJournal()">Save</button>
         <button onclick="closeJournalForm()">Cancel</button>
     </div>
-    
+
+    <!-- Navigation buttons for changing day outside the journal -->
+    <!-- CHANGED: Start off hidden -->
+    <button id="prevDayButton" 
+        class="nav-button" 
+        style="position:fixed; left:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
+        onclick="changeJournalDay(-1)">&lt;</button>
+
+    <button id="nextDayButton" 
+        class="nav-button" 
+        style="position:fixed; right:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
+        onclick="changeJournalDay(1)">&gt;</button>
 
     <div class="habit-form" id="habitForm" style="display: none;" data-date="">
         <div id="habitDate" style="margin-bottom: 10px;"></div>
@@ -571,17 +580,7 @@ Go to Journal
     </div>
 </div>
 
-<!-- NEW CODE: Navigation buttons outside the journal form -->
-<button id="prevDayButton" 
-        class="nav-button" 
-        style="display:none; position:fixed; left:20px; top:50%; transform:translateY(-50%); z-index:1001;" 
-        onclick="changeJournalDay(-1)">&lt;</button>
 
-<button id="nextDayButton" 
-        class="nav-button" 
-        style="display:none; position:fixed; right:20px; top:50%; transform:translateY(-50%); z-index:1001;" 
-        onclick="changeJournalDay(1)">&gt;</button>
-<!-- END NEW CODE -->
 
     <script>
         let currentDate = new Date();
@@ -840,19 +839,21 @@ Go to Journal
             const journalForm = document.getElementById('journalForm');
             const journalDate = document.getElementById('journalDate');
             const journalText = document.getElementById('journalText');
-            
+
             const displayDate = new Date(date + 'T00:00:00');
             journalDate.textContent = displayDate.toLocaleDateString();
             journalText.value = journalEntries[date] || '';
             journalForm.dataset.date = date;
             journalForm.style.display = 'block';
-            
-            updateDailyEventsList(date);
-            renderTasks();
 
-            // NEW CODE: Show nav buttons when journal is open
             document.getElementById('prevDayButton').style.display = 'block';
             document.getElementById('nextDayButton').style.display = 'block';
+
+            updateDailyEventsList(date);
+            renderTasks();
+            
+            // CHANGED: Show the nav buttons when journal is open
+            
         }
 
         function updateDailyEventsList(date) {
@@ -884,8 +885,7 @@ Go to Journal
 
         function closeJournalForm() {
             document.getElementById('journalForm').style.display = 'none';
-
-            // NEW CODE: Hide nav buttons when journal is closed
+            // CHANGED: Hide nav buttons when journal is closed
             document.getElementById('prevDayButton').style.display = 'none';
             document.getElementById('nextDayButton').style.display = 'none';
         }
@@ -1056,17 +1056,19 @@ Go to Journal
             
             journalForm.style.display = 'none';
             habitForm.style.display = 'block';
-            
-            updateHabitDisplay();
-            // Hide nav buttons when switching to habit
+
+            // CHANGED: Hide day nav buttons when switching to habit form
             document.getElementById('prevDayButton').style.display = 'none';
             document.getElementById('nextDayButton').style.display = 'none';
+            
+            updateHabitDisplay();
         }
 
         function changeToJournal() {
             document.getElementById('habitForm').style.display = 'none';
             document.getElementById('journalForm').style.display = 'block';
-            // Show nav buttons again when switching back to journal
+
+            // CHANGED: Show nav buttons again when switching back to journal
             document.getElementById('prevDayButton').style.display = 'block';
             document.getElementById('nextDayButton').style.display = 'block';
         }
@@ -1218,10 +1220,217 @@ Go to Journal
                 };
                 controlsContainer.appendChild(progressBtn);
 
-                // ADDED: Time frame container hidden by default
                 const timeFrameContainer = document.createElement('div');
                 timeFrameContainer.style.display = 'none'; // Initially hidden
                 timeFrameContainer.style.display = 'flex';
                 timeFrameContainer.style.gap = '5px';
 
-                const weeklyBtn 
+                const weeklyBtn = document.createElement('button');
+                weeklyBtn.textContent = '7 Days';
+                weeklyBtn.onclick = () => {
+                    drawHabitGraph(habitName, 7);
+                };
+
+                const monthlyBtn = document.createElement('button');
+                monthlyBtn.textContent = '30 Days';
+                monthlyBtn.onclick = () => {
+                    drawHabitGraph(habitName, 30);
+                };
+
+                timeFrameContainer.appendChild(weeklyBtn);
+                timeFrameContainer.appendChild(monthlyBtn);
+
+                controlsContainer.timeFrameContainer = timeFrameContainer;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.style.marginLeft = '10px';
+                deleteBtn.onclick = () => {
+                    if (confirm(`Delete habit "${habitName}" for all future dates as well?`)) {
+                        deleteHabitFromGlobal(habitName);
+                        updateHabitDisplay();
+                    }
+                };
+                controlsContainer.appendChild(deleteBtn);
+
+                topRow.appendChild(nameSpan);
+                topRow.appendChild(controlsContainer);
+
+                const graphContainer = document.createElement('div');
+                graphContainer.style.display = 'none';
+                graphContainer.style.marginTop = '10px';
+                const canvas = document.createElement('canvas');
+                canvas.id = `graph-${habitName}`;
+                canvas.width = 300;
+                canvas.height = 100;
+                graphContainer.appendChild(canvas);
+
+                habitDiv.appendChild(topRow);
+                habitDiv.appendChild(controlsContainer.timeFrameContainer);
+                habitDiv.appendChild(graphContainer);
+
+                habitList.appendChild(habitDiv);
+            });
+        }
+
+        function deleteHabitFromGlobal(habitName) {
+            const dateKey = getCurrentDateKey();
+            delete habitTracker[dateKey][habitName];
+
+            globalHabits = globalHabits.filter(h => h.name.toLowerCase() !== habitName.toLowerCase());
+            localStorage.setItem('globalHabits', JSON.stringify(globalHabits));
+
+            const currentDateObj = parseDateKey(dateKey);
+            for (const dateKeyInTracker of Object.keys(habitTracker)) {
+                const dateObj = parseDateKey(dateKeyInTracker);
+                if (dateObj > currentDateObj && habitTracker[dateKeyInTracker][habitName]) {
+                    delete habitTracker[dateKeyInTracker][habitName];
+                }
+            }
+
+            localStorage.setItem('habitTracker', JSON.stringify(habitTracker));
+        }
+
+        function toggleHabitGraph(habitName) {
+            const graphContainer = document.getElementById(`graph-${habitName}`).parentElement;
+            const topRow = graphContainer.parentElement.firstChild;
+            const controlsContainer = topRow.lastChild;
+            
+            graphContainer.style.display = (graphContainer.style.display === 'none') ? 'block' : 'none';
+            if (graphContainer.style.display === 'block') {
+                drawHabitGraph(habitName, 7); 
+                controlsContainer.timeFrameContainer.style.display = 'flex'; 
+            } else {
+                controlsContainer.timeFrameContainer.style.display = 'none';
+            }
+        }
+
+        function drawHabitGraph(habitName, daysRange = 7) {
+            const canvas = document.getElementById(`graph-${habitName}`);
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const endDate = parseDateKey(getCurrentDateKey());
+            const dates = [];
+            for (let i = daysRange - 1; i >= 0; i--) {
+                const d = new Date(endDate);
+                d.setDate(d.getDate() - i);
+                const dateKey = d.toISOString().split('T')[0];
+                dates.push(dateKey);
+            }
+
+            const values = dates.map(d => {
+                if (habitTracker[d] && habitTracker[d][habitName]) {
+                    const habitData = habitTracker[d][habitName];
+                    return habitData.type === 'count' 
+                        ? habitData.value 
+                        : (habitData.value === true ? 1 : 0);
+                } else {
+                    return 0;
+                }
+            });
+
+            const leftMargin = 30;
+            const bottomMargin = 30;
+            const topMargin = 10;
+            const rightMargin = canvas.width - 10; 
+            
+            ctx.strokeStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(leftMargin, topMargin);
+            ctx.lineTo(leftMargin, canvas.height - bottomMargin);
+            ctx.lineTo(rightMargin, canvas.height - bottomMargin);
+            ctx.stroke();
+
+            const maxVal = Math.max(...values, 1);
+            const dataPoints = values.length;
+            const xStep = (rightMargin - leftMargin) / (dataPoints - 1);
+            const yScale = (canvas.height - bottomMargin - topMargin) / maxVal;
+
+            ctx.strokeStyle = '#4285f4';
+            ctx.beginPath();
+            values.forEach((v, i) => {
+                const x = leftMargin + i * xStep;
+                const y = (canvas.height - bottomMargin) - v * yScale;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            ctx.fillStyle = '#4285f4';
+            values.forEach((v, i) => {
+                const x = leftMargin + i * xStep;
+                const y = (canvas.height - bottomMargin) - v * yScale;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2, true);
+                ctx.fill();
+            });
+
+            ctx.fillStyle = '#333';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+
+            const labelInterval = daysRange === 30 ? 5 : 1;
+            dates.forEach((dateStr, i) => {
+                if (i % labelInterval === 0) {
+                    const x = leftMargin + i * xStep;
+                    const [year, month, day] = dateStr.split('-');
+                    const dateLabel = `${month}-${day}`;
+                    ctx.fillText(dateLabel, x, canvas.height - bottomMargin + 5);
+                }
+            });
+        }
+
+        function saveHabitTracker() {
+            localStorage.setItem('habitTracker', JSON.stringify(habitTracker));
+            localStorage.setItem('globalHabits', JSON.stringify(globalHabits));
+            document.getElementById('habitForm').style.display = 'none';
+        }
+
+        function cancelHabitTracker() {
+            document.getElementById('habitForm').style.display = 'none';
+        }
+
+        renderTasks();
+
+        function goToGoalsPage() {
+            closeJournalForm();
+            document.getElementById('goalsForm').style.display = 'block';
+        }
+
+        function saveGoals() {
+            const goalsText = document.getElementById('goalsText').value.trim();
+            localStorage.setItem('userGoals', goalsText);
+            closeGoalsForm();
+        }
+
+        function closeGoalsForm() {
+            document.getElementById('goalsForm').style.display = 'none';
+            document.getElementById('journalForm').style.display = 'none';
+        }
+
+        function goToJournalFromGoals() {
+            document.getElementById('goalsForm').style.display = 'none';
+            document.getElementById('journalForm').style.display = 'block';
+            // CHANGED: Show nav buttons again if needed
+            document.getElementById('prevDayButton').style.display = 'block';
+            document.getElementById('nextDayButton').style.display = 'block';
+        }
+
+        function changeJournalDay(direction) {
+            const journalForm = document.getElementById('journalForm');
+            const currentDateStr = journalForm.dataset.date;
+            if (!currentDateStr) return;
+
+            const [year, month, day] = currentDateStr.split('-').map(Number);
+            const currentDate = new Date(year, month - 1, day);
+            currentDate.setDate(currentDate.getDate() + direction);
+
+            const newDateStr = currentDate.toISOString().split('T')[0];
+            openJournal(newDateStr);
+        }
+    </script>
+</body>
+</html>
