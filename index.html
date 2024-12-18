@@ -1135,143 +1135,155 @@ Go to Journal
         }
 
         function updateHabitDisplay() {
-            const dateKey = getCurrentDateKey();
-            const habitList = document.getElementById('habitList');
-            habitList.innerHTML = '';
+    const dateKey = getCurrentDateKey();
+    const habitList = document.getElementById('habitList');
+    habitList.innerHTML = '';
 
-            if (!habitTracker[dateKey]) {
-                habitTracker[dateKey] = {};
-            }
+    if (!habitTracker[dateKey]) {
+        habitTracker[dateKey] = {};
+    }
 
-            const currentDateObj = parseDateKey(dateKey);
-            globalHabits.forEach(habit => {
-                const habitStartDate = parseDateKey(habit.startDate);
-                if (currentDateObj >= habitStartDate) {
-                    if (habitTracker[dateKey][habit.name] === undefined) {
-                        if (habit.type === 'count') {
-                            habitTracker[dateKey][habit.name] = { type: 'count', value: 0 };
-                        } else {
-                            habitTracker[dateKey][habit.name] = { type: 'check', value: false };
-                        }
-                    }
-                }
-            });
-
-            const habits = habitTracker[dateKey];
-
-            Object.keys(habits).forEach(habitName => {
-                const habitData = habits[habitName];
-                const habitDiv = document.createElement('div');
-                habitDiv.style.display = 'flex';
-                habitDiv.style.flexDirection = 'column';
-                habitDiv.style.marginBottom = '10px';
-
-                const topRow = document.createElement('div');
-                topRow.style.display = 'flex';
-                topRow.style.alignItems = 'center';
-                topRow.style.justifyContent = 'space-between';
-
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = habitName + ': ';
-
-                const controlsContainer = document.createElement('div');
-                controlsContainer.style.display = 'flex';
-                controlsContainer.style.alignItems = 'center';
-                controlsContainer.style.gap = '5px';
-
-                if (habitData.type === 'count') {
-                    const decrementBtn = document.createElement('button');
-                    decrementBtn.textContent = '-';
-                    decrementBtn.onclick = () => {
-                        if (habitTracker[dateKey][habitName].value > 0) {
-                            habitTracker[dateKey][habitName].value--;
-                            countSpan.textContent = habitTracker[dateKey][habitName].value;
-                        }
-                    };
-
-                    const countSpan = document.createElement('span');
-                    countSpan.id = `count-${habitName}`;
-                    countSpan.textContent = habitData.value;
-
-                    const incrementBtn = document.createElement('button');
-                    incrementBtn.textContent = '+';
-                    incrementBtn.onclick = () => {
-                        habitTracker[dateKey][habitName].value++;
-                        countSpan.textContent = habitTracker[dateKey][habitName].value;
-                    };
-
-                    controlsContainer.appendChild(decrementBtn);
-                    controlsContainer.appendChild(countSpan);
-                    controlsContainer.appendChild(incrementBtn);
+    const currentDateObj = parseDateKey(dateKey);
+    globalHabits.forEach(habit => {
+        const habitStartDate = parseDateKey(habit.startDate);
+        if (currentDateObj >= habitStartDate) {
+            if (habitTracker[dateKey][habit.name] === undefined) {
+                if (habit.type === 'count') {
+                    habitTracker[dateKey][habit.name] = { type: 'count', value: 0 };
                 } else {
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.checked = habitData.value === true;
-                    checkbox.onchange = () => {
-                        habitTracker[dateKey][habitName].value = checkbox.checked;
-                    };
-                    controlsContainer.appendChild(checkbox);
+                    habitTracker[dateKey][habit.name] = { type: 'check', value: false };
                 }
-
-                const progressBtn = document.createElement('button');
-                progressBtn.textContent = 'View Progress';
-                progressBtn.onclick = () => {
-                    toggleHabitGraph(habitName);
-                };
-                controlsContainer.appendChild(progressBtn);
-
-                const timeFrameContainer = document.createElement('div');
-                timeFrameContainer.style.display = 'none'; // Initially hidden
-                timeFrameContainer.style.display = 'flex';
-                timeFrameContainer.style.gap = '5px';
-
-                const weeklyBtn = document.createElement('button');
-                weeklyBtn.textContent = '7 Days';
-                weeklyBtn.onclick = () => {
-                    drawHabitGraph(habitName, 7);
-                };
-
-                const monthlyBtn = document.createElement('button');
-                monthlyBtn.textContent = '30 Days';
-                monthlyBtn.onclick = () => {
-                    drawHabitGraph(habitName, 30);
-                };
-
-                timeFrameContainer.appendChild(weeklyBtn);
-                timeFrameContainer.appendChild(monthlyBtn);
-
-                controlsContainer.timeFrameContainer = timeFrameContainer;
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.style.marginLeft = '10px';
-                deleteBtn.onclick = () => {
-                    if (confirm(`Delete habit "${habitName}" for all future dates as well?`)) {
-                        deleteHabitFromGlobal(habitName);
-                        updateHabitDisplay();
-                    }
-                };
-                controlsContainer.appendChild(deleteBtn);
-
-                topRow.appendChild(nameSpan);
-                topRow.appendChild(controlsContainer);
-
-                const graphContainer = document.createElement('div');
-                graphContainer.style.display = 'none';
-                graphContainer.style.marginTop = '10px';
-                const canvas = document.createElement('canvas');
-                canvas.id = `graph-${habitName}`;
-                canvas.width = 300;
-                canvas.height = 100;
-                graphContainer.appendChild(canvas);
-
-                habitDiv.appendChild(topRow);
-                habitDiv.appendChild(controlsContainer.timeFrameContainer);
-                habitDiv.appendChild(graphContainer);
-
-                habitList.appendChild(habitDiv);
-            });
+            }
         }
+    });
+
+    const habits = habitTracker[dateKey];
+
+    Object.keys(habits).forEach(habitName => {
+        const habitData = habits[habitName];
+        const habitDiv = document.createElement('div');
+        habitDiv.style.display = 'flex';
+        habitDiv.style.flexDirection = 'column';
+        habitDiv.style.marginBottom = '10px';
+
+        const topRow = document.createElement('div');
+        topRow.style.display = 'flex';
+        topRow.style.alignItems = 'center';
+        topRow.style.justifyContent = 'space-between';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = habitName + ': ';
+
+        const controlsContainer = document.createElement('div');
+        controlsContainer.style.display = 'flex';
+        controlsContainer.style.alignItems = 'center';
+        controlsContainer.style.gap = '5px';
+
+        if (habitData.type === 'count') {
+            const decrementBtn = document.createElement('button');
+            decrementBtn.textContent = '-';
+            decrementBtn.onclick = () => {
+                if (habitTracker[dateKey][habitName].value > 0) {
+                    habitTracker[dateKey][habitName].value--;
+                    countInput.value = habitTracker[dateKey][habitName].value;
+                }
+            };
+
+            const countInput = document.createElement('input');
+            countInput.type = 'number';
+            countInput.value = habitData.value;
+            countInput.style.width = '60px';
+            countInput.onchange = () => {
+                const val = parseInt(countInput.value, 10);
+                if (!isNaN(val)) {
+                    habitTracker[dateKey][habitName].value = val;
+                } else {
+                    countInput.value = habitTracker[dateKey][habitName].value;
+                }
+            };
+
+            const incrementBtn = document.createElement('button');
+            incrementBtn.textContent = '+';
+            incrementBtn.onclick = () => {
+                habitTracker[dateKey][habitName].value++;
+                countInput.value = habitTracker[dateKey][habitName].value;
+            };
+
+            controlsContainer.appendChild(decrementBtn);
+            controlsContainer.appendChild(countInput);
+            controlsContainer.appendChild(incrementBtn);
+        } else {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = habitData.value === true;
+            checkbox.onchange = () => {
+                habitTracker[dateKey][habitName].value = checkbox.checked;
+            };
+            controlsContainer.appendChild(checkbox);
+        }
+
+        const progressBtn = document.createElement('button');
+        progressBtn.textContent = 'View Progress';
+        progressBtn.onclick = () => {
+            toggleHabitGraph(habitName);
+        };
+        controlsContainer.appendChild(progressBtn);
+
+        // Time frame container initially hidden
+        const timeFrameContainer = document.createElement('div');
+        timeFrameContainer.style.display = 'none';
+        timeFrameContainer.style.gap = '5px';
+
+        const weeklyBtn = document.createElement('button');
+        weeklyBtn.textContent = '7 Days';
+        weeklyBtn.onclick = () => {
+            drawHabitGraph(habitName, 7);
+        };
+
+        const monthlyBtn = document.createElement('button');
+        monthlyBtn.textContent = '30 Days';
+        monthlyBtn.onclick = () => {
+            drawHabitGraph(habitName, 30);
+        };
+
+        timeFrameContainer.appendChild(weeklyBtn);
+        timeFrameContainer.appendChild(monthlyBtn);
+
+        controlsContainer.timeFrameContainer = timeFrameContainer;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.style.marginLeft = '10px';
+        deleteBtn.onclick = () => {
+            if (confirm(`Delete habit "${habitName}" for all future dates as well?`)) {
+                deleteHabitFromGlobal(habitName);
+                updateHabitDisplay();
+            }
+        };
+        controlsContainer.appendChild(deleteBtn);
+
+        topRow.appendChild(nameSpan);
+        topRow.appendChild(controlsContainer);
+
+        const graphContainer = document.createElement('div');
+        graphContainer.style.display = 'none';
+        graphContainer.style.marginTop = '10px';
+        const canvas = document.createElement('canvas');
+        canvas.id = `graph-${habitName}`;
+        canvas.width = 300;
+        canvas.height = 100;
+        graphContainer.appendChild(canvas);
+
+        habitDiv.appendChild(topRow);
+        habitDiv.appendChild(controlsContainer.timeFrameContainer);
+        habitDiv.appendChild(graphContainer);
+
+        habitList.appendChild(habitDiv);
+    });
+}
+
+
+
 
         function deleteHabitFromGlobal(habitName) {
             const dateKey = getCurrentDateKey();
@@ -1292,18 +1304,23 @@ Go to Journal
         }
 
         function toggleHabitGraph(habitName) {
-            const graphContainer = document.getElementById(`graph-${habitName}`).parentElement;
-            const topRow = graphContainer.parentElement.firstChild;
-            const controlsContainer = topRow.lastChild;
-            
-            graphContainer.style.display = (graphContainer.style.display === 'none') ? 'block' : 'none';
-            if (graphContainer.style.display === 'block') {
-                drawHabitGraph(habitName, 7); 
-                controlsContainer.timeFrameContainer.style.display = 'flex'; 
-            } else {
-                controlsContainer.timeFrameContainer.style.display = 'none';
-            }
-        }
+    const graphContainer = document.getElementById(`graph-${habitName}`).parentElement;
+    const topRow = graphContainer.parentElement.firstChild;
+    const controlsContainer = topRow.lastChild;
+
+    if (graphContainer.style.display === 'none' || graphContainer.style.display === '') {
+        graphContainer.style.display = 'block';
+        controlsContainer.timeFrameContainer.style.display = 'flex'; 
+        drawHabitGraph(habitName, 7); // default to 7-day view
+    } else {
+        graphContainer.style.display = 'none';
+        controlsContainer.timeFrameContainer.style.display = 'none';
+    }
+}
+
+    
+
+
 
         function drawHabitGraph(habitName, daysRange = 7) {
             const canvas = document.getElementById(`graph-${habitName}`);
