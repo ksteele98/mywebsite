@@ -843,6 +843,25 @@ Go to Journal
         generateCalendar();
     }
 
+    function initializeColorPicker() {
+        const colorPicker = document.getElementById('colorPicker');
+        colorPicker.innerHTML = '';
+        
+        colors.forEach(color => {
+            const colorOption = document.createElement('div');
+            colorOption.className = 'color-option';
+            colorOption.style.backgroundColor = color;
+            colorOption.onclick = () => {
+                document.querySelectorAll('.color-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                colorOption.classList.add('selected');
+                selectedColor = color;
+            };
+            colorPicker.appendChild(colorOption);
+        });
+    }
+
     function addEvent(date) {
         const eventForm = document.getElementById('eventForm');
         document.getElementById('eventDate').value = date;
@@ -855,7 +874,8 @@ Go to Journal
         
         document.querySelector('.delete-event-btn').style.display = 'none';
         
-        document.getElementById('journalForm').style.display = 'none';
+        // Keep the journal form visible but put event form on top
+        eventForm.style.zIndex = '1002';
     }
 
     function editEvent(event, index) {
@@ -1048,7 +1068,7 @@ Go to Journal
                 eventDiv.textContent = event.description;
                 eventDiv.onclick = (e) => {
                     e.stopPropagation();
-                    editEvent(event, index);
+                    editEvent(event, events.indexOf(event));
                 };
                 cell.appendChild(eventDiv);
             }
