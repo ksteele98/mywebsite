@@ -936,13 +936,22 @@ Go to Journal
         dailyEventsList.innerHTML = '';
         
         const dayEvents = events.filter(event => event.date === date);
+        
+        if (dayEvents.length === 0) {
+            dailyEventsList.innerHTML = '<p>No events scheduled for this day.</p>';
+            return;
+        }
+        
+        // Sort events by start time
         dayEvents.sort((a, b) => a.startTime.localeCompare(b.startTime));
         
         dayEvents.forEach((event, index) => {
             const eventDiv = document.createElement('div');
             eventDiv.className = 'event';
             eventDiv.style.backgroundColor = event.color;
-            eventDiv.textContent = `${formatTime(event.startTime)}-${formatTime(event.endTime)} ${event.description}`;
+            eventDiv.style.margin = '5px 0';
+            eventDiv.style.padding = '8px';
+            eventDiv.textContent = `${event.startTime} - ${event.endTime}: ${event.description}`;
             eventDiv.onclick = () => editEvent(event, events.indexOf(event));
             dailyEventsList.appendChild(eventDiv);
         });
