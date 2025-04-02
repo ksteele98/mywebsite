@@ -6,7 +6,7 @@
   <title>Calendar App (Google Auth)</title>
 
   <style>
-    /* === Your original CSS === */
+    /* === Your existing CSS unchanged === */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -146,20 +146,16 @@
       cursor: pointer;
       min-width: 80px;
     }
-    .event-actions button:first-child { /* Save Button */
+    .event-actions button:first-child {
       background: #4285f4;
       color: white;
     }
-    .event-actions button:nth-child(2) { /* Delete button */
-       background: #dc3545 !important;
-       color: white;
-    }
-    .event-actions button:last-child { /* Cancel Button */
+    .event-actions button:last-child {
       background: #ddd;
     }
-    /* Ensure delete button specific class if needed, but above covers it */
     .delete-event-btn {
-        /* Style already defined above by nth-child, but keep class for JS targeting */
+      background: #dc3545 !important;
+      color: white;
     }
     .journal-form {
       position: fixed;
@@ -192,7 +188,7 @@
       margin: 10px 0;
       padding: 10px;
       resize: vertical;
-      box-sizing: border-box; /* Added for consistency */
+      box-sizing: border-box;
     }
     .other-month {
       background-color: #f5f5f5;
@@ -203,28 +199,23 @@
       margin: 10px 0;
       max-height: 200px;
       overflow-y: auto;
-      position: relative; /* Keep for potential future absolute positioning */
+      position: relative;
     }
     .task-item {
       display: flex;
       align-items: center;
       padding: 5px;
       border-bottom: 1px solid #eee;
-      flex-wrap: wrap; /* Allow wrapping */
+      flex-wrap: wrap;
       gap: 5px;
-      transition: opacity 0.5s ease; /* Keep transition */
+      transition: opacity 5s ease;
       opacity: 1;
     }
-    .task-item.fade-out { /* Keep fade-out class */
+    .task-item.fade-out {
       opacity: 0;
     }
     .task-item input[type="checkbox"] {
       margin-right: 10px;
-      flex-shrink: 0; /* Prevent checkbox shrinking */
-    }
-     .task-item span {
-        flex-grow: 1; /* Allow text to take space */
-        word-break: break-word; /* Wrap long text */
     }
     .task-input {
       width: 100%;
@@ -242,7 +233,7 @@
       border-radius: 4px;
       cursor: pointer;
       margin-bottom: 10px;
-      width: 100%; /* Make button full width */
+      width: 100%;
     }
     .completed-task {
       text-decoration: line-through;
@@ -261,13 +252,13 @@
       margin-bottom: 10px;
     }
     .task-toggle button {
-      flex: 1; /* Allow buttons to share space */
+      flex: 1;
       padding: 8px 16px;
       border: 1px solid #ddd;
       background: #fff;
       cursor: pointer;
       border-radius: 4px;
-      min-width: 120px; /* Minimum width */
+      min-width: 120px;
     }
     .task-toggle button.active {
       background: #4285f4;
@@ -292,7 +283,7 @@
       border-radius: 4px;
       cursor: pointer;
       margin-top: 10px;
-      width: 100%; /* Make button full width */
+      width: 100%;
     }
     .new-list-btn {
       background: #4285f4;
@@ -301,9 +292,9 @@
       padding: 8px 16px;
       border-radius: 4px;
       cursor: pointer;
-      margin-left: auto; /* Pushes button to the right */
-      min-width: auto; /* Override min-width from general button */
-      flex: 0; /* Prevent growing */
+      margin-left: auto;
+      min-width: auto;
+      flex: 0;
     }
     .delete-list-btn {
       background: #dc3545;
@@ -312,25 +303,15 @@
       padding: 8px 16px;
       border-radius: 4px;
       cursor: pointer;
-      min-width: auto; /* Override min-width */
-      flex: 0; /* Prevent growing */
-      display: none; /* Hide by default */
+      min-width: auto;
+      flex: 0;
     }
     .tasks-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
-      flex-wrap: wrap; /* Allow wrapping */
-      gap: 10px;
     }
-     .tasks-header h3 {
-        margin: 0;
-     }
-     .tasks-header > div { /* Container for new/delete list buttons */
-        display: flex;
-        gap: 10px;
-     }
     .change-habit-btn {
       position: absolute;
       top: 10px;
@@ -341,7 +322,6 @@
       padding: 8px 16px;
       border-radius: 4px;
       cursor: pointer;
-      z-index: 1001; /* Ensure above content */
     }
     .habit-form {
       position: fixed;
@@ -359,13 +339,12 @@
       overflow-y: auto;
       z-index: 1000;
     }
-    #habitDate { /* Style for date display in habit form */
+    #habitDate {
       margin-bottom: 10px;
-      font-weight: bold;
     }
     .new-habit-form {
       margin-top: 20px;
-      display: none;
+      display: none; 
       background: #f9f9f9;
       padding: 15px;
       border-radius: 8px;
@@ -375,8 +354,6 @@
     }
     .habit-type-options label {
       margin-right: 10px;
-      display: block; /* Stack radio buttons */
-      margin-bottom: 5px;
     }
     .goals-btn {
       background: #4285f4;
@@ -385,52 +362,11 @@
       padding: 8px 16px;
       border-radius: 4px;
       cursor: pointer;
-      /* Added positioning from original example if needed */
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1001;
-    }
-    .goals-form {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        display: none; /* Hidden by default */
-        width: 90%;
-        max-width: 600px;
-        max-height: 90vh;
-        overflow-y: auto;
-        z-index: 1000;
     }
 
-     /* Default Journal Form Save/Cancel buttons */
-    .journal-form button:not(.goals-btn):not(.change-habit-btn):not(.add-event-btn):not(.task-toggle button):not(.add-task-btn):not(.new-list-btn):not(.delete-list-btn) {
-        padding: 10px;
-        margin-top: 15px; /* Space above buttons */
-        width: 100%; /* Full width */
-        box-sizing: border-box;
-    }
-     .journal-form button:nth-last-of-type(2) { /* Save Journal Button */
-        background: #4285f4;
-        color: white;
-        border: none;
-     }
-    .journal-form button:nth-last-of-type(1) { /* Cancel Journal Button */
-        background: #ddd;
-        color: black;
-        border: none;
-        margin-top: 10px; /* Space between Save and Cancel */
-    }
-
-    /* Responsive Styles from Original */
     @media screen and (max-width: 768px) {
       .calendar-grid {
-        font-size: 14px; /* Slightly larger for readability */
+        font-size: 14px;
       }
       .calendar-cell {
         min-height: 80px;
@@ -442,34 +378,21 @@
       }
       .current-month {
         font-size: 16px;
-        width: 100%; /* Full width */
+        width: 100%;
         text-align: center;
-        order: -1; /* Move month above buttons */
-        margin-bottom: 10px; /* Add space below month */
-      }
-      .calendar-header {
-          gap: 5px; /* Reduce gap */
+        order: -1;
       }
       .nav-button {
         padding: 6px 12px;
-        min-width: auto; /* Remove min-width */
-        flex: 1; /* Make Prev/Next buttons share space */
+        min-width: auto;
+        flex: 1;
       }
-      .goals-btn, .change-habit-btn {
-          padding: 6px 10px;
-          font-size: 12px;
+      .journal-form button {
+        margin-bottom: 20px;
+        padding: 12px;
+        font-size: 16px;
       }
-       .tasks-header > div { /* Container for list buttons */
-          width: 100%; /* Stack below title */
-          justify-content: space-between; /* Space out buttons */
-      }
-       .new-list-btn, .delete-list-btn {
-          flex: 1; /* Share space */
-          margin-left: 0; /* Reset margin */
-      }
-      /* Removed specific .journal-form button sizing here, handled by default rules */
     }
-
     @media screen and (max-width: 480px) {
       body {
         padding: 10px;
@@ -485,68 +408,49 @@
         font-size: 12px;
       }
       .event {
-        margin-bottom: 1px; /* Tighter spacing */
+        margin-bottom: 1px;
       }
-      .event-form, .journal-form, .habit-form, .goals-form { /* Apply to all forms */
-        width: 95%; /* Slightly more width */
+      .event-form, .journal-form {
+        width: 95%;
         padding: 15px;
       }
       .time-inputs div {
-        flex: 100%; /* Stack time inputs */
+        flex: 100%;
       }
       .task-toggle button {
-        flex: 100%; /* Stack task list buttons */
-        min-width: 0; /* Allow full stacking */
+        flex: 100%;
       }
-      /* Journal Save/Cancel button specific styling for mobile */
-      .journal-form button:nth-last-of-type(2), /* Save */
-      .journal-form button:nth-last-of-type(1) { /* Cancel */
+      .journal-form button {
+        margin-bottom: 20px;
         padding: 12px;
         font-size: 16px;
-        /* Width is already 100% from default */
       }
-      /* Reposition Goals/Habit buttons on small screens */
-       .goals-btn, .change-habit-btn {
-          position: static; /* Remove absolute positioning */
-          width: 100%;
-          margin-bottom: 10px;
-          order: -2; /* Move them towards the top */
-       }
-       .journal-form h3 { /* Ensure space below title if buttons move */
-           margin-bottom: 15px;
-           order: -1; /* Keep title high */
-       }
-       #journalDate {
-           order: -1; /* Keep date high */
-       }
     }
   </style>
 </head>
 <body>
 
-<!-- Auth Section -->
+<!-- A simple section to show/hide when not logged in -->
 <div id="authSection" style="display: none; text-align:center; margin-bottom: 20px;">
   <button onclick="loginWithGoogle()" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
     Sign in with Google
   </button>
 </div>
 
-<!-- Logout Button -->
+<!-- Add logout button that shows when logged in -->
 <div id="logoutSection" style="display: none; text-align:right; margin-bottom: 20px;">
   <button onclick="logoutFromGoogle()" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
     Sign Out
   </button>
 </div>
 
-<!-- Calendar Container -->
-<div class="calendar-container" style="display: none;"> <!-- Hide initially until logged in -->
+<div class="calendar-container">
   <div class="calendar-header">
-    <button class="nav-button" onclick="previousMonth()">< Previous</button>
-    <div class="current-month">Loading...</div> <!-- Updated by JS -->
-    <button class="nav-button" onclick="nextMonth()">Next ></button>
+    <button class="nav-button" onclick="previousMonth()">&lt; Previous</button>
+    <div class="current-month">September 2023</div>
+    <button class="nav-button" onclick="nextMonth()">Next &gt;</button>
   </div>
   <div class="calendar-grid">
-    <!-- Day Headers (cloned by JS) -->
     <div class="day-header">Sun</div>
     <div class="day-header">Mon</div>
     <div class="day-header">Tue</div>
@@ -554,163 +458,150 @@
     <div class="day-header">Thu</div>
     <div class="day-header">Fri</div>
     <div class="day-header">Sat</div>
-    <!-- Calendar cells generated by JS -->
   </div>
 </div>
 
 <!-- Event Form -->
 <div class="event-form" id="eventForm">
-  <h3>Add/Edit Event</h3>
+  <h3>Add Event</h3>
   <input type="text" id="eventDescription" placeholder="Event Name" required>
   <div class="time-inputs">
     <div>
       <label for="eventStartTime">Start Time:</label>
-      <input type="time" id="eventStartTime"> <!-- Required removed to allow all-day -->
+      <input type="time" id="eventStartTime" required>
     </div>
     <div>
       <label for="eventEndTime">End Time:</label>
-      <input type="time" id="eventEndTime">
+      <input type="time" id="eventEndTime" required>
     </div>
   </div>
   <h4>Select Color:</h4>
   <div class="color-picker" id="colorPicker"></div>
   <input type="hidden" id="eventDate">
-  <input type="hidden" id="eventId"> <!-- Stores index -->
+  <input type="hidden" id="eventId">
   <div class="event-actions">
     <button onclick="saveEvent()">Save Event</button>
-    <button onclick="deleteEvent()" class="delete-event-btn" style="display: none;">Delete</button> <!-- Hide initially -->
     <button onclick="closeEventForm()">Cancel</button>
+    <button onclick="deleteEvent()" class="delete-event-btn">Delete</button>
   </div>
 </div>
 
 <!-- Journal Form -->
-<div class="journal-form" id="journalForm" data-date=""> <!-- data-date set by JS -->
-    <button class="goals-btn" onclick="goToGoalsPage()">Go To Goals</button>
-    <button class="change-habit-btn" onclick="changeToHabit()">Change to Habit</button>
-    <h3>Daily Overview</h3>
-    <div id="journalDate" style="margin-bottom: 10px; font-weight: bold; text-align: center;"></div>
+<div class="journal-form" id="journalForm">
+  <button class="goals-btn" onclick="goToGoalsPage()">Go To Goals</button>
+  <button class="change-habit-btn" onclick="changeToHabit()">Change to Habit</button>
+  <h3>Daily Overview</h3>
+  <div id="journalDate" style="margin-bottom: 10px;"></div>
 
-    <!-- Events for the Day -->
-    <div class="daily-events">
-      <h4>Events</h4>
-      <div id="dailyEventsList"></div> <!-- Populated by JS -->
-      <button class="add-event-btn" onclick="addEvent(document.getElementById('journalForm').dataset.date)">Add Event for this Day</button>
-    </div>
+  <div class="daily-events">
+    <h4>Events</h4>
+    <div id="dailyEventsList"></div>
+    <button class="add-event-btn" onclick="addEvent(document.getElementById('journalForm').dataset.date)">Add Event</button>
+  </div>
 
-    <!-- Journal Entry -->
-    <h4>Journal Entry</h4>
-    <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
-
-    <!-- Tasks Section -->
-    <div class="task-container">
-      <div class="tasks-header">
-        <h3>Tasks</h3>
-        <div>
-          <button class="new-list-btn" onclick="createNewListDirect()">+ New List</button>
-          <button class="delete-list-btn" onclick="deleteCurrentListDirect()">Delete List</button>
-        </div>
+  <h4>Journal Entry</h4>
+  <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
+        
+  <div class="task-container">
+    <div class="tasks-header">
+      <h3>Tasks</h3>
+      <div>
+        <button class="new-list-btn" onclick="createNewList()">+ New List</button>
+        <button class="delete-list-btn" onclick="deleteCurrentList()">Delete List</button>
       </div>
-      <div class="task-toggle">
-        <!-- Buttons generated/managed by fixTaskButtons JS function -->
-      </div>
-
-      <label style="display: block; margin: 15px 0 8px; font-size: 14px;">
-        <input type="checkbox" id="taskDailyCheckbox" style="margin-right: 6px;">
-        Repeat Daily?
-      </label>
-
-      <input type="text" id="taskInput" class="task-input" placeholder="Add task (or multiple, comma-separated)">
-      <button class="add-task-btn" onclick="addTaskDirect()">Add Task</button>
-      <ul class="task-list" id="taskList">
-        <!-- Task items generated by JS -->
-      </ul>
     </div>
+    <div class="task-toggle">
+      <button onclick="switchTaskList('personal')" id="personalTasksBtn" class="active">Personal Tasks</button>
+      <button onclick="switchTaskList('work')" id="workTasksBtn">Work Tasks</button>
+    </div>
+            
+    <label style="display: block; margin: 8px 0; font-size: 14px;">
+      <input type="checkbox" id="taskDailyCheckbox" style="margin-right: 6px;">
+      Repeat Daily?
+    </label>
 
-    <!-- Save/Cancel Buttons for Journal - Styling handled by CSS -->
-    <button onclick="saveJournal()">Save Journal & Tasks</button>
-    <button onclick="closeJournalForm()">Cancel</button>
+    <input type="text" id="taskInput" class="task-input" placeholder="Add a new task">
+    <button class="add-task-btn" onclick="addTask()">Add Task</button>
+    <ul class="task-list" id="taskList"></ul>
+  </div>
+
+  <button onclick="saveJournal()">Save</button>
+  <button onclick="closeJournalForm()">Cancel</button>
 </div>
 
-
 <!-- Prev / Next Journal Buttons -->
-<button id="prevDayButton"
-  class="nav-button"
-  style="position:fixed; left:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;"
-  onclick="changeJournalDay(-1)"><</button>
+<button id="prevDayButton" 
+  class="nav-button" 
+  style="position:fixed; left:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
+  onclick="changeJournalDay(-1)">&lt;</button>
 
-<button id="nextDayButton"
-  class="nav-button"
-  style="position:fixed; right:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;"
-  onclick="changeJournalDay(1)">></button>
+<button id="nextDayButton" 
+  class="nav-button" 
+  style="position:fixed; right:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
+  onclick="changeJournalDay(1)">&gt;</button>
 
 <!-- Habit Form -->
 <div class="habit-form" id="habitForm" style="display: none;" data-date="">
+  <div id="habitDate" style="margin-bottom: 10px;"></div>
   <button class="change-habit-btn" onclick="changeToJournal()">Change to Journal</button>
   <h3>Habit Tracker</h3>
-  <div id="habitDate"></div> <!-- Populated by JS -->
-  <div id="habitList" style="margin-bottom: 15px;"></div> <!-- Added margin -->
-  <button onclick="showNewHabitForm()" style="background: #5cb85c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-bottom: 15px;">Add Habit</button>
+  <div id="habitList"></div>
+  <button onclick="showNewHabitForm()">Add Habit</button>
+  <button onclick="saveHabitTracker()">Save</button>
+  <button onclick="cancelHabitTracker()">Cancel</button>
 
-  <!-- New Habit Creation Sub-Form -->
   <div class="new-habit-form" id="newHabitForm">
     <h4>Add a New Habit</h4>
-    <input type="text" id="newHabitName" placeholder="Habit Name" style="width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box;">
-    <div class="habit-type-options" style="margin-bottom: 15px;">
+    <input type="text" id="newHabitName" placeholder="Habit Name">
+    <div class="habit-type-options">
       <label><input type="radio" name="habitType" value="count" checked> Count</label>
       <label><input type="radio" name="habitType" value="check"> Check</label>
     </div>
-    <div style="display: flex; gap: 10px;">
-        <button onclick="confirmAddHabit()" style="flex: 1; background: #4CAF50; color: white; padding: 8px; border: none; border-radius: 4px; cursor: pointer;">Save New Habit</button>
-        <button onclick="cancelAddHabit()" style="flex: 1; background: #ddd; padding: 8px; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Save/Cancel for Habit Form -->
-  <div style="margin-top: 20px; display: flex; gap: 10px;">
-      <button onclick="saveHabitTracker()" style="flex: 1; background: #4285f4; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">Save Habits</button>
-      <button onclick="cancelHabitTracker()" style="flex: 1; background: #ddd; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+    <button onclick="confirmAddHabit()">Save New Habit</button>
+    <button onclick="cancelAddHabit()">Cancel</button>
   </div>
 </div>
 
-
 <!-- Goals Form -->
-<div class="goals-form" id="goalsForm">
-  <button onclick="goToJournalFromGoals()"
+<div class="goals-form" id="goalsForm" style="display: none; position: fixed; top: 50%; left: 50%;
+transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; 
+box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; z-index: 1000;">
+  <button onclick="goToJournalFromGoals()" 
     style="position: absolute; top: 10px; right: 10px; background:#4285f4; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">
     Go to Journal
   </button>
   <h3>Goals</h3>
-  <p>Write your long-term or overarching goals here.</p>
-  <textarea id="goalsText" style="width:100%; height:200px; box-sizing: border-box; padding: 10px;" placeholder="e.g., Run a marathon, Learn a new language..."></textarea>
+  <p>Write your goals here...</p>
+  <textarea id="goalsText" style="width:100%; height:100px;" placeholder="Your goals..."></textarea>
   <div style="display: flex; gap: 10px; margin-top: 20px;">
     <button onclick="saveGoals()" style="flex:1; background:#4285f4; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">
-      Save Goals
+      Save
     </button>
     <button onclick="closeGoalsForm()" style="flex:1; background:#ddd; border:none; padding:10px; border-radius:4px; cursor:pointer;">
-      Close
+      Cancel
     </button>
   </div>
 </div>
 
-
 <!-- ====================== Firebase + App Script ====================== -->
 <script type="module">
-  /**********************
+  /********************** 
     1) Firebase Imports
   ***********************/
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
-  import {
-    getAuth,
-    GoogleAuthProvider,
-    signInWithPopup,
+  import { 
+    getAuth, 
+    GoogleAuthProvider, 
+    signInWithPopup, 
     onAuthStateChanged,
     signOut
   } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-  /**********************
-    2) Firebase Config
+  /********************** 
+    2) Firebase Config 
+       (from your snippet)
   ***********************/
   const firebaseConfig = {
     apiKey: "AIzaSyCmtc69JDgCWtxPNgPU73Y4n7-asl6M72w",
@@ -722,7 +613,7 @@
     measurementId: "G-SSJEV8WQFT"
   };
 
-  /**********************
+  /********************** 
     3) Init Firebase
   ***********************/
   const app = initializeApp(firebaseConfig);
@@ -730,30 +621,60 @@
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  let userId = null;
+  let userId = null;  // will store current Google user's uid here
   const provider = new GoogleAuthProvider();
 
+  // This function triggers the Google popup
   async function loginWithGoogle() {
     try {
-      await signInWithPopup(auth, provider);
-      console.log("Google sign-in successful!");
+      const result = await signInWithPopup(auth, provider);
+      // If successful, user is now signed in
+      console.log("Google sign-in success!");
+      // userId is set via onAuthStateChanged below
     } catch (error) {
       console.error("Google Sign-In Error:", error);
-      alert("Failed to sign in with Google. Check console.");
     }
   }
 
+  // On page load, watch for auth changes
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      userId = user.uid;
+      // Hide sign in button, show logout button
+      document.getElementById('authSection').style.display = 'none';
+      document.getElementById('logoutSection').style.display = 'block';
+      // Load data from Firestore
+      await loadUserData();
+      // Generate calendar, tasks, etc.
+      generateCalendar();
+      renderTasks();
+    } else {
+      // Show sign in button, hide logout button
+      document.getElementById('authSection').style.display = 'block';
+      document.getElementById('logoutSection').style.display = 'none';
+    }
+  });
+
+  // Log out the user from Google
   async function logoutFromGoogle() {
     try {
       await signOut(auth);
       console.log("User signed out successfully");
+      // Clear local data
+      events = [];
+      journalEntries = {};
+      taskLists = { personal: [], work: [] };
+      habitTracker = {};
+      globalHabits = [];
+      // Regenerate calendar with cleared data
+      generateCalendar();
     } catch (error) {
       console.error("Error signing out:", error);
     }
   }
 
-  /*******************************************************
-   4) In-Memory Data & State
+  /******************************************************* 
+   4) In-Memory Data
   *******************************************************/
   let currentDate   = new Date();
   let events        = [];
@@ -761,76 +682,58 @@
   let journalEntries = {};
   let taskLists     = { personal: [], work: [] };
   let currentTaskList = 'personal';
+
   let habitTracker = {};
   let globalHabits = [];
-  let userGoals = '';
 
-  /*******************************************************
-   5) Firestore Load/Save
+  /******************************************************* 
+   5) Firestore Load/Save 
   *******************************************************/
   async function loadUserData() {
     if (!userId) return;
-    console.log("Loading user data for:", userId);
     try {
       const docRef = doc(db, "users", userId);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        console.log("Firestore data found:", data);
         events          = data.events          || [];
         journalEntries  = data.journalEntries  || {};
         taskLists       = data.taskLists       || { personal: [], work: [] };
         habitTracker    = data.habitTracker    || {};
         globalHabits    = data.globalHabits    || [];
-        userGoals       = data.userGoals       || '';
-
-        if (!taskLists.personal) taskLists.personal = [];
-        if (!taskLists.work) taskLists.work = [];
-
-        document.getElementById('goalsText').value = userGoals;
-        currentTaskList = 'personal'; // Reset view
-
+        document.getElementById('goalsText').value = data.userGoals || '';
+        
+        // Initialize task controls after loading data
+        setTimeout(initializeTaskControls, 100);
       } else {
         console.log("No existing Firestore doc for this user; starting fresh.");
-        events = [];
-        journalEntries = {};
         taskLists = { personal: [], work: [] };
-        habitTracker = {};
-        globalHabits = [];
-        userGoals = '';
-        currentTaskList = 'personal';
-        document.getElementById('goalsText').value = '';
+        setTimeout(initializeTaskControls, 100);
       }
     } catch (err) {
       console.error("Error loading user data:", err);
-      alert("Error loading data. Check console.");
     }
   }
 
   async function saveUserData() {
-    if (!userId) {
-        console.warn("Attempted to save data without userId.");
-        return;
-    }
-    console.log("Saving user data to Firestore...");
+    if (!userId) return; // not signed in yet
     try {
       const docRef = doc(db, "users", userId);
       await setDoc(docRef, {
-        events: events || [],
-        journalEntries: journalEntries || {},
-        taskLists: taskLists || { personal: [], work: [] },
-        habitTracker: habitTracker || {},
-        globalHabits: globalHabits || [],
+        events,
+        journalEntries,
+        taskLists,
+        habitTracker,
+        globalHabits,
         userGoals: document.getElementById('goalsText')?.value || ''
-      }, { merge: true });
-      console.log("Data saved successfully!");
+      });
+      console.log("Data saved to Firestore!");
     } catch (err) {
       console.error("Error saving user data:", err);
-      alert("Error saving data. Check console.");
     }
   }
 
-  /*******************************************************
+  /******************************************************* 
    6) Color Picker
   *******************************************************/
   const colors = [
@@ -841,23 +744,13 @@
 
   function initializeColorPicker() {
     const colorPicker = document.getElementById('colorPicker');
-    if (!colorPicker) return;
     colorPicker.innerHTML = '';
-    let defaultSelected = false;
-
     colors.forEach(color => {
       const colorOption = document.createElement('div');
       colorOption.className = 'color-option';
       colorOption.style.backgroundColor = color;
-      colorOption.dataset.color = color;
-
-      if (color === selectedColor) {
-        colorOption.classList.add('selected');
-        defaultSelected = true;
-      }
-
       colorOption.onclick = () => {
-        colorPicker.querySelectorAll('.color-option').forEach(opt => {
+        document.querySelectorAll('.color-option').forEach(opt => {
           opt.classList.remove('selected');
         });
         colorOption.classList.add('selected');
@@ -865,16 +758,10 @@
       };
       colorPicker.appendChild(colorOption);
     });
-
-     if (!defaultSelected && colorPicker.firstChild) {
-        colorPicker.firstChild.classList.add('selected');
-        selectedColor = colorPicker.firstChild.dataset.color;
-     }
   }
 
-
-  /*******************************************************
-   7) Calendar Navigation
+  /******************************************************* 
+   7) Calendar Navigation 
   *******************************************************/
   function previousMonth() {
     currentDate.setMonth(currentDate.getMonth() - 1);
@@ -886,150 +773,106 @@
     generateCalendar();
   }
 
-  /*******************************************************
+  /******************************************************* 
    8) Calendar Generation
   *******************************************************/
   function generateCalendar() {
-    const monthYearDisplay = document.querySelector('.current-month');
-    const calendarGrid = document.querySelector('.calendar-grid');
-    if (!monthYearDisplay || !calendarGrid) return;
-
-    const headers = calendarGrid.querySelectorAll('.day-header');
-    calendarGrid.innerHTML = '';
-    headers.forEach(header => calendarGrid.appendChild(header.cloneNode(true)));
+    const monthYear = document.querySelector('.current-month');
+    const headers = document.querySelectorAll('.day-header');
+    const oldGrid = document.querySelector('.calendar-grid');
+    oldGrid.innerHTML = '';
+    headers.forEach(header => oldGrid.appendChild(header.cloneNode(true)));
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const monthNames = ["January","February","March","April","May","June",
                         "July","August","September","October","November","December"];
-    monthYearDisplay.textContent = `${monthNames[month]} ${year}`;
+    monthYear.textContent = `${monthNames[month]} ${year}`;
 
-    const firstDayOfMonth = new Date(year, month, 1);
-    const lastDayOfMonth  = new Date(year, month + 1, 0);
-    const firstDayWeekday = firstDayOfMonth.getDay();
+    const firstDay = new Date(year, month, 1);
+    const lastDay  = new Date(year, month + 1, 0);
+    const firstDayIndex = firstDay.getDay();
 
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
-    for (let i = firstDayWeekday; i > 0; i--) {
-      const day = daysInPrevMonth - i + 1;
-      const prevDate = new Date(year, month - 1, day);
-      calendarGrid.appendChild(createCalendarCell(prevDate, true));
+    for (let i = firstDayIndex; i > 0; i--) {
+      const prevDate = new Date(year, month, -i + 1);
+      const cell = createCalendarCell(prevDate, true);
+      oldGrid.appendChild(cell);
     }
 
-    for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
+    for (let day = 1; day <= lastDay.getDate(); day++) {
       const date = new Date(year, month, day);
-      calendarGrid.appendChild(createCalendarCell(date, false));
+      const cell = createCalendarCell(date, false);
+      oldGrid.appendChild(cell);
     }
 
-    const lastDayWeekday = lastDayOfMonth.getDay();
-    const totalCellsRendered = firstDayWeekday + lastDayOfMonth.getDate();
-    // Ensure 6 rows total (42 cells - 7 headers = 35 content cells minimum)
-    // More accurately, total cells = 42. Cells used so far = 7 + totalCellsRendered
-    const remainingCells = 42 - (7 + totalCellsRendered);
-
-
+    const remainingCells = 42 - (firstDayIndex + lastDay.getDate());
     for (let i = 1; i <= remainingCells; i++) {
-        const nextDate = new Date(year, month + 1, i);
-        calendarGrid.appendChild(createCalendarCell(nextDate, true));
+      const nextDate = new Date(year, month + 1, i);
+      const cell = createCalendarCell(nextDate, true);
+      oldGrid.appendChild(cell);
     }
-     // console.log(`Calendar generated for ${monthNames[month]} ${year}`);
   }
-
 
   function createCalendarCell(date, isOtherMonth) {
     const cell = document.createElement('div');
     cell.className = `calendar-cell${isOtherMonth ? ' other-month' : ''}`;
-    const dateStr = date.toISOString().split('T')[0];
-
     const dateNumber = document.createElement('div');
     dateNumber.className = 'date-number';
     dateNumber.textContent = date.getDate();
     cell.appendChild(dateNumber);
 
-    cell.addEventListener('click', () => openJournal(dateStr));
+    const dateStr = date.toISOString().split('T')[0];
+    cell.addEventListener('click', () => {
+      openJournal(dateStr);
+    });
 
-    const dayEvents = events.filter(event => event.date === dateStr)
-                           .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
-
-    dayEvents.forEach((event, index) => {
-      if (index < 2) { // Limit to 2 direct events for space
-          const eventDiv = document.createElement('div');
-          eventDiv.className = 'event';
-          eventDiv.style.backgroundColor = event.color || '#3498DB';
-          eventDiv.textContent = event.description;
-          eventDiv.title = `${event.startTime || ''} - ${event.endTime || ''}: ${event.description}`;
-          eventDiv.onclick = (e) => {
-            e.stopPropagation();
-            editEvent(event, events.indexOf(event));
-          };
-          cell.appendChild(eventDiv);
-      } else if (index === 2) {
-         const moreDiv = document.createElement('div');
-         moreDiv.className = 'event';
-         moreDiv.style.backgroundColor = '#ccc';
-         moreDiv.style.color = '#333';
-         moreDiv.textContent = '+ more';
-         moreDiv.onclick = (e) => { e.stopPropagation(); openJournal(dateStr); };
-         cell.appendChild(moreDiv);
+    // Show events
+    events.forEach((event) => {
+      if (event.date === dateStr) {
+        const eventDiv = document.createElement('div');
+        eventDiv.className = 'event';
+        eventDiv.style.backgroundColor = event.color;
+        eventDiv.textContent = event.description;
+        eventDiv.onclick = (e) => {
+          e.stopPropagation();
+          editEvent(event, events.indexOf(event));
+        };
+        cell.appendChild(eventDiv);
       }
     });
 
+    // Show a small "Journal" tag if there's a journal entry
     if (journalEntries[dateStr]) {
       const journalIndicator = document.createElement('div');
       journalIndicator.className = 'event';
       journalIndicator.style.backgroundColor = '#666';
-      journalIndicator.textContent = '📝';
-      journalIndicator.title = 'Journal entry exists';
-      journalIndicator.style.marginTop = '2px'; // Add slight gap
-      journalIndicator.onclick = (e) => { e.stopPropagation(); openJournal(dateStr); };
+      journalIndicator.textContent = '📝 Journal Entry';
       cell.appendChild(journalIndicator);
-    }
-
-    if (habitTracker[dateStr] && Object.keys(habitTracker[dateStr]).length > 0 && globalHabits.length > 0) {
-        const habitIndicator = document.createElement('div');
-        habitIndicator.className = 'event';
-        habitIndicator.style.backgroundColor = '#FFA07A';
-        habitIndicator.textContent = '🎯';
-        habitIndicator.title = 'Habits tracked';
-        habitIndicator.style.marginTop = '2px'; // Add slight gap
-        habitIndicator.onclick = (e) => { e.stopPropagation(); openJournal(dateStr); };
-        cell.appendChild(habitIndicator);
     }
 
     return cell;
   }
 
-
-  /*******************************************************
-   9) Open/Close Forms & Navigation
+  /******************************************************* 
+   9) Open/Close Journal
   *******************************************************/
   function openJournal(date) {
     const journalForm = document.getElementById('journalForm');
-    const journalDateEl = document.getElementById('journalDate');
+    const journalDate = document.getElementById('journalDate');
     const journalText = document.getElementById('journalText');
-    if (!journalForm || !journalDateEl || !journalText) return;
 
     const displayDate = new Date(date + 'T00:00:00');
-    journalDateEl.textContent = displayDate.toLocaleDateString(undefined, {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
-
+    journalDate.textContent = displayDate.toLocaleDateString();
     journalText.value = journalEntries[date] || '';
     journalForm.dataset.date = date;
-
-    document.getElementById('eventForm').style.display = 'none';
-    document.getElementById('habitForm').style.display = 'none';
-    document.getElementById('goalsForm').style.display = 'none';
     journalForm.style.display = 'block';
 
     document.getElementById('prevDayButton').style.display = 'block';
     document.getElementById('nextDayButton').style.display = 'block';
 
     updateDailyEventsList(date);
-
-    fixTaskButtons();
-    switchTaskDirect(currentTaskList); // Renders tasks for this date
-
-    console.log("Opened journal for:", date);
+    renderTasks(); // re-render tasks for this date
+    initializeTaskControls(); // Initialize task controls each time the journal is opened
   }
 
   function closeJournalForm() {
@@ -1038,538 +881,264 @@
     document.getElementById('nextDayButton').style.display = 'none';
   }
 
-   function closeEventForm() {
-    document.getElementById('eventForm').style.display = 'none';
-    selectedColor = '#4285f4';
-    // Re-open journal if it was the context? Optional.
-    // const journalDate = document.getElementById('journalForm').dataset.date;
-    // if(journalDate && document.getElementById('journalForm').style.display === 'none') {
-    //     openJournal(journalDate);
-    // }
-  }
-
-  function closeHabitForm() {
-    document.getElementById('habitForm').style.display = 'none';
-    document.getElementById('newHabitForm').style.display = 'none';
-    const habitDate = document.getElementById('habitForm').dataset.date;
-    if (habitDate) {
-        openJournal(habitDate); // Return to journal
-    }
-  }
-  window.cancelHabitTracker = closeHabitForm;
-
-
-  function closeGoalsForm() {
-    document.getElementById('goalsForm').style.display = 'none';
-  }
-
   function changeJournalDay(direction) {
     const journalForm = document.getElementById('journalForm');
     const currentDateStr = journalForm.dataset.date;
     if (!currentDateStr) return;
 
     const [year, month, day] = currentDateStr.split('-').map(Number);
-    const currentDateObj = new Date(year, month - 1, day);
-    currentDateObj.setDate(currentDateObj.getDate() + direction);
+    const currentDate = new Date(year, month - 1, day);
+    currentDate.setDate(currentDate.getDate() + direction);
 
-    const newDateStr = currentDateObj.toISOString().split('T')[0];
+    const newDateStr = currentDate.toISOString().split('T')[0];
     openJournal(newDateStr);
   }
 
-  // --- Navigation between Journal/Habit/Goals ---
-  function changeToHabit() {
-    const date = document.getElementById('journalForm').dataset.date;
-    if (!date) return;
-    closeJournalForm();
-    openHabitTracker(date);
-  }
-
-  function changeToJournal() {
-    const date = document.getElementById('habitForm').dataset.date;
-    if (!date) return;
-    closeHabitForm();
-    openJournal(date);
-  }
-
-  function goToGoalsPage() {
-    closeJournalForm();
-    document.getElementById('goalsForm').style.display = 'block';
-    document.getElementById('goalsText').value = userGoals;
-  }
-
-  function goToJournalFromGoals() {
-    document.getElementById('goalsForm').style.display = 'none';
-    const journalDate = document.getElementById('journalForm').dataset.date || new Date().toISOString().split('T')[0];
-    openJournal(journalDate);
-  }
-
-
-  /*******************************************************
-   10) Events Management
+  /******************************************************* 
+   10) Events
   *******************************************************/
   function addEvent(date) {
-    if (!date) return;
     const eventForm = document.getElementById('eventForm');
-    const deleteBtn = eventForm.querySelector('.delete-event-btn');
-
+    document.getElementById('eventDate').value = date;
+    document.getElementById('eventId').value = '';
     document.getElementById('eventDescription').value = '';
     document.getElementById('eventStartTime').value = '';
     document.getElementById('eventEndTime').value = '';
-    document.getElementById('eventDate').value = date;
-    document.getElementById('eventId').value = '';
-    selectedColor = '#4285f4';
-
-    initializeColorPicker();
-
-    deleteBtn.style.display = 'none';
     eventForm.style.display = 'block';
-    eventForm.style.zIndex = '1002';
-
-    document.getElementById('journalForm').style.display = 'none';
-    document.getElementById('habitForm').style.display = 'none';
-    document.getElementById('prevDayButton').style.display = 'none';
-    document.getElementById('nextDayButton').style.display = 'none';
-
-    console.log("Opening event form for date:", date);
+    initializeColorPicker();
+    document.querySelector('.delete-event-btn').style.display = 'none';
+    eventForm.style.zIndex = '1002'; // above the journal form
   }
 
   function editEvent(event, index) {
     const eventForm = document.getElementById('eventForm');
-    const deleteBtn = eventForm.querySelector('.delete-event-btn');
-    // Find index robustly if not provided correctly
-    if (typeof index !== 'number' || index < 0 || index >= events.length || events[index].id !== event.id) {
-       index = events.findIndex(e => e.id === event.id && e.date === event.date); // Requires unique ID per day or globally
-    }
-
-     if (index === -1) {
-        alert("Could not find the event to edit.");
-        return;
-     }
-
-    document.getElementById('eventDescription').value = event.description || '';
-    document.getElementById('eventStartTime').value = event.startTime || '';
-    document.getElementById('eventEndTime').value = event.endTime || '';
     document.getElementById('eventDate').value = event.date;
+    document.getElementById('eventStartTime').value = event.startTime;
+    document.getElementById('eventEndTime').value = event.endTime;
+    document.getElementById('eventDescription').value = event.description;
     document.getElementById('eventId').value = index;
-    selectedColor = event.color || '#4285f4';
+    selectedColor = event.color;
 
-    initializeColorPicker();
-
-    deleteBtn.style.display = 'block';
     eventForm.style.display = 'block';
-    eventForm.style.zIndex = '1002';
+    initializeColorPicker();
+    document.querySelector('.delete-event-btn').style.display = 'block';
 
+    // Mark selected color
+    const colorOptions = document.querySelectorAll('.color-option');
+    colorOptions.forEach(opt => {
+      if (opt.style.backgroundColor === event.color) {
+        opt.classList.add('selected');
+      }
+    });
     document.getElementById('journalForm').style.display = 'none';
-    document.getElementById('habitForm').style.display = 'none';
-    document.getElementById('prevDayButton').style.display = 'none';
-    document.getElementById('nextDayButton').style.display = 'none';
+  }
 
-    console.log("Editing event:", event, "at index:", index);
+  function closeEventForm() {
+    document.getElementById('eventForm').style.display = 'none';
+    selectedColor = '#4285f4';
   }
 
   function saveEvent() {
     const date = document.getElementById('eventDate').value;
     const startTime = document.getElementById('eventStartTime').value;
     const endTime = document.getElementById('eventEndTime').value;
-    const description = document.getElementById('eventDescription').value.trim();
-    const eventId = document.getElementById('eventId').value; // Index string
+    const description = document.getElementById('eventDescription').value;
+    const eventId = document.getElementById('eventId').value;
 
-    if (!description) {
-      alert('Please enter an event description.');
+    if (!description || !startTime || !endTime) {
+      alert('Please fill in all fields');
       return;
     }
-     if (startTime && endTime && endTime <= startTime) {
-      alert('End time must be after start time.');
+    if (endTime <= startTime) {
+      alert('End time must be after start time');
       return;
     }
 
-    const eventData = {
-        date,
-        startTime: startTime || null, // Store null if empty
-        endTime: endTime || null,   // Store null if empty
-        description,
-        color: selectedColor,
-        // Use existing ID if editing, generate if new
-        id: eventId !== '' ? events[parseInt(eventId)].id : 'evt_' + Date.now() + Math.random().toString(36).substring(2, 7)
-    };
-
+    const eventData = { date, startTime, endTime, description, color: selectedColor };
     if (eventId !== '') {
-      const index = parseInt(eventId);
-      if (index >= 0 && index < events.length) {
-          events[index] = eventData;
-          console.log("Event updated:", eventData);
-      } else {
-          console.error("Invalid index for updating event:", index);
-          return;
-      }
+      // Editing existing
+      events[parseInt(eventId)] = eventData;
     } else {
+      // New
       events.push(eventData);
-      console.log("Event added:", eventData);
     }
-
     saveUserData();
+
     closeEventForm();
     generateCalendar();
-    openJournal(date); // Re-open journal for the event's date
+    updateDailyEventsList(date);
   }
 
   function deleteEvent() {
-    const eventId = document.getElementById('eventId').value; // Index
-    const date = document.getElementById('eventDate').value;
-
-    if (eventId === '') {
+    const eventId = document.getElementById('eventId').value;
+    if (eventId !== '') {
+      events.splice(parseInt(eventId), 1);
+      saveUserData();
       closeEventForm();
-      openJournal(date);
-      return;
-    }
+      generateCalendar();
 
-    const index = parseInt(eventId);
-    if (index >= 0 && index < events.length) {
-      if (confirm(`Delete event "${events[index].description}"?`)) {
-        events.splice(index, 1);
-        console.log("Event deleted.");
-        saveUserData();
-        closeEventForm();
-        generateCalendar();
-        openJournal(date); // Re-open journal
-      }
-    } else {
-      console.error("Invalid index for deleting event:", index);
-      closeEventForm();
-      openJournal(date);
+      const date = document.getElementById('eventDate').value;
+      updateDailyEventsList(date);
     }
   }
 
   function updateDailyEventsList(date) {
     const dailyEventsList = document.getElementById('dailyEventsList');
-    if (!dailyEventsList) return;
-
     dailyEventsList.innerHTML = '';
-    const dayEvents = events.filter(event => event.date === date)
-                           .sort((a, b) => (a.startTime || '00:00').localeCompare(b.startTime || '00:00')); // Sort putting all-day first
+    const dayEvents = events.filter(event => event.date === date);
 
     if (dayEvents.length === 0) {
-      dailyEventsList.innerHTML = '<p style="color: #666; font-style: italic;">No events scheduled.</p>';
+      dailyEventsList.innerHTML = '<p>No events scheduled for this day.</p>';
       return;
     }
+    dayEvents.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
     dayEvents.forEach((event) => {
       const eventDiv = document.createElement('div');
-      // Use a different style than calendar cell events
-      eventDiv.style.backgroundColor = event.color || '#3498DB';
-      eventDiv.style.color = 'white';
+      eventDiv.className = 'event';
+      eventDiv.style.backgroundColor = event.color;
       eventDiv.style.margin = '5px 0';
       eventDiv.style.padding = '8px';
-      eventDiv.style.borderRadius = '4px';
-      eventDiv.style.cursor = 'pointer';
-      eventDiv.style.overflow = 'hidden';
-      eventDiv.style.textOverflow = 'ellipsis';
-
-      let timeText = 'All day';
-      if (event.startTime) {
-          timeText = event.startTime;
-          if (event.endTime) {
-              timeText += ` - ${event.endTime}`;
-          }
-      }
-      eventDiv.textContent = `${timeText}: ${event.description}`;
-      eventDiv.title = eventDiv.textContent; // Tooltip for overflow
-
+      eventDiv.textContent = `${event.startTime} - ${event.endTime}: ${event.description}`;
       eventDiv.onclick = () => editEvent(event, events.indexOf(event));
       dailyEventsList.appendChild(eventDiv);
     });
   }
 
-
-  /*******************************************************
-   11) Journal Entry Management
+  /******************************************************* 
+   11) Journal
   *******************************************************/
   function saveJournal() {
-    const date = document.getElementById('journalForm').dataset.date;
+    const journalForm = document.getElementById('journalForm');
+    const date = journalForm.dataset.date;
     const text = document.getElementById('journalText').value;
 
-    if (!date) return;
-
-    if (text.trim()) {
-        journalEntries[date] = text.trim();
-        console.log("Journal entry saved for:", date);
-    } else {
-        delete journalEntries[date];
-        console.log("Journal entry removed for:", date);
-    }
-
-    // Tasks are saved implicitly by their actions, only journal text here.
+    journalEntries[date] = text;
     saveUserData();
     closeJournalForm();
-    generateCalendar(); // Update journal indicator
   }
 
-  /*******************************************************
-   12) Goals Management
+  /******************************************************* 
+   12) Goals
   *******************************************************/
+  function goToGoalsPage() {
+    closeJournalForm();
+    document.getElementById('goalsForm').style.display = 'block';
+  }
+
   function saveGoals() {
-    userGoals = document.getElementById('goalsText').value;
-    console.log("Goals saved.");
+    // We store goals in userGoals field in Firestore doc
     saveUserData();
     closeGoalsForm();
   }
 
-  /*******************************************************
-   13) Task Lists - *Direct Functions (Globally Exposed)
+  function closeGoalsForm() {
+    document.getElementById('goalsForm').style.display = 'none';
+    document.getElementById('journalForm').style.display = 'none';
+  }
+
+  function goToJournalFromGoals() {
+    document.getElementById('goalsForm').style.display = 'none';
+    document.getElementById('journalForm').style.display = 'block';
+    document.getElementById('prevDayButton').style.display = 'block';
+    document.getElementById('nextDayButton').style.display = 'block';
+  }
+
+  /******************************************************* 
+   13) Task Lists
   *******************************************************/
-
-  function renderTasks() {
-    const taskListContainer = document.getElementById('taskList');
-    if (!taskListContainer) return;
-    taskListContainer.innerHTML = '';
-
-    if (!taskLists[currentTaskList]) {
-      taskLists[currentTaskList] = [];
-    }
-
-    const tasks = taskLists[currentTaskList];
-    const journalForm = document.getElementById('journalForm');
-    const dateKey = journalForm?.dataset?.date || new Date().toISOString().split('T')[0]; // YYYY-MM-DD of view
-
-    console.log(`Rendering tasks for list: "${currentTaskList}", Date: ${dateKey}`);
-
-    if (!tasks || tasks.length === 0) {
-      taskListContainer.innerHTML = '<p style="color: #666; font-style: italic; padding: 10px 0;">No tasks in this list.</p>';
-      return;
-    }
-
-    let tasksToShow = 0;
-    tasks.forEach(task => {
-      if (!task || typeof task.id === 'undefined') {
-          console.warn("Skipping invalid task object:", task);
-          return;
-      }
-
-      // --- Visibility Check 1: Creation Date ---
-      const taskCreationDate = task.createdAt; // Should be YYYY-MM-DD
-      if (taskCreationDate && dateKey < taskCreationDate) {
-          // console.log(`Skipping task "${task.text}" - created on ${taskCreationDate}, viewing date ${dateKey}`);
-          return; // Don't show tasks created *after* the date being viewed
-      }
-
-      // --- Visibility Check 2: Completion Status ---
-      const isCompletedToday = (task.repeat === 'daily' && task.completions && task.completions[dateKey]);
-      const isCompletedOnce = (task.repeat === 'once' && task.completed);
-
-      if (isCompletedOnce || isCompletedToday) {
-           // Don't render completed tasks
-           return;
-      }
-
-      // --- If checks pass, render the task ---
-      tasksToShow++;
-      const li = document.createElement('li');
-      li.className = 'task-item';
-      li.setAttribute('data-task-id', task.id);
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.id = `task-checkbox-${task.id}`;
-      checkbox.checked = false; // Will be false as completed tasks are filtered out
-      checkbox.setAttribute('onclick', `toggleTaskDirect('${task.id}', '${dateKey}')`);
-
-      const span = document.createElement('span');
-      span.textContent = task.text;
-
-      li.appendChild(checkbox);
-      li.appendChild(span);
-
-      if (task.repeat === 'daily') {
-        const dailyBadge = document.createElement('span');
-        dailyBadge.textContent = '🔄 Daily';
-        dailyBadge.style.marginLeft = '8px';
-        dailyBadge.style.fontSize = '0.8rem';
-        dailyBadge.style.color = '#555';
-        dailyBadge.style.backgroundColor = '#eee';
-        dailyBadge.style.padding = '1px 4px';
-        dailyBadge.style.borderRadius = '3px';
-        dailyBadge.style.whiteSpace = 'nowrap';
-        li.appendChild(dailyBadge);
-      }
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = '×';
-      deleteBtn.title = 'Delete Task';
-      deleteBtn.style.marginLeft = 'auto';
-      deleteBtn.style.background = 'none';
-      deleteBtn.style.border = 'none';
-      deleteBtn.style.fontSize = '18px';
-      deleteBtn.style.color = '#dc3545';
-      deleteBtn.style.cursor = 'pointer';
-      deleteBtn.style.padding = '0 5px';
-      deleteBtn.setAttribute('onclick', `deleteTaskDirect('${task.id}')`);
-      li.appendChild(deleteBtn);
-
-      taskListContainer.appendChild(li);
-    });
-
-     if (tasksToShow === 0 && tasks.length > 0) {
-        taskListContainer.innerHTML = '<p style="color: green; font-style: italic; padding: 10px 0;">All tasks complete for today!</p>';
-     } else if (tasksToShow === 0 && tasks.length === 0) {
-         // Handled by initial check, but safer
-         taskListContainer.innerHTML = '<p style="color: #666; font-style: italic; padding: 10px 0;">No tasks in this list.</p>';
-     }
-
-    // console.log(`Rendered ${tasksToShow} tasks.`);
-  }
-
-
-  function fixTaskButtons() {
-    // console.log("Running fixTaskButtons");
-    const taskToggleContainer = document.querySelector('.task-toggle');
-    if (!taskToggleContainer) return;
-
-    taskToggleContainer.innerHTML = '';
-
-    const createButton = (text, key) => {
-        const button = document.createElement('button');
-        button.textContent = text;
-        button.setAttribute('onclick', `switchTaskDirect('${key}')`);
-        if (key === 'personal' || key === 'work') button.id = `${key}TasksBtn`;
-        taskToggleContainer.appendChild(button);
-    };
-
-    createButton('Personal Tasks', 'personal');
-    createButton('Work Tasks', 'work');
-
-    Object.keys(taskLists).forEach(listKey => {
-        if (listKey !== 'personal' && listKey !== 'work' && typeof listKey === 'string' && listKey.trim() !== '') {
-            const displayName = listKey.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            createButton(displayName, listKey);
-        }
-    });
-
-    const addTaskBtn = document.querySelector('.add-task-btn');
-    if (addTaskBtn) addTaskBtn.setAttribute('onclick', 'addTaskDirect()');
-
-    const newListBtn = document.querySelector('.new-list-btn');
-    if (newListBtn) newListBtn.setAttribute('onclick', 'createNewListDirect()');
-
-    const deleteListBtn = document.querySelector('.delete-list-btn');
-    if (deleteListBtn) deleteListBtn.setAttribute('onclick', 'deleteCurrentListDirect()');
-  }
-
-
-  function toggleTaskDirect(taskId, dateKey) {
-    console.log(`Toggle task: ID=${taskId}, List=${currentTaskList}, Date=${dateKey}`);
-    if (!taskLists[currentTaskList]) return;
-
-    const taskIndex = taskLists[currentTaskList].findIndex(t => t && t.id == taskId);
-    if (taskIndex === -1) {
-        renderTasks(); // Task not found, refresh view
-        return;
-    }
-
-    const task = taskLists[currentTaskList][taskIndex];
-    if (!task) return;
-
-    let isNowCompleted = false;
-    if (task.repeat === 'once') {
-      task.completed = !task.completed;
-      isNowCompleted = task.completed;
-    } else if (task.repeat === 'daily') {
-      if (!task.completions) task.completions = {};
-      task.completions[dateKey] = !task.completions[dateKey];
-      isNowCompleted = task.completions[dateKey];
-    } else { return; } // Unknown type
-
-    saveUserData(); // Save change
-
-    const taskElement = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-    if (taskElement && isNowCompleted) {
-        taskElement.style.transition = 'opacity 0.5s ease-out';
-        taskElement.style.opacity = '0';
-        setTimeout(() => renderTasks(), 500); // Re-render after fade
-    } else {
-        // If unchecking, or element not found, just re-render immediately
-        renderTasks();
-    }
-  }
-
-
-  function deleteTaskDirect(taskId) {
-    console.log(`Delete task: ID=${taskId}, List=${currentTaskList}`);
-    if (!taskLists[currentTaskList]) return;
-
-    const taskIndex = taskLists[currentTaskList].findIndex(t => t && t.id == taskId);
-    if (taskIndex !== -1) {
-      const taskText = taskLists[currentTaskList][taskIndex].text;
-      if (confirm(`Delete task: "${taskText}"?`)) {
-          taskLists[currentTaskList].splice(taskIndex, 1);
-          saveUserData();
-          renderTasks();
-      }
-    } else {
-      renderTasks(); // Task not found, refresh view
-    }
-  }
-
-
-  function switchTaskDirect(type) {
-    console.log("Switching task list to:", type);
-    if (typeof type !== 'string' || !type.trim()) return;
-
-    if (!taskLists[type]) {
-        taskLists[type] = [];
-        fixTaskButtons(); // Add button for new list
-    }
-
+  function switchTaskList(type) {
     currentTaskList = type;
-
+    
+    // Update active button styling
     document.querySelectorAll('.task-toggle button').forEach(btn => {
-      const btnOnClick = btn.getAttribute('onclick');
-      const isActive = btnOnClick && btnOnClick.includes(`switchTaskDirect('${type}')`);
-      btn.classList.toggle('active', isActive); // More concise way to set active class
+      btn.classList.remove('active');
     });
-
-    const deleteListBtn = document.querySelector('.delete-list-btn');
-    if (deleteListBtn) {
-        deleteListBtn.style.display = (currentTaskList !== 'personal' && currentTaskList !== 'work') ? 'inline-block' : 'none';
+    
+    const activeButton = Array.from(document.querySelectorAll('.task-toggle button'))
+      .find(btn => btn.textContent.toLowerCase().includes(type));
+      
+    if (activeButton) {
+      activeButton.classList.add('active');
     }
-
+    
     renderTasks();
   }
 
+  function createNewList() {
+    const listName = prompt("Enter name for new list:");
+    if (listName && listName.trim()) {
+      const listKey = listName.toLowerCase().replace(/\s+/g, '-');
+      if (!taskLists[listKey]) {
+        taskLists[listKey] = [];
+        const newBtn = document.createElement('button');
+        newBtn.textContent = listName;
+        
+        const taskToggle = document.querySelector('.task-toggle');
+        taskToggle.appendChild(newBtn);
+        saveUserData();
+        
+        // Reinitialize all controls to ensure event handlers are attached
+        initializeTaskControls();
+        switchTaskList(listKey);
+      } else {
+        alert("A list with this name already exists!");
+      }
+    }
+  }
 
-  function addTaskDirect() {
+  function deleteCurrentList() {
+    if (confirm(`Are you sure you want to delete the "${currentTaskList}" list?`)) {
+      if (currentTaskList === 'personal' || currentTaskList === 'work') {
+        alert("Cannot delete default lists!");
+        return;
+      }
+      const buttonToRemove = Array.from(document.querySelector('.task-toggle').children)
+        .find(btn => btn.textContent.toLowerCase() === currentTaskList.replace(/-/g, ' '));
+      if (buttonToRemove) {
+        buttonToRemove.remove();
+      }
+      delete taskLists[currentTaskList];
+      currentTaskList = 'personal';
+      document.getElementById('personalTasksBtn').classList.add('active');
+      saveUserData();
+      renderTasks();
+    }
+  }
+
+  function addTask() {
     const taskInput = document.getElementById('taskInput');
-    const dailyCheckbox = document.getElementById('taskDailyCheckbox');
-    if (!taskInput || !dailyCheckbox) return;
-
     const rawText = taskInput.value.trim();
-    if (!rawText) { alert("Please enter task description(s)."); return; }
-
-    const tasksTexts = rawText.split(',').map(t => t.trim()).filter(Boolean);
-    if (tasksTexts.length === 0) { alert("Please enter valid task descriptions."); return; }
-
-    const isDaily = dailyCheckbox.checked;
-    const creationDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-
-    if (!taskLists[currentTaskList]) {
-      taskLists[currentTaskList] = [];
-       fixTaskButtons();
-       switchTaskDirect(currentTaskList); // Activate if just created
+    if (!rawText) {
+      alert("Please enter a task description");
+      return;
     }
 
-    tasksTexts.forEach((text) => {
+    const tasksTexts = rawText.split(',').map(t => t.trim()).filter(Boolean);
+    const dailyCheckbox = document.getElementById('taskDailyCheckbox');
+    const isDaily = dailyCheckbox.checked;
+    
+    // Make sure the current task list exists
+    if (!taskLists[currentTaskList]) {
+      taskLists[currentTaskList] = [];
+    }
+
+    tasksTexts.forEach((text, i) => {
       const newTask = {
         text,
-        id: 'task_' + Date.now() + Math.random().toString(36).substring(2, 9), // Unique ID
+        id: Date.now() + i,
         repeat: isDaily ? 'daily' : 'once',
-        createdAt: creationDate, // **** Store creation date ****
       };
-      if (newTask.repeat === 'daily') newTask.completions = {};
-      else newTask.completed = false;
-
+      
+      if (isDaily) {
+        newTask.completions = {};
+      } else {
+        newTask.completed = false;
+      }
+      
       taskLists[currentTaskList].push(newTask);
-      console.log("Added task:", newTask);
     });
-
+    
     taskInput.value = '';
     dailyCheckbox.checked = false;
 
@@ -1577,299 +1146,358 @@
     renderTasks();
   }
 
+  function renderTasks() {
+    const taskList = document.getElementById('taskList');
+    taskList.innerHTML = '';
+
+    // Make sure currentTaskList exists in taskLists
+    if (!taskLists[currentTaskList]) {
+      taskLists[currentTaskList] = [];
+    }
+
+    const tasks = taskLists[currentTaskList];
+    const journalForm = document.getElementById('journalForm');
+    const dateKey = journalForm.dataset.date || new Date().toISOString().split('T')[0];
+
+    console.log("Current task list:", currentTaskList);
+    console.log("Tasks for this list:", tasks);
+    console.log("Current date key:", dateKey);
+
+    if (tasks.length === 0) {
+      const emptyMessage = document.createElement('p');
+      emptyMessage.textContent = 'No tasks yet. Add a task above.';
+      emptyMessage.style.color = '#666';
+      emptyMessage.style.fontStyle = 'italic';
+      taskList.appendChild(emptyMessage);
+      return;
+    }
+
+    tasks.forEach(task => {
+      // Skip completed tasks
+      if ((task.repeat === 'daily' && task.completions && task.completions[dateKey]) ||
+          (task.repeat === 'once' && task.completed)) {
+        return;
+      }
+
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      li.setAttribute('data-task-id', task.id);
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = `task-checkbox-${task.id}`;
+      checkbox.checked = (task.repeat === 'once' && task.completed) || 
+                        (task.repeat === 'daily' && task.completions && task.completions[dateKey]);
+      
+      // Use setAttribute for onclick to ensure it works consistently
+      checkbox.setAttribute('onclick', `toggleTaskDirect('${task.id}', '${dateKey}')`);
+
+      const span = document.createElement('span');
+      span.textContent = task.text;
+      if ((task.repeat === 'once' && task.completed) || 
+          (task.repeat === 'daily' && task.completions && task.completions[dateKey])) {
+        span.className = 'completed-task';
+      }
+
+      li.appendChild(checkbox);
+      li.appendChild(span);
+
+      if (task.repeat === 'daily') {
+        const dailyBadge = document.createElement('span');
+        dailyBadge.textContent = 'Repeat Daily';
+        dailyBadge.style.marginLeft = '8px';
+        dailyBadge.style.fontSize = '0.85rem';
+        dailyBadge.style.color = '#888';
+        li.appendChild(dailyBadge);
+      }
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '×';
+      deleteBtn.style.marginLeft = 'auto';
+      deleteBtn.style.background = 'none';
+      deleteBtn.style.border = 'none';
+      deleteBtn.style.fontSize = '18px';
+      deleteBtn.style.cursor = 'pointer';
+      deleteBtn.style.color = '#dc3545';
+      // Use setAttribute for onclick to ensure it works consistently
+      deleteBtn.setAttribute('onclick', `deleteTaskDirect('${task.id}')`);
+      li.appendChild(deleteBtn);
+
+      taskList.appendChild(li);
+    });
+  }
+
+  // Update the HTML for task toggle buttons and add task button
+  function fixTaskButtons() {
+    // Fix task toggle buttons
+    const personalTasksBtn = document.getElementById('personalTasksBtn');
+    const workTasksBtn = document.getElementById('workTasksBtn');
+    
+    if (personalTasksBtn) {
+      personalTasksBtn.setAttribute('onclick', "switchTaskDirect('personal')");
+    }
+    
+    if (workTasksBtn) {
+      workTasksBtn.setAttribute('onclick', "switchTaskDirect('work')");
+    }
+    
+    // Fix add task button
+    const addTaskBtn = document.querySelector('.add-task-btn');
+    if (addTaskBtn) {
+      addTaskBtn.setAttribute('onclick', 'addTaskDirect()');
+    }
+
+    // Fix "new list" button
+    const newListBtn = document.querySelector('.new-list-btn');
+    if (newListBtn) {
+      newListBtn.setAttribute('onclick', 'createNewListDirect()');
+    }
+
+    // Fix "delete list" button
+    const deleteListBtn = document.querySelector('.delete-list-btn');
+    if (deleteListBtn) {
+      deleteListBtn.setAttribute('onclick', 'deleteCurrentListDirect()');
+    }
+  }
+
+  // Direct action functions (exposed to window)
+  function toggleTaskDirect(taskId, dateKey) {
+    console.log("Toggle task called: ", taskId, dateKey);
+    if (!taskLists[currentTaskList]) {
+      console.error("Current task list doesn't exist:", currentTaskList);
+      return;
+    }
+    
+    const tasks = taskLists[currentTaskList];
+    const task = tasks.find(t => t.id == taskId); // Use == for string/number comparison
+    
+    if (!task) {
+      console.error("Task not found with ID:", taskId);
+      return;
+    }
+    
+    if (task.repeat === 'once') {
+      task.completed = !task.completed;
+      const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+      
+      if (task.completed && taskElement) {
+        const span = taskElement.querySelector('span');
+        if (span) span.className = 'completed-task';
+        taskElement.classList.add('fade-out');
+        setTimeout(() => renderTasks(), 5000);
+      }
+    } else if (task.repeat === 'daily') {
+      if (!task.completions) task.completions = {};
+      task.completions[dateKey] = !task.completions[dateKey];
+      
+      const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (taskElement) {
+        const span = taskElement.querySelector('span');
+        if (span) {
+          if (task.completions[dateKey]) {
+            span.className = 'completed-task';
+            taskElement.classList.add('fade-out');
+            setTimeout(() => renderTasks(), 5000);
+          } else {
+            span.className = '';
+            taskElement.classList.remove('fade-out');
+          }
+        }
+      }
+    }
+    
+    saveUserData();
+  }
+
+  function deleteTaskDirect(taskId) {
+    console.log("Delete task called: ", taskId);
+    if (taskLists[currentTaskList]) {
+      taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
+      saveUserData();
+      renderTasks();
+    }
+  }
+
+  function switchTaskDirect(type) {
+    console.log("Switch task list called: ", type);
+    currentTaskList = type;
+    
+    document.querySelectorAll('.task-toggle button').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.textContent.toLowerCase().includes(type)) {
+        btn.classList.add('active');
+      }
+    });
+    
+    renderTasks();
+  }
+
+  function addTaskDirect() {
+    console.log("Add task called");
+    const taskInput = document.getElementById('taskInput');
+    const rawText = taskInput.value.trim();
+    if (!rawText) {
+      alert("Please enter a task description");
+      return;
+    }
+
+    const tasksTexts = rawText.split(',').map(t => t.trim()).filter(Boolean);
+    const dailyCheckbox = document.getElementById('taskDailyCheckbox');
+    const isDaily = dailyCheckbox.checked;
+    
+    if (!taskLists[currentTaskList]) {
+      taskLists[currentTaskList] = [];
+    }
+
+    tasksTexts.forEach((text, i) => {
+      const newTask = {
+        text,
+        id: Date.now() + i,
+        repeat: isDaily ? 'daily' : 'once',
+      };
+      
+      if (isDaily) {
+        newTask.completions = {};
+      } else {
+        newTask.completed = false;
+      }
+      
+      taskLists[currentTaskList].push(newTask);
+    });
+    
+    taskInput.value = '';
+    dailyCheckbox.checked = false;
+
+    saveUserData();
+    renderTasks();
+  }
 
   function createNewListDirect() {
-    const listName = prompt("Enter name for new task list:");
+    console.log("Create new list called");
+    const listName = prompt("Enter name for new list:");
     if (listName && listName.trim()) {
-      const trimmedName = listName.trim();
-      const listKey = trimmedName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      if (!listKey) { alert("Invalid list name."); return; }
-
+      const listKey = listName.toLowerCase().replace(/\s+/g, '-');
       if (!taskLists[listKey]) {
         taskLists[listKey] = [];
+        
+        const taskToggle = document.querySelector('.task-toggle');
+        const newBtn = document.createElement('button');
+        newBtn.textContent = listName;
+        newBtn.setAttribute('onclick', `switchTaskDirect('${listKey}')`);
+        taskToggle.appendChild(newBtn);
+        
         saveUserData();
-        fixTaskButtons(); // Rebuild buttons
-        switchTaskDirect(listKey); // Switch to new list
+        switchTaskDirect(listKey);
       } else {
-        alert(`List "${trimmedName}" (key "${listKey}") already exists!`);
+        alert("A list with this name already exists!");
       }
-    } else if (listName !== null) { alert("List name cannot be empty."); }
+    }
   }
-
 
   function deleteCurrentListDirect() {
-    if (currentTaskList === 'personal' || currentTaskList === 'work') {
-      alert("Default lists cannot be deleted."); return;
-    }
-    const currentButton = document.querySelector(`.task-toggle button.active`);
-    const currentListName = currentButton ? currentButton.textContent : currentTaskList;
-
-    if (confirm(`Delete list "${currentListName}" and all its tasks?`)) {
-      if (taskLists[currentTaskList]) {
-            delete taskLists[currentTaskList];
-            saveUserData();
-            const listToSwitchTo = 'personal';
-            currentTaskList = listToSwitchTo;
-            fixTaskButtons();
-            switchTaskDirect(listToSwitchTo);
-      } else {
-           // List might already be deleted, reset UI anyway
-           const listToSwitchTo = 'personal';
-           currentTaskList = listToSwitchTo;
-           fixTaskButtons();
-           switchTaskDirect(listToSwitchTo);
+    console.log("Delete current list called");
+    if (confirm(`Are you sure you want to delete the "${currentTaskList}" list?`)) {
+      if (currentTaskList === 'personal' || currentTaskList === 'work') {
+        alert("Cannot delete default lists!");
+        return;
       }
+      
+      const buttonToRemove = Array.from(document.querySelector('.task-toggle').children)
+        .find(btn => btn.textContent.toLowerCase() === currentTaskList.replace(/-/g, ' '));
+      
+      if (buttonToRemove) {
+        buttonToRemove.remove();
+      }
+      
+      delete taskLists[currentTaskList];
+      currentTaskList = 'personal';
+      
+      const personalBtn = document.getElementById('personalTasksBtn');
+      if (personalBtn) {
+        personalBtn.classList.add('active');
+      }
+      
+      saveUserData();
+      renderTasks();
     }
   }
 
- /*******************************************************
-   14) Habit Tracker Functions (Unchanged from previous)
-  *******************************************************/
-
-    function openHabitTracker(date) {
-        const habitForm = document.getElementById('habitForm');
-        const habitDateEl = document.getElementById('habitDate');
-        const habitListEl = document.getElementById('habitList');
-        if (!habitForm || !habitDateEl || !habitListEl) return;
-
-        const displayDate = new Date(date + 'T00:00:00');
-        habitDateEl.textContent = displayDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        habitForm.dataset.date = date;
-
-        renderHabitList(date);
-
-        document.getElementById('journalForm').style.display = 'none';
-        document.getElementById('eventForm').style.display = 'none';
-        document.getElementById('goalsForm').style.display = 'none';
-        document.getElementById('newHabitForm').style.display = 'none';
-        habitForm.style.display = 'block';
-
-        document.getElementById('prevDayButton').style.display = 'block';
-        document.getElementById('nextDayButton').style.display = 'block';
-        console.log("Opened habit tracker for:", date);
-    }
-
-    function renderHabitList(date) {
-        const habitListEl = document.getElementById('habitList');
-        habitListEl.innerHTML = '';
-
-        if (globalHabits.length === 0) {
-            habitListEl.innerHTML = '<p style="color: #666; font-style: italic;">No habits defined yet.</p>';
-            return;
-        }
-
-        const dailyHabitData = habitTracker[date] || {};
-
-        globalHabits.forEach(habit => {
-            const habitDiv = document.createElement('div');
-            habitDiv.style.padding = '10px 0';
-            habitDiv.style.borderBottom = '1px solid #eee';
-            habitDiv.style.display = 'flex';
-            habitDiv.style.alignItems = 'center';
-            habitDiv.style.gap = '10px';
-
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = habit.name;
-            nameSpan.style.flexGrow = '1';
-            habitDiv.appendChild(nameSpan);
-
-            const currentValue = dailyHabitData[habit.id];
-
-            if (habit.type === 'check') {
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = !!currentValue;
-                checkbox.onchange = (e) => updateHabitValue(date, habit.id, e.target.checked);
-                habitDiv.appendChild(checkbox);
-            } else if (habit.type === 'count') {
-                const countInput = document.createElement('input');
-                countInput.type = 'number';
-                countInput.min = '0';
-                countInput.value = currentValue || 0;
-                countInput.style.width = '60px';
-                countInput.style.padding = '5px';
-                countInput.style.textAlign = 'center';
-                countInput.onchange = (e) => updateHabitValue(date, habit.id, parseInt(e.target.value) || 0);
-                habitDiv.appendChild(countInput);
-            }
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = '×';
-            deleteBtn.title = 'Delete this habit entirely';
-            deleteBtn.style.background = 'none';
-            deleteBtn.style.border = '1px solid #ccc';
-            deleteBtn.style.borderRadius = '50%';
-            deleteBtn.style.color = '#dc3545';
-            deleteBtn.style.cursor = 'pointer';
-            deleteBtn.style.padding = '0px 5px';
-            deleteBtn.style.fontSize = '14px';
-            deleteBtn.style.lineHeight = '1';
-            deleteBtn.onclick = () => deleteGlobalHabit(habit.id);
-            habitDiv.appendChild(deleteBtn);
-
-            habitListEl.appendChild(habitDiv);
-        });
-    }
-
-    function updateHabitValue(date, habitId, value) {
-        if (!habitTracker[date]) habitTracker[date] = {};
-        habitTracker[date][habitId] = value;
-        // Value saved when main 'Save Habits' button is clicked
-    }
-
-     function showNewHabitForm() {
-        document.getElementById('newHabitForm').style.display = 'block';
-        document.getElementById('newHabitName').value = '';
-        document.querySelector('input[name="habitType"][value="count"]').checked = true;
-    }
-
-    function cancelAddHabit() {
-        document.getElementById('newHabitForm').style.display = 'none';
-    }
-
-    function confirmAddHabit() {
-        const nameInput = document.getElementById('newHabitName');
-        const name = nameInput.value.trim();
-        if (!name) { alert("Please enter habit name."); return; }
-        if (globalHabits.some(h => h.name.toLowerCase() === name.toLowerCase())) {
-            alert(`Habit "${name}" already exists.`); return;
-        }
-        const type = document.querySelector('input[name="habitType"]:checked').value;
-        const newHabit = { id: 'habit_' + Date.now(), name: name, type: type };
-        globalHabits.push(newHabit);
-
-        document.getElementById('newHabitForm').style.display = 'none';
-        const currentDate = document.getElementById('habitForm').dataset.date;
-        if (currentDate) renderHabitList(currentDate);
-        // Saved via main 'Save Habits' button
-    }
-
-     function deleteGlobalHabit(habitId) {
-        const habitToDelete = globalHabits.find(h => h.id === habitId);
-        if (!habitToDelete) return;
-        if (confirm(`Delete habit "${habitToDelete.name}" permanently?`)) {
-            globalHabits = globalHabits.filter(h => h.id !== habitId);
-            // Optional: Clean history in habitTracker (can make save slower)
-            // Object.keys(habitTracker).forEach(date => { delete habitTracker[date][habitId]; });
-            const currentDate = document.getElementById('habitForm').dataset.date;
-            if (currentDate) renderHabitList(currentDate);
-            // Saved via main 'Save Habits' button
-        }
-    }
-
-    function saveHabitTracker() {
-        console.log("Saving habit tracker data...");
-        saveUserData(); // Saves globalHabits and habitTracker state
-        closeHabitForm();
-        generateCalendar(); // Update calendar indicators
-    }
-
-
-  /*******************************************************
-   15) Initialization & Global Exposure
-  *******************************************************/
-
-  onAuthStateChanged(auth, async (user) => {
-    const authSection = document.getElementById('authSection');
-    const logoutSection = document.getElementById('logoutSection');
-    const calendarContainer = document.querySelector('.calendar-container');
-
-    if (user) {
-      userId = user.uid;
-      authSection.style.display = 'none';
-      logoutSection.style.display = 'block';
-      calendarContainer.style.display = 'block'; // Show calendar container
-
-      await loadUserData();
-
-      fixTaskButtons();
-      generateCalendar();
-
-      if (!taskLists[currentTaskList] || !currentTaskList) {
-          currentTaskList = 'personal';
-      }
-      // Initial task rendering happens via openJournal or if task view is default
-      // For now, don't render tasks until journal is opened.
-      // switchTaskDirect(currentTaskList); // Activate button, but don't necessarily render list yet
-
-      console.log("User logged in, UI initialized.");
-
-    } else {
-      userId = null;
-      authSection.style.display = 'block';
-      logoutSection.style.display = 'none';
-      calendarContainer.style.display = 'none'; // Hide calendar container
-
-       closeJournalForm();
-       closeEventForm();
-       closeHabitForm();
-       closeGoalsForm();
-
-      events = [];
-      journalEntries = {};
-      taskLists = { personal: [], work: [] };
-      currentTaskList = 'personal';
-      habitTracker = {};
-      globalHabits = [];
-      userGoals = '';
-      if(document.getElementById('goalsText')) document.getElementById('goalsText').value = '';
-      if(document.getElementById('taskList')) document.getElementById('taskList').innerHTML = '';
-      if(document.getElementById('habitList')) document.getElementById('habitList').innerHTML = '';
-      if(document.getElementById('dailyEventsList')) document.getElementById('dailyEventsList').innerHTML = '';
-
-
-       const calendarGrid = document.querySelector('.calendar-grid');
-       if (calendarGrid) {
-           const headers = calendarGrid.querySelectorAll('.day-header');
-           calendarGrid.innerHTML = '';
-           headers.forEach(header => calendarGrid.appendChild(header.cloneNode(true)));
-       }
-       const monthYearDisplay = document.querySelector('.current-month');
-       if(monthYearDisplay) monthYearDisplay.textContent = 'Loading...';
-
-
-      console.log("User logged out, UI reset.");
-    }
-  });
-
-  function initializeGlobalFunctions() {
-    window.loginWithGoogle = loginWithGoogle;
-    window.logoutFromGoogle = logoutFromGoogle;
-    window.previousMonth = previousMonth;
-    window.nextMonth = nextMonth;
-    window.openJournal = openJournal;
-    window.closeJournalForm = closeJournalForm;
-    window.changeJournalDay = changeJournalDay;
-    window.addEvent = addEvent;
-    window.editEvent = editEvent;
-    window.saveEvent = saveEvent;
-    window.closeEventForm = closeEventForm;
-    window.deleteEvent = deleteEvent;
-    window.saveJournal = saveJournal;
-    window.goToGoalsPage = goToGoalsPage;
-    window.saveGoals = saveGoals;
-    window.closeGoalsForm = closeGoalsForm;
-    window.goToJournalFromGoals = goToJournalFromGoals;
+  // Add these functions to the window object for HTML access
+  function initializeTaskFunctions() {
     window.toggleTaskDirect = toggleTaskDirect;
     window.deleteTaskDirect = deleteTaskDirect;
     window.switchTaskDirect = switchTaskDirect;
     window.addTaskDirect = addTaskDirect;
     window.createNewListDirect = createNewListDirect;
     window.deleteCurrentListDirect = deleteCurrentListDirect;
-    window.changeToHabit = changeToHabit;
-    window.changeToJournal = changeToJournal;
-    window.openHabitTracker = openHabitTracker;
-    window.showNewHabitForm = showNewHabitForm;
-    window.confirmAddHabit = confirmAddHabit;
-    window.cancelAddHabit = cancelAddHabit;
-    window.saveHabitTracker = saveHabitTracker;
-    window.cancelHabitTracker = closeHabitForm; // Alias
-
-    console.log("Global functions initialized.");
+    
+    // Fix buttons in the DOM
+    setTimeout(fixTaskButtons, 100);
   }
 
-  initializeGlobalFunctions();
+  // Make functions available globally to be called from HTML
+  window.loginWithGoogle = loginWithGoogle;
+  window.previousMonth = previousMonth;
+  window.nextMonth = nextMonth;
+  window.openJournal = openJournal;
+  window.closeJournalForm = closeJournalForm;
+  window.changeJournalDay = changeJournalDay;
+  window.addEvent = addEvent;
+  window.saveEvent = saveEvent;
+  window.closeEventForm = closeEventForm;
+  window.deleteEvent = deleteEvent;
+  window.saveJournal = saveJournal;
+  window.goToGoalsPage = goToGoalsPage;
+  window.saveGoals = saveGoals;
+  window.closeGoalsForm = closeGoalsForm;
+  window.goToJournalFromGoals = goToJournalFromGoals;
+  window.changeToHabit = changeToHabit;
+  window.changeToJournal = changeToJournal;
+  window.showNewHabitForm = showNewHabitForm;
+  window.confirmAddHabit = confirmAddHabit;
+  window.cancelAddHabit = cancelAddHabit;
+  window.saveHabitTracker = saveHabitTracker;
+  window.cancelHabitTracker = cancelHabitTracker;
+  window.logoutFromGoogle = logoutFromGoogle;
 
+  // Make sure all task-related DOM elements are properly initialized
+  // Add this function to ensure all task controls are properly set up
+  function initializeTaskControls() {
+    // Set up task toggle buttons
+    document.querySelectorAll('.task-toggle button').forEach(button => {
+      const listType = button.textContent.toLowerCase().includes('personal') ? 'personal' : 
+                      button.textContent.toLowerCase().includes('work') ? 'work' : 
+                      button.textContent.toLowerCase().replace(/\s+/g, '-');
+      
+      // Remove existing event listeners (to prevent duplicates)
+      button.replaceWith(button.cloneNode(true));
+      
+      // Get the fresh button and add event listener
+      const freshButton = document.querySelector(`.task-toggle button:nth-child(${Array.from(button.parentNode.children).indexOf(button) + 1})`);
+      freshButton.addEventListener('click', () => switchTaskList(listType));
+    });
+    
+    // Set up Add Task button
+    const addTaskBtn = document.querySelector('.add-task-btn');
+    if (addTaskBtn) {
+      addTaskBtn.replaceWith(addTaskBtn.cloneNode(true));
+      document.querySelector('.add-task-btn').addEventListener('click', addTask);
+    }
+    
+    // Initialize the active task list
+    if (currentTaskList && taskLists[currentTaskList]) {
+      switchTaskList(currentTaskList);
+    } else {
+      // Default to personal if the current list doesn't exist
+      currentTaskList = 'personal';
+      switchTaskList('personal');
+    }
+    
+    console.log("Task controls initialized");
+  }
+
+  // Make task functions globally available and initialize buttons
+  initializeTaskFunctions();
 </script>
 
 </body>
