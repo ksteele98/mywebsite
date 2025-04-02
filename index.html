@@ -432,7 +432,7 @@
 
 <!-- A simple section to show/hide when not logged in -->
 <div id="authSection" style="display: none; text-align:center; margin-bottom: 20px;">
-  <button id="googleSignInButton" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
+  <button onclick="loginWithGoogle()" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
     Sign in with Google
   </button>
 </div>
@@ -586,13 +586,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   import { 
     getAuth, 
     GoogleAuthProvider, 
-    signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
-    signOut,
-    onAuthStateChanged,
-    setPersistence,
-    browserLocalPersistence
+    signInWithPopup, 
+    onAuthStateChanged 
   } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
@@ -618,155 +613,35 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  // Force immediate initialization of auth
-  auth.useDeviceLanguage();
-  
-  // Set persistence to LOCAL with a more robust approach
-  await setPersistence(auth, browserLocalPersistence)
-    .then(() => {
-      console.log("Firebase persistence set to localStorage");
-    })
-    .catch((error) => {
-      console.error("Error setting persistence:", error);
-    });
-  
-  let userId = null;  // will store current Google user's uid here
+  let userId = null;  // will store current Google user’s uid here
   const provider = new GoogleAuthProvider();
 
-  // This function triggers the Google redirect
-  async function loginWithGoogleRedirect() {
+  // This function triggers the Google popup
+  async function loginWithGoogle() {
     try {
-      console.log("Login with Google redirect started");
-      document.getElementById('authSection').innerHTML = "Redirecting to Google...";
-      
-      // Set a marker in sessionStorage that we're attempting auth
-      sessionStorage.setItem('auth_in_progress', 'true');
-      
-      // Use redirect method
-      await signInWithRedirect(auth, provider);
-      // Page will reload after redirect
+      const result = await signInWithPopup(auth, provider);
+      // If successful, user is now signed in
+      console.log("Google sign-in success!");
+      // userId is set via onAuthStateChanged below
     } catch (error) {
       console.error("Google Sign-In Error:", error);
-      sessionStorage.removeItem('auth_in_progress');
-      document.getElementById('authSection').innerHTML = 
-        `<p>Error: ${error.message}</p>
-         <button id="googleSignInButton" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
-           Try Again
-         </button>`;
-      
-      document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogleRedirect);
     }
   }
-  
-  // Enhanced DOMContentLoaded handler with auth recovery
-  window.addEventListener('DOMContentLoaded', async () => {
-    console.log("DOM loaded, checking for auth state");
-    
-    // Make auth section visible while we check
-    document.getElementById('authSection').style.display = 'block';
-    
-    // Retry mechanism for auth state
-    let authCheckAttempts = 0;
-    const maxAuthCheckAttempts = 3;
-    
-    async function checkAuthState() {
-      console.log(`Auth check attempt ${authCheckAttempts + 1}/${maxAuthCheckAttempts}`);
-      
-      if (auth.currentUser) {
-        console.log("User is signed in:", auth.currentUser);
-        handleSuccessfulAuth(auth.currentUser);
-        return true;
-      }
-      
-      try {
-        // Try getting redirect result
-        console.log("Checking for redirect result...");
-        const result = await getRedirectResult(auth);
-        
-        if (result && result.user) {
-          console.log("✅ Auth from redirect:", result.user);
-          handleSuccessfulAuth(result.user);
-          return true;
-        }
-        
-        // If we were in the process of authenticating but no result,
-        // something went wrong with the redirect - clear the marker
-        if (sessionStorage.getItem('auth_in_progress')) {
-          console.warn("Auth was in progress but no result found");
-          sessionStorage.removeItem('auth_in_progress');
-          showAuthError("Authentication process was interrupted. Please try again.");
-          return false;
-        }
-        
-        console.log("No authenticated user found");
-        return false;
-        
-      } catch (error) {
-        console.error("Auth check error:", error);
-        showAuthError(error.message);
-        return false;
-      }
-    }
-    
-    function handleSuccessfulAuth(user) {
-      // Clear the auth in progress marker
-      sessionStorage.removeItem('auth_in_progress');
-      
-      // Hide auth section
-      document.getElementById('authSection').style.display = 'none';
-      
-      // Set userId and generate calendar
-      console.log("Setting userId:", user.uid);
-      userId = user.uid;
-      
-      // Add userId to localStorage for persistence
-      localStorage.setItem('lastUserId', user.uid);
-      
-      // Load data and render UI
-      loadUserData().then(() => {
-        generateCalendar();
-        renderTasks();
-      });
-    }
-    
-    function showAuthError(message) {
-      document.getElementById('authSection').innerHTML = 
-        `<p>Authentication error: ${message}</p>
-         <button id="googleSignInButton" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
-           Try Again
-         </button>`;
-      
-      document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogleRedirect);
-    }
-    
-    // Try to get auth state immediately
-    let isAuthenticated = await checkAuthState();
-    
-    // If not authenticated, retry a few times (auth initialization can be slow)
-    while (!isAuthenticated && authCheckAttempts < maxAuthCheckAttempts - 1) {
-      authCheckAttempts++;
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-      isAuthenticated = await checkAuthState();
-    }
-    
-    // If still not authenticated after retries, set up sign-in button
-    if (!isAuthenticated) {
-      console.log("No authentication after retries, showing sign-in button");
-      const signInButton = document.getElementById('googleSignInButton');
-      if (signInButton) {
-        signInButton.addEventListener('click', loginWithGoogleRedirect);
-      }
-    }
-  });
-  
-  // Simplified onAuthStateChanged - our DOMContentLoaded handler is now more robust
-  onAuthStateChanged(auth, (user) => {
-    console.log("Auth state changed:", user ? "User signed in" : "User signed out");
+
+  // On page load, watch for auth changes
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
       userId = user.uid;
+      // Hide sign in button
       document.getElementById('authSection').style.display = 'none';
+      // Load data from Firestore
+      await loadUserData();
+      // Generate calendar, tasks, etc.
+      generateCalendar();
+      renderTasks();
     } else {
-      userId = null;
+      // Show sign in button
+      document.getElementById('authSection').style.display = 'block';
     }
   });
 
@@ -808,75 +683,20 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   async function saveUserData() {
-    // First, ensure userId is set - try to recover if possible
-    if (!userId) {
-      console.error("No userId found when trying to save data");
-      
-      // Try to recover from localStorage
-      const storedUserId = localStorage.getItem('lastUserId');
-      if (storedUserId && auth.currentUser) {
-        console.log("Recovered userId from localStorage:", storedUserId);
-        userId = storedUserId;
-      } else if (auth.currentUser) {
-        console.log("Recovered userId from auth.currentUser:", auth.currentUser.uid);
-        userId = auth.currentUser.uid;
-      } else {
-        console.error("Cannot save: No user ID found and unable to recover. User not authenticated.");
-        alert("You need to be logged in to save data. Please sign in again.");
-        document.getElementById('authSection').style.display = 'block';
-        return;
-      }
-    }
-    
+    if (!userId) return; // not signed in yet
     try {
-      console.log("Saving data to Firestore with userId:", userId);
-      console.log("Current user ID:", userId);
-      
-      // Create a structured data object
-      const dataToSave = {
+      const docRef = doc(db, "users", userId);
+      await setDoc(docRef, {
         events,
         journalEntries,
         taskLists,
         habitTracker,
         globalHabits,
-        userGoals: document.getElementById('goalsText')?.value || '',
-        lastUpdated: new Date().toISOString()  // Helpful for debugging
-      };
-      
-      console.log("Data being saved:", JSON.stringify(dataToSave).substring(0, 200) + "...");
-      
-      const docRef = doc(db, "users", userId);
-      await setDoc(docRef, dataToSave);
-      
-      console.log("✅ Data successfully saved to Firestore!");
-      
-      // Show visual confirmation to user
-      const saveConfirm = document.createElement('div');
-      saveConfirm.textContent = "✓ Saved";
-      saveConfirm.style.position = "fixed";
-      saveConfirm.style.bottom = "20px";
-      saveConfirm.style.right = "20px";
-      saveConfirm.style.background = "#4CAF50";
-      saveConfirm.style.color = "white";
-      saveConfirm.style.padding = "10px 20px";
-      saveConfirm.style.borderRadius = "4px";
-      saveConfirm.style.zIndex = "9999";
-      document.body.appendChild(saveConfirm);
-      
-      setTimeout(() => {
-        saveConfirm.remove();
-      }, 2000);
-      
+        userGoals: document.getElementById('goalsText')?.value || ''
+      });
+      console.log("Data saved to Firestore!");
     } catch (err) {
-      console.error("❌ Error saving user data:", err);
-      
-      // Check for specific Firestore errors
-      if (err.code === 'permission-denied') {
-        console.error("Firestore permission denied. Check your security rules.");
-        alert("Unable to save data: Permission denied. Your Firestore security rules may need to be updated.");
-      } else {
-        alert("Failed to save your data. Please check console for details.");
-      }
+      console.error("Error saving user data:", err);
     }
   }
 
@@ -1727,30 +1547,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   function cancelHabitTracker() {
     document.getElementById('habitForm').style.display = 'none';
   }
-
-  // Make functions available globally to be called from HTML
-  window.loginWithGoogleRedirect = loginWithGoogleRedirect;
-  window.previousMonth = previousMonth;
-  window.nextMonth = nextMonth;
-  window.openJournal = openJournal;
-  window.closeJournalForm = closeJournalForm;
-  window.changeJournalDay = changeJournalDay;
-  window.addEvent = addEvent;
-  window.saveEvent = saveEvent;
-  window.closeEventForm = closeEventForm;
-  window.deleteEvent = deleteEvent;
-  window.saveJournal = saveJournal;
-  window.goToGoalsPage = goToGoalsPage;
-  window.saveGoals = saveGoals;
-  window.closeGoalsForm = closeGoalsForm;
-  window.goToJournalFromGoals = goToJournalFromGoals;
-  window.changeToHabit = changeToHabit;
-  window.changeToJournal = changeToJournal;
-  window.showNewHabitForm = showNewHabitForm;
-  window.confirmAddHabit = confirmAddHabit;
-  window.cancelAddHabit = cancelAddHabit;
-  window.saveHabitTracker = saveHabitTracker;
-  window.cancelHabitTracker = cancelHabitTracker;
 </script>
 
 </body>
