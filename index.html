@@ -645,18 +645,30 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
   // On page load, watch for auth changes
   onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      userId = user.uid;
-      // Hide sign in button
-      document.getElementById('authSection').style.display = 'none';
-      // Load data from Firestore
-      await loadUserData();
-      // Generate calendar, tasks, etc.
-      generateCalendar();
-      renderTasks();
-    } else {
-      // Show sign in button
-      document.getElementById('authSection').style.display = 'block';
+    try {
+      if (user) {
+        console.log("User authenticated:", user.uid);
+        userId = user.uid;
+        
+        // Hide sign in button
+        document.getElementById('authSection').style.display = 'none';
+        
+        // Load data from Firestore
+        console.log("Loading user data from Firestore...");
+        await loadUserData();
+        console.log("User data loaded successfully");
+        
+        // Generate calendar, tasks, etc.
+        generateCalendar();
+        renderTasks();
+      } else {
+        console.log("No authenticated user");
+        userId = null;
+        // Show sign in button
+        document.getElementById('authSection').style.display = 'block';
+      }
+    } catch (error) {
+      console.error("Error in auth state change handler:", error);
     }
   });
 
@@ -698,20 +710,60 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   async function saveUserData() {
-    if (!userId) return; // not signed in yet
+    if (!userId) {
+      console.error("Cannot save: No user ID found. User may not be authenticated.");
+      return;
+    }
+    
     try {
-      const docRef = doc(db, "users", userId);
-      await setDoc(docRef, {
+      console.log("Attempting to save data to Firestore...");
+      console.log("Current user ID:", userId);
+      
+      // Create a structured data object
+      const dataToSave = {
         events,
         journalEntries,
         taskLists,
         habitTracker,
         globalHabits,
-        userGoals: document.getElementById('goalsText')?.value || ''
-      });
-      console.log("Data saved to Firestore!");
+        userGoals: document.getElementById('goalsText')?.value || '',
+        lastUpdated: new Date().toISOString()  // Helpful for debugging
+      };
+      
+      console.log("Data being saved:", JSON.stringify(dataToSave).substring(0, 200) + "...");
+      
+      const docRef = doc(db, "users", userId);
+      await setDoc(docRef, dataToSave);
+      
+      console.log("✅ Data successfully saved to Firestore!");
+      
+      // Show visual confirmation to user
+      const saveConfirm = document.createElement('div');
+      saveConfirm.textContent = "✓ Saved";
+      saveConfirm.style.position = "fixed";
+      saveConfirm.style.bottom = "20px";
+      saveConfirm.style.right = "20px";
+      saveConfirm.style.background = "#4CAF50";
+      saveConfirm.style.color = "white";
+      saveConfirm.style.padding = "10px 20px";
+      saveConfirm.style.borderRadius = "4px";
+      saveConfirm.style.zIndex = "9999";
+      document.body.appendChild(saveConfirm);
+      
+      setTimeout(() => {
+        saveConfirm.remove();
+      }, 2000);
+      
     } catch (err) {
-      console.error("Error saving user data:", err);
+      console.error("❌ Error saving user data:", err);
+      
+      // Check for specific Firestore errors
+      if (err.code === 'permission-denied') {
+        console.error("Firestore permission denied. Check your security rules.");
+        alert("Unable to save data: Permission denied. Your Firestore security rules may need to be updated.");
+      } else {
+        alert("Failed to save your data. Please check console for details.");
+      }
     }
   }
 
