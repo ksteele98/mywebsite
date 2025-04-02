@@ -1043,9 +1043,19 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   *******************************************************/
   function switchTaskList(type) {
     currentTaskList = type;
+    
+    // Update active button styling
     document.querySelectorAll('.task-toggle button').forEach(btn => {
-      btn.classList.toggle('active', btn.textContent.toLowerCase().includes(type));
+      btn.classList.remove('active');
     });
+    
+    const activeButton = Array.from(document.querySelectorAll('.task-toggle button'))
+      .find(btn => btn.textContent.toLowerCase().includes(type));
+      
+    if (activeButton) {
+      activeButton.classList.add('active');
+    }
+    
     renderTasks();
   }
 
@@ -1091,33 +1101,36 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   function addTask() {
     const taskInput = document.getElementById('taskInput');
     const rawText = taskInput.value.trim();
-    if (!rawText) return;
+    if (!rawText) {
+      alert("Please enter a task description");
+      return;
+    }
 
     const tasksTexts = rawText.split(',').map(t => t.trim()).filter(Boolean);
     const dailyCheckbox = document.getElementById('taskDailyCheckbox');
     const isDaily = dailyCheckbox.checked;
+    
+    // Make sure the current task list exists
+    if (!taskLists[currentTaskList]) {
+      taskLists[currentTaskList] = [];
+    }
 
     tasksTexts.forEach((text, i) => {
+      const newTask = {
+        text,
+        id: Date.now() + i,
+        repeat: isDaily ? 'daily' : 'once',
+      };
+      
       if (isDaily) {
-        // daily
-        const newTask = {
-          text,
-          id: Date.now() + i,
-          repeat: 'daily',
-          completions: {}
-        };
-        taskLists[currentTaskList].push(newTask);
+        newTask.completions = {};
       } else {
-        // once-only
-        const newTask = {
-          text,
-          id: Date.now() + i,
-          repeat: 'once',
-          completed: false
-        };
-        taskLists[currentTaskList].push(newTask);
+        newTask.completed = false;
       }
+      
+      taskLists[currentTaskList].push(newTask);
     });
+    
     taskInput.value = '';
     dailyCheckbox.checked = false;
 
@@ -1129,16 +1142,35 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     const taskList = document.getElementById('taskList');
     taskList.innerHTML = '';
 
+    // Make sure currentTaskList exists in taskLists
+    if (!taskLists[currentTaskList]) {
+      taskLists[currentTaskList] = [];
+    }
+
     const tasks = taskLists[currentTaskList];
     const journalForm = document.getElementById('journalForm');
     const dateKey = journalForm.dataset.date || new Date().toISOString().split('T')[0];
 
+    // Debug - show what we're working with
+    console.log("Current task list:", currentTaskList);
+    console.log("Tasks for this list:", tasks);
+    console.log("Current date key:", dateKey);
+
+    if (tasks.length === 0) {
+      const emptyMessage = document.createElement('p');
+      emptyMessage.textContent = 'No tasks yet. Add a task above.';
+      emptyMessage.style.color = '#666';
+      emptyMessage.style.fontStyle = 'italic';
+      taskList.appendChild(emptyMessage);
+      return;
+    }
+
     tasks.forEach(task => {
-      // If it's daily and it's completed for dateKey, skip
+      // Skip completed daily tasks for this date
       if (task.repeat === 'daily' && task.completions && task.completions[dateKey]) {
         return;
       }
-      // If it's once-only and completed => skip
+      // Skip completed one-time tasks
       if (task.repeat === 'once' && task.completed) {
         return;
       }
@@ -1149,17 +1181,19 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
-
+      
       if (task.repeat === 'once') {
         checkbox.checked = task.completed;
-      } else {
-        checkbox.checked = false;
+      } else if (task.repeat === 'daily') {
+        checkbox.checked = task.completions && task.completions[dateKey];
       }
+      
       checkbox.onclick = () => toggleTask(task.id, dateKey);
 
       const span = document.createElement('span');
       span.textContent = task.text;
-      if (task.repeat === 'once' && task.completed) {
+      if ((task.repeat === 'once' && task.completed) || 
+          (task.repeat === 'daily' && task.completions && task.completions[dateKey])) {
         span.className = 'completed-task';
       }
 
@@ -1178,7 +1212,15 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = '×';
       deleteBtn.style.marginLeft = 'auto';
-      deleteBtn.onclick = () => deleteTask(task.id);
+      deleteBtn.style.background = 'none';
+      deleteBtn.style.border = 'none';
+      deleteBtn.style.fontSize = '18px';
+      deleteBtn.style.cursor = 'pointer';
+      deleteBtn.style.color = '#dc3545';
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteTask(task.id);
+      };
       li.appendChild(deleteBtn);
 
       taskList.appendChild(li);
@@ -1186,29 +1228,58 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   function toggleTask(taskId, dateKey) {
+    if (!taskLists[currentTaskList]) {
+      console.error("Current task list doesn't exist:", currentTaskList);
+      return;
+    }
+    
     const tasks = taskLists[currentTaskList];
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+    
+    if (taskIndex === -1) {
+      console.error("Task not found with ID:", taskId);
+      return;
+    }
+    
+    const task = tasks[taskIndex];
+    
     if (task.repeat === 'once') {
       task.completed = !task.completed;
-      if (task.completed) {
-        const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+      const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+      
+      if (task.completed && taskElement) {
+        taskElement.querySelector('span').className = 'completed-task';
         taskElement.classList.add('fade-out');
+        
+        // Remove the task after animation
         setTimeout(() => {
-          deleteTask(taskId);
+          renderTasks();
         }, 5000);
       }
-    } else {
-      // daily
-      if (!task.completions) task.completions = {};
-      task.completions[dateKey] = true;
+    } else if (task.repeat === 'daily') {
+      // Initialize completions object if it doesn't exist
+      if (!task.completions) {
+        task.completions = {};
+      }
+      
+      // Toggle completion for this day
+      task.completions[dateKey] = !task.completions[dateKey];
+      
       const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-      taskElement.classList.add('fade-out');
-      setTimeout(() => {
-        renderTasks();
-      }, 5000);
+      if (task.completions[dateKey] && taskElement) {
+        taskElement.querySelector('span').className = 'completed-task';
+        taskElement.classList.add('fade-out');
+        
+        // Refresh the task list after animation
+        setTimeout(() => {
+          renderTasks();
+        }, 5000);
+      } else if (taskElement) {
+        taskElement.querySelector('span').className = '';
+        taskElement.classList.remove('fade-out');
+      }
     }
+    
     saveUserData();
   }
 
