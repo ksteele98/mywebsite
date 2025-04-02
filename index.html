@@ -437,6 +437,13 @@
   </button>
 </div>
 
+<!-- Add logout button that shows when logged in -->
+<div id="logoutSection" style="display: none; text-align:right; margin-bottom: 20px;">
+  <button onclick="logoutFromGoogle()" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
+    Sign Out
+  </button>
+</div>
+
 <div class="calendar-container">
   <div class="calendar-header">
     <button class="nav-button" onclick="previousMonth()">&lt; Previous</button>
@@ -587,7 +594,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     getAuth, 
     GoogleAuthProvider, 
     signInWithPopup, 
-    onAuthStateChanged 
+    onAuthStateChanged,
+    signOut
   } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
@@ -632,18 +640,38 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       userId = user.uid;
-      // Hide sign in button
+      // Hide sign in button, show logout button
       document.getElementById('authSection').style.display = 'none';
+      document.getElementById('logoutSection').style.display = 'block';
       // Load data from Firestore
       await loadUserData();
       // Generate calendar, tasks, etc.
       generateCalendar();
       renderTasks();
     } else {
-      // Show sign in button
+      // Show sign in button, hide logout button
       document.getElementById('authSection').style.display = 'block';
+      document.getElementById('logoutSection').style.display = 'none';
     }
   });
+
+  // Log out the user from Google
+  async function logoutFromGoogle() {
+    try {
+      await signOut(auth);
+      console.log("User signed out successfully");
+      // Clear local data
+      events = [];
+      journalEntries = {};
+      taskLists = { personal: [], work: [] };
+      habitTracker = {};
+      globalHabits = [];
+      // Regenerate calendar with cleared data
+      generateCalendar();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  }
 
   /******************************************************* 
    4) In-Memory Data
@@ -1571,6 +1599,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   window.cancelAddHabit = cancelAddHabit;
   window.saveHabitTracker = saveHabitTracker;
   window.cancelHabitTracker = cancelHabitTracker;
+  window.logoutFromGoogle = logoutFromGoogle;
 </script>
 
 </body>
