@@ -618,32 +618,36 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  // Set persistence to LOCAL - this is the key fix
-  setPersistence(auth, browserLocalPersistence)
+  // Force immediate initialization of auth
+  auth.useDeviceLanguage();
+  
+  // Set persistence to LOCAL with a more robust approach
+  await setPersistence(auth, browserLocalPersistence)
     .then(() => {
       console.log("Firebase persistence set to localStorage");
     })
     .catch((error) => {
       console.error("Error setting persistence:", error);
     });
-
+  
   let userId = null;  // will store current Google user's uid here
   const provider = new GoogleAuthProvider();
 
-  // This function triggers the Google popup
+  // This function triggers the Google redirect
   async function loginWithGoogleRedirect() {
     try {
       console.log("Login with Google redirect started");
       document.getElementById('authSection').innerHTML = "Redirecting to Google...";
       
-      // Force fresh login
-      await signOut(auth);
+      // Set a marker in sessionStorage that we're attempting auth
+      sessionStorage.setItem('auth_in_progress', 'true');
       
-      // Use redirect instead of popup
+      // Use redirect method
       await signInWithRedirect(auth, provider);
-      // This page will reload after redirect
+      // Page will reload after redirect
     } catch (error) {
       console.error("Google Sign-In Error:", error);
+      sessionStorage.removeItem('auth_in_progress');
       document.getElementById('authSection').innerHTML = 
         `<p>Error: ${error.message}</p>
          <button id="googleSignInButton" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
@@ -653,33 +657,110 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogleRedirect);
     }
   }
-
-  // On page load, watch for auth changes
-  onAuthStateChanged(auth, async (user) => {
-    try {
-      if (user) {
-        console.log("User authenticated:", user.uid);
-        userId = user.uid;
+  
+  // Enhanced DOMContentLoaded handler with auth recovery
+  window.addEventListener('DOMContentLoaded', async () => {
+    console.log("DOM loaded, checking for auth state");
+    
+    // Make auth section visible while we check
+    document.getElementById('authSection').style.display = 'block';
+    
+    // Retry mechanism for auth state
+    let authCheckAttempts = 0;
+    const maxAuthCheckAttempts = 3;
+    
+    async function checkAuthState() {
+      console.log(`Auth check attempt ${authCheckAttempts + 1}/${maxAuthCheckAttempts}`);
+      
+      if (auth.currentUser) {
+        console.log("User is signed in:", auth.currentUser);
+        handleSuccessfulAuth(auth.currentUser);
+        return true;
+      }
+      
+      try {
+        // Try getting redirect result
+        console.log("Checking for redirect result...");
+        const result = await getRedirectResult(auth);
         
-        // Hide sign in button
-        document.getElementById('authSection').style.display = 'none';
+        if (result && result.user) {
+          console.log("✅ Auth from redirect:", result.user);
+          handleSuccessfulAuth(result.user);
+          return true;
+        }
         
-        // Load data from Firestore
-        console.log("Loading user data from Firestore...");
-        await loadUserData();
-        console.log("User data loaded successfully");
+        // If we were in the process of authenticating but no result,
+        // something went wrong with the redirect - clear the marker
+        if (sessionStorage.getItem('auth_in_progress')) {
+          console.warn("Auth was in progress but no result found");
+          sessionStorage.removeItem('auth_in_progress');
+          showAuthError("Authentication process was interrupted. Please try again.");
+          return false;
+        }
         
-        // Generate calendar, tasks, etc.
+        console.log("No authenticated user found");
+        return false;
+        
+      } catch (error) {
+        console.error("Auth check error:", error);
+        showAuthError(error.message);
+        return false;
+      }
+    }
+    
+    function handleSuccessfulAuth(user) {
+      // Clear the auth in progress marker
+      sessionStorage.removeItem('auth_in_progress');
+      
+      // Hide auth section
+      document.getElementById('authSection').style.display = 'none';
+      
+      // Set userId and generate calendar
+      userId = user.uid;
+      loadUserData().then(() => {
         generateCalendar();
         renderTasks();
-      } else {
-        console.log("No authenticated user");
-        userId = null;
-        // Show sign in button
-        document.getElementById('authSection').style.display = 'block';
+      });
+    }
+    
+    function showAuthError(message) {
+      document.getElementById('authSection').innerHTML = 
+        `<p>Authentication error: ${message}</p>
+         <button id="googleSignInButton" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
+           Try Again
+         </button>`;
+      
+      document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogleRedirect);
+    }
+    
+    // Try to get auth state immediately
+    let isAuthenticated = await checkAuthState();
+    
+    // If not authenticated, retry a few times (auth initialization can be slow)
+    while (!isAuthenticated && authCheckAttempts < maxAuthCheckAttempts - 1) {
+      authCheckAttempts++;
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      isAuthenticated = await checkAuthState();
+    }
+    
+    // If still not authenticated after retries, set up sign-in button
+    if (!isAuthenticated) {
+      console.log("No authentication after retries, showing sign-in button");
+      const signInButton = document.getElementById('googleSignInButton');
+      if (signInButton) {
+        signInButton.addEventListener('click', loginWithGoogleRedirect);
       }
-    } catch (error) {
-      console.error("Error in auth state change handler:", error);
+    }
+  });
+  
+  // Simplified onAuthStateChanged - our DOMContentLoaded handler is now more robust
+  onAuthStateChanged(auth, (user) => {
+    console.log("Auth state changed:", user ? "User signed in" : "User signed out");
+    if (user) {
+      userId = user.uid;
+      document.getElementById('authSection').style.display = 'none';
+    } else {
+      userId = null;
     }
   });
 
@@ -1649,41 +1730,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   window.cancelAddHabit = cancelAddHabit;
   window.saveHabitTracker = saveHabitTracker;
   window.cancelHabitTracker = cancelHabitTracker;
-  
-  // Initialize calendar after page loads
-  window.addEventListener('DOMContentLoaded', async () => {
-    console.log("DOM loaded, checking for auth state");
-    console.log("Current auth state on page load:", auth.currentUser);
-    
-    try {
-      // Check if we're returning from a redirect sign-in
-      console.log("Checking for redirect result...");
-      const result = await getRedirectResult(auth);
-      if (result) {
-        console.log("✅ Redirect result received:", result.user);
-        userId = result.user.uid;
-        // Force an immediate calendar render
-        generateCalendar();
-      } else {
-        console.log("No redirect result found");
-      }
-    } catch (error) {
-      console.error("❌ Redirect sign-in error:", error);
-      document.getElementById('authSection').innerHTML = 
-        `<p>Login error: ${error.message}</p>
-         <button id="googleSignInButton" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
-           Try Again
-         </button>`;
-      
-      document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogleRedirect);
-    }
-    
-    document.getElementById('authSection').style.display = 'block';
-    
-    // Use the redirect version
-    const signInButton = document.getElementById('googleSignInButton');
-    signInButton.addEventListener('click', loginWithGoogleRedirect);
-  });
 </script>
 
 </body>
