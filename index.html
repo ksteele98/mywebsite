@@ -1159,7 +1159,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     const journalForm = document.getElementById('journalForm');
     const dateKey = journalForm.dataset.date || new Date().toISOString().split('T')[0];
 
-    // Debug - show what we're working with
     console.log("Current task list:", currentTaskList);
     console.log("Tasks for this list:", tasks);
     console.log("Current date key:", dateKey);
@@ -1174,12 +1173,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     }
 
     tasks.forEach(task => {
-      // Skip completed daily tasks for this date
-      if (task.repeat === 'daily' && task.completions && task.completions[dateKey]) {
-        return;
-      }
-      // Skip completed one-time tasks
-      if (task.repeat === 'once' && task.completed) {
+      // Skip completed tasks
+      if ((task.repeat === 'daily' && task.completions && task.completions[dateKey]) ||
+          (task.repeat === 'once' && task.completed)) {
         return;
       }
 
@@ -1189,14 +1185,12 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
+      checkbox.id = `task-checkbox-${task.id}`;
+      checkbox.checked = (task.repeat === 'once' && task.completed) || 
+                        (task.repeat === 'daily' && task.completions && task.completions[dateKey]);
       
-      if (task.repeat === 'once') {
-        checkbox.checked = task.completed;
-      } else if (task.repeat === 'daily') {
-        checkbox.checked = task.completions && task.completions[dateKey];
-      }
-      
-      checkbox.onclick = () => toggleTask(task.id, dateKey);
+      // Use setAttribute for onclick to ensure it works consistently
+      checkbox.setAttribute('onclick', `toggleTaskDirect('${task.id}', '${dateKey}')`);
 
       const span = document.createElement('span');
       span.textContent = task.text;
@@ -1225,434 +1219,220 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       deleteBtn.style.fontSize = '18px';
       deleteBtn.style.cursor = 'pointer';
       deleteBtn.style.color = '#dc3545';
-      deleteBtn.onclick = (e) => {
-        e.stopPropagation();
-        deleteTask(task.id);
-      };
+      // Use setAttribute for onclick to ensure it works consistently
+      deleteBtn.setAttribute('onclick', `deleteTaskDirect('${task.id}')`);
       li.appendChild(deleteBtn);
 
       taskList.appendChild(li);
     });
   }
 
-  function toggleTask(taskId, dateKey) {
+  // Update the HTML for task toggle buttons and add task button
+  function fixTaskButtons() {
+    // Fix task toggle buttons
+    const personalTasksBtn = document.getElementById('personalTasksBtn');
+    const workTasksBtn = document.getElementById('workTasksBtn');
+    
+    if (personalTasksBtn) {
+      personalTasksBtn.setAttribute('onclick', "switchTaskDirect('personal')");
+    }
+    
+    if (workTasksBtn) {
+      workTasksBtn.setAttribute('onclick', "switchTaskDirect('work')");
+    }
+    
+    // Fix add task button
+    const addTaskBtn = document.querySelector('.add-task-btn');
+    if (addTaskBtn) {
+      addTaskBtn.setAttribute('onclick', 'addTaskDirect()');
+    }
+
+    // Fix "new list" button
+    const newListBtn = document.querySelector('.new-list-btn');
+    if (newListBtn) {
+      newListBtn.setAttribute('onclick', 'createNewListDirect()');
+    }
+
+    // Fix "delete list" button
+    const deleteListBtn = document.querySelector('.delete-list-btn');
+    if (deleteListBtn) {
+      deleteListBtn.setAttribute('onclick', 'deleteCurrentListDirect()');
+    }
+  }
+
+  // Direct action functions (exposed to window)
+  function toggleTaskDirect(taskId, dateKey) {
+    console.log("Toggle task called: ", taskId, dateKey);
     if (!taskLists[currentTaskList]) {
       console.error("Current task list doesn't exist:", currentTaskList);
       return;
     }
     
     const tasks = taskLists[currentTaskList];
-    const taskIndex = tasks.findIndex(t => t.id === taskId);
+    const task = tasks.find(t => t.id == taskId); // Use == for string/number comparison
     
-    if (taskIndex === -1) {
+    if (!task) {
       console.error("Task not found with ID:", taskId);
       return;
     }
-    
-    const task = tasks[taskIndex];
     
     if (task.repeat === 'once') {
       task.completed = !task.completed;
       const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
       
       if (task.completed && taskElement) {
-        taskElement.querySelector('span').className = 'completed-task';
+        const span = taskElement.querySelector('span');
+        if (span) span.className = 'completed-task';
         taskElement.classList.add('fade-out');
-        
-        // Remove the task after animation
-        setTimeout(() => {
-          renderTasks();
-        }, 5000);
+        setTimeout(() => renderTasks(), 5000);
       }
     } else if (task.repeat === 'daily') {
-      // Initialize completions object if it doesn't exist
-      if (!task.completions) {
-        task.completions = {};
-      }
-      
-      // Toggle completion for this day
+      if (!task.completions) task.completions = {};
       task.completions[dateKey] = !task.completions[dateKey];
       
       const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-      if (task.completions[dateKey] && taskElement) {
-        taskElement.querySelector('span').className = 'completed-task';
-        taskElement.classList.add('fade-out');
-        
-        // Refresh the task list after animation
-        setTimeout(() => {
-          renderTasks();
-        }, 5000);
-      } else if (taskElement) {
-        taskElement.querySelector('span').className = '';
-        taskElement.classList.remove('fade-out');
+      if (taskElement) {
+        const span = taskElement.querySelector('span');
+        if (span) {
+          if (task.completions[dateKey]) {
+            span.className = 'completed-task';
+            taskElement.classList.add('fade-out');
+            setTimeout(() => renderTasks(), 5000);
+          } else {
+            span.className = '';
+            taskElement.classList.remove('fade-out');
+          }
+        }
       }
     }
     
     saveUserData();
   }
 
-  function deleteTask(taskId) {
-    taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id !== taskId);
+  function deleteTaskDirect(taskId) {
+    console.log("Delete task called: ", taskId);
+    if (taskLists[currentTaskList]) {
+      taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
+      saveUserData();
+      renderTasks();
+    }
+  }
+
+  function switchTaskDirect(type) {
+    console.log("Switch task list called: ", type);
+    currentTaskList = type;
+    
+    document.querySelectorAll('.task-toggle button').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.textContent.toLowerCase().includes(type)) {
+        btn.classList.add('active');
+      }
+    });
+    
+    renderTasks();
+  }
+
+  function addTaskDirect() {
+    console.log("Add task called");
+    const taskInput = document.getElementById('taskInput');
+    const rawText = taskInput.value.trim();
+    if (!rawText) {
+      alert("Please enter a task description");
+      return;
+    }
+
+    const tasksTexts = rawText.split(',').map(t => t.trim()).filter(Boolean);
+    const dailyCheckbox = document.getElementById('taskDailyCheckbox');
+    const isDaily = dailyCheckbox.checked;
+    
+    if (!taskLists[currentTaskList]) {
+      taskLists[currentTaskList] = [];
+    }
+
+    tasksTexts.forEach((text, i) => {
+      const newTask = {
+        text,
+        id: Date.now() + i,
+        repeat: isDaily ? 'daily' : 'once',
+      };
+      
+      if (isDaily) {
+        newTask.completions = {};
+      } else {
+        newTask.completed = false;
+      }
+      
+      taskLists[currentTaskList].push(newTask);
+    });
+    
+    taskInput.value = '';
+    dailyCheckbox.checked = false;
+
     saveUserData();
     renderTasks();
   }
 
-  /******************************************************* 
-   14) Habit Tracker
-  *******************************************************/
-  function changeToHabit() {
-    const journalForm = document.getElementById('journalForm');
-    const habitForm = document.getElementById('habitForm');
-
-    habitForm.dataset.date = journalForm.dataset.date;
-    const displayDate = new Date(habitForm.dataset.date + 'T00:00:00');
-    document.getElementById('habitDate').textContent = displayDate.toLocaleDateString();
-
-    journalForm.style.display = 'none';
-    habitForm.style.display = 'block';
-    document.getElementById('prevDayButton').style.display = 'none';
-    document.getElementById('nextDayButton').style.display = 'none';
-
-    updateHabitDisplay();
-  }
-
-  function changeToJournal() {
-    document.getElementById('habitForm').style.display = 'none';
-    document.getElementById('journalForm').style.display = 'block';
-    document.getElementById('prevDayButton').style.display = 'block';
-    document.getElementById('nextDayButton').style.display = 'block';
-  }
-
-  function getCurrentDateKey() {
-    const dateFromForm = document.getElementById('habitForm').dataset.date;
-    return dateFromForm || new Date().toISOString().split('T')[0];
-  }
-
-  function parseDateKey(dateKey) {
-    const parts = dateKey.split('-');
-    return new Date(parts[0], parts[1]-1, parts[2]);
-  }
-
-  function showNewHabitForm() {
-    document.getElementById('newHabitForm').style.display = 'block';
-  }
-
-  function cancelAddHabit() {
-    document.getElementById('newHabitForm').style.display = 'none';
-    document.getElementById('newHabitName').value = '';
-  }
-
-  function confirmAddHabit() {
-    const habitName = document.getElementById('newHabitName').value.trim();
-    if (!habitName) {
-      alert("Please enter a habit name");
-      return;
-    }
-    const habitType = document.querySelector('input[name="habitType"]:checked').value;
-    const dateKey = getCurrentDateKey();
-
-    if (!habitTracker[dateKey]) {
-      habitTracker[dateKey] = {};
-    }
-    if (habitTracker[dateKey][habitName]) {
-      alert('This habit already exists for this day.');
-      return;
-    }
-
-    if (habitType === 'count') {
-      habitTracker[dateKey][habitName] = { type: 'count', value: 0 };
-    } else {
-      habitTracker[dateKey][habitName] = { type: 'check', value: false };
-    }
-
-    const existingGlobalHabit = globalHabits.find(h => h.name.toLowerCase() === habitName.toLowerCase());
-    const currentDateObj = parseDateKey(dateKey);
-
-    if (!existingGlobalHabit) {
-      globalHabits.push({ name: habitName, startDate: dateKey, type: habitType });
-    } else {
-      const globalStartDateObj = parseDateKey(existingGlobalHabit.startDate);
-      if (currentDateObj < globalStartDateObj) {
-        existingGlobalHabit.startDate = dateKey;
-      }
-    }
-
-    document.getElementById('newHabitName').value = '';
-    document.getElementById('newHabitForm').style.display = 'none';
-    updateHabitDisplay();
-    saveUserData();
-  }
-
-  function updateHabitDisplay() {
-    const dateKey = getCurrentDateKey();
-    const habitList = document.getElementById('habitList');
-    habitList.innerHTML = '';
-
-    if (!habitTracker[dateKey]) {
-      habitTracker[dateKey] = {};
-    }
-    const currentDateObj = parseDateKey(dateKey);
-
-    // If a global habit started earlier and this date is after start, show it
-    globalHabits.forEach(habit => {
-      const habitStartDate = parseDateKey(habit.startDate);
-      if (currentDateObj >= habitStartDate) {
-        if (habitTracker[dateKey][habit.name] === undefined) {
-          if (habit.type === 'count') {
-            habitTracker[dateKey][habit.name] = { type: 'count', value: 0 };
-          } else {
-            habitTracker[dateKey][habit.name] = { type: 'check', value: false };
-          }
-        }
-      }
-    });
-
-    const habitsForDay = habitTracker[dateKey];
-    Object.keys(habitsForDay).forEach(habitName => {
-      const habitData = habitsForDay[habitName];
-      const habitDiv = document.createElement('div');
-      habitDiv.style.display = 'flex';
-      habitDiv.style.flexDirection = 'column';
-      habitDiv.style.marginBottom = '10px';
-
-      // top row
-      const topRow = document.createElement('div');
-      topRow.style.display = 'flex';
-      topRow.style.alignItems = 'center';
-      topRow.style.justifyContent = 'space-between';
-
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = habitName + ': ';
-
-      const controlsContainer = document.createElement('div');
-      controlsContainer.style.display = 'flex';
-      controlsContainer.style.alignItems = 'center';
-      controlsContainer.style.gap = '5px';
-
-      if (habitData.type === 'count') {
-        const decrementBtn = document.createElement('button');
-        decrementBtn.textContent = '-';
-        decrementBtn.onclick = () => {
-          if (habitTracker[dateKey][habitName].value > 0) {
-            habitTracker[dateKey][habitName].value--;
-            countInput.value = habitTracker[dateKey][habitName].value;
-          }
-          saveUserData();
-        };
-
-        const countInput = document.createElement('input');
-        countInput.type = 'number';
-        countInput.value = habitData.value;
-        countInput.style.width = '60px';
-        countInput.onchange = () => {
-          const val = parseInt(countInput.value, 10);
-          if (!isNaN(val)) {
-            habitTracker[dateKey][habitName].value = val;
-          } else {
-            countInput.value = habitTracker[dateKey][habitName].value;
-          }
-          saveUserData();
-        };
-
-        const incrementBtn = document.createElement('button');
-        incrementBtn.textContent = '+';
-        incrementBtn.onclick = () => {
-          habitTracker[dateKey][habitName].value++;
-          countInput.value = habitTracker[dateKey][habitName].value;
-          saveUserData();
-        };
-
-        controlsContainer.appendChild(decrementBtn);
-        controlsContainer.appendChild(countInput);
-        controlsContainer.appendChild(incrementBtn);
-
+  function createNewListDirect() {
+    console.log("Create new list called");
+    const listName = prompt("Enter name for new list:");
+    if (listName && listName.trim()) {
+      const listKey = listName.toLowerCase().replace(/\s+/g, '-');
+      if (!taskLists[listKey]) {
+        taskLists[listKey] = [];
+        
+        const taskToggle = document.querySelector('.task-toggle');
+        const newBtn = document.createElement('button');
+        newBtn.textContent = listName;
+        newBtn.setAttribute('onclick', `switchTaskDirect('${listKey}')`);
+        taskToggle.appendChild(newBtn);
+        
+        saveUserData();
+        switchTaskDirect(listKey);
       } else {
-        // check
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = habitData.value === true;
-        checkbox.onchange = () => {
-          habitTracker[dateKey][habitName].value = checkbox.checked;
-          saveUserData();
-        };
-        controlsContainer.appendChild(checkbox);
-      }
-
-      const progressBtn = document.createElement('button');
-      progressBtn.textContent = 'View Progress';
-      progressBtn.onclick = () => {
-        toggleHabitGraph(habitName);
-      };
-      controlsContainer.appendChild(progressBtn);
-
-      const timeFrameContainer = document.createElement('div');
-      timeFrameContainer.style.display = 'none';
-      timeFrameContainer.style.gap = '5px';
-
-      const weeklyBtn = document.createElement('button');
-      weeklyBtn.textContent = '7 Days';
-      weeklyBtn.onclick = () => {
-        drawHabitGraph(habitName, 7);
-      };
-
-      const monthlyBtn = document.createElement('button');
-      monthlyBtn.textContent = '30 Days';
-      monthlyBtn.onclick = () => {
-        drawHabitGraph(habitName, 30);
-      };
-
-      timeFrameContainer.appendChild(weeklyBtn);
-      timeFrameContainer.appendChild(monthlyBtn);
-
-      controlsContainer.timeFrameContainer = timeFrameContainer;
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.style.marginLeft = '10px';
-      deleteBtn.onclick = () => {
-        if (confirm(`Delete habit "${habitName}" for all future dates as well?`)) {
-          deleteHabitFromGlobal(habitName);
-          updateHabitDisplay();
-          saveUserData();
-        }
-      };
-      controlsContainer.appendChild(deleteBtn);
-
-      topRow.appendChild(nameSpan);
-      topRow.appendChild(controlsContainer);
-
-      const graphContainer = document.createElement('div');
-      graphContainer.style.display = 'none';
-      graphContainer.style.marginTop = '10px';
-      const canvas = document.createElement('canvas');
-      canvas.id = `graph-${habitName}`;
-      canvas.width = 300;
-      canvas.height = 100;
-      graphContainer.appendChild(canvas);
-
-      habitDiv.appendChild(topRow);
-      habitDiv.appendChild(controlsContainer.timeFrameContainer);
-      habitDiv.appendChild(graphContainer);
-      habitList.appendChild(habitDiv);
-    });
-  }
-
-  function deleteHabitFromGlobal(habitName) {
-    const dateKey = getCurrentDateKey();
-    delete habitTracker[dateKey][habitName];
-    globalHabits = globalHabits.filter(h => h.name.toLowerCase() !== habitName.toLowerCase());
-
-    const currentDateObj = parseDateKey(dateKey);
-    for (const dateKeyInTracker of Object.keys(habitTracker)) {
-      const dateObj = parseDateKey(dateKeyInTracker);
-      if (dateObj > currentDateObj && habitTracker[dateKeyInTracker][habitName]) {
-        delete habitTracker[dateKeyInTracker][habitName];
+        alert("A list with this name already exists!");
       }
     }
   }
 
-  function toggleHabitGraph(habitName, daysRange = 7) {
-    const graphContainer = document.getElementById(`graph-${habitName}`).parentElement;
-    const topRow = graphContainer.parentElement.firstChild;
-    const controlsContainer = topRow.lastChild;
-
-    if (graphContainer.style.display === 'none' || graphContainer.style.display === '') {
-      graphContainer.style.display = 'block';
-      controlsContainer.timeFrameContainer.style.display = 'flex'; 
-      drawHabitGraph(habitName, 7); // default to 7-day view
-    } else {
-      graphContainer.style.display = 'none';
-      controlsContainer.timeFrameContainer.style.display = 'none';
+  function deleteCurrentListDirect() {
+    console.log("Delete current list called");
+    if (confirm(`Are you sure you want to delete the "${currentTaskList}" list?`)) {
+      if (currentTaskList === 'personal' || currentTaskList === 'work') {
+        alert("Cannot delete default lists!");
+        return;
+      }
+      
+      const buttonToRemove = Array.from(document.querySelector('.task-toggle').children)
+        .find(btn => btn.textContent.toLowerCase() === currentTaskList.replace(/-/g, ' '));
+      
+      if (buttonToRemove) {
+        buttonToRemove.remove();
+      }
+      
+      delete taskLists[currentTaskList];
+      currentTaskList = 'personal';
+      
+      const personalBtn = document.getElementById('personalTasksBtn');
+      if (personalBtn) {
+        personalBtn.classList.add('active');
+      }
+      
+      saveUserData();
+      renderTasks();
     }
   }
 
-  function drawHabitGraph(habitName, daysRange = 7) {
-    const canvas = document.getElementById(`graph-${habitName}`);
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const endDate = parseDateKey(getCurrentDateKey());
-    const dates = [];
-    for (let i = daysRange - 1; i >= 0; i--) {
-      const d = new Date(endDate);
-      d.setDate(d.getDate() - i);
-      const dateKey = d.toISOString().split('T')[0];
-      dates.push(dateKey);
-    }
-
-    const values = dates.map(d => {
-      if (habitTracker[d] && habitTracker[d][habitName]) {
-        const habitData = habitTracker[d][habitName];
-        return habitData.type === 'count' 
-          ? habitData.value 
-          : (habitData.value === true ? 1 : 0);
-      } else {
-        return 0;
-      }
-    });
-
-    const leftMargin = 30;
-    const bottomMargin = 30;
-    const topMargin = 10;
-    const rightMargin = canvas.width - 10; 
-
-    // Axes
-    ctx.strokeStyle = '#333';
-    ctx.beginPath();
-    ctx.moveTo(leftMargin, topMargin);
-    ctx.lineTo(leftMargin, canvas.height - bottomMargin);
-    ctx.lineTo(rightMargin, canvas.height - bottomMargin);
-    ctx.stroke();
-
-    const maxVal = Math.max(...values, 1);
-    const dataPoints = values.length;
-    const xStep = (rightMargin - leftMargin) / (dataPoints - 1);
-    const yScale = (canvas.height - bottomMargin - topMargin) / maxVal;
-
-    // Draw line
-    ctx.strokeStyle = '#4285f4';
-    ctx.beginPath();
-    values.forEach((v, i) => {
-      const x = leftMargin + i * xStep;
-      const y = (canvas.height - bottomMargin) - v * yScale;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // Draw dots
-    ctx.fillStyle = '#4285f4';
-    values.forEach((v, i) => {
-      const x = leftMargin + i * xStep;
-      const y = (canvas.height - bottomMargin) - v * yScale;
-      ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2, true);
-      ctx.fill();
-    });
-
-    // X-axis labels
-    ctx.fillStyle = '#333';
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    const labelInterval = daysRange === 30 ? 5 : 1;
-    dates.forEach((dateStr, i) => {
-      if (i % labelInterval === 0) {
-        const x = leftMargin + i * xStep;
-        const [year, month, day] = dateStr.split('-');
-        const dateLabel = `${month}-${day}`;
-        ctx.fillText(dateLabel, x, canvas.height - bottomMargin + 5);
-      }
-    });
-  }
-
-  function saveHabitTracker() {
-    saveUserData();
-    document.getElementById('habitForm').style.display = 'none';
-  }
-
-  function cancelHabitTracker() {
-    document.getElementById('habitForm').style.display = 'none';
+  // Add these functions to the window object for HTML access
+  function initializeTaskFunctions() {
+    window.toggleTaskDirect = toggleTaskDirect;
+    window.deleteTaskDirect = deleteTaskDirect;
+    window.switchTaskDirect = switchTaskDirect;
+    window.addTaskDirect = addTaskDirect;
+    window.createNewListDirect = createNewListDirect;
+    window.deleteCurrentListDirect = deleteCurrentListDirect;
+    
+    // Fix buttons in the DOM
+    setTimeout(fixTaskButtons, 100);
   }
 
   // Make functions available globally to be called from HTML
@@ -1715,6 +1495,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     
     console.log("Task controls initialized");
   }
+
+  // Make task functions globally available and initialize buttons
+  initializeTaskFunctions();
 </script>
 
 </body>
