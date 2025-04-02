@@ -590,7 +590,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     signInWithRedirect,
     getRedirectResult,
     signOut,
-    onAuthStateChanged 
+    onAuthStateChanged,
+    setPersistence,
+    browserLocalPersistence
   } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
@@ -615,6 +617,15 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const analytics = getAnalytics(app);
   const auth = getAuth(app);
   const db   = getFirestore(app);
+
+  // Set persistence to LOCAL - this is the key fix
+  setPersistence(auth, browserLocalPersistence)
+    .then(() => {
+      console.log("Firebase persistence set to localStorage");
+    })
+    .catch((error) => {
+      console.error("Error setting persistence:", error);
+    });
 
   let userId = null;  // will store current Google user's uid here
   const provider = new GoogleAuthProvider();
@@ -1641,18 +1652,30 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   
   // Initialize calendar after page loads
   window.addEventListener('DOMContentLoaded', async () => {
-    console.log("DOM loaded, checking for redirect result first");
+    console.log("DOM loaded, checking for auth state");
+    console.log("Current auth state on page load:", auth.currentUser);
     
     try {
       // Check if we're returning from a redirect sign-in
+      console.log("Checking for redirect result...");
       const result = await getRedirectResult(auth);
       if (result) {
-        console.log("Redirect result received:", result.user);
-        // User is signed in
-        // onAuthStateChanged will handle the rest
+        console.log("✅ Redirect result received:", result.user);
+        userId = result.user.uid;
+        // Force an immediate calendar render
+        generateCalendar();
+      } else {
+        console.log("No redirect result found");
       }
     } catch (error) {
-      console.error("Redirect sign-in error:", error);
+      console.error("❌ Redirect sign-in error:", error);
+      document.getElementById('authSection').innerHTML = 
+        `<p>Login error: ${error.message}</p>
+         <button id="googleSignInButton" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
+           Try Again
+         </button>`;
+      
+      document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogleRedirect);
     }
     
     document.getElementById('authSection').style.display = 'block';
@@ -1660,11 +1683,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     // Use the redirect version
     const signInButton = document.getElementById('googleSignInButton');
     signInButton.addEventListener('click', loginWithGoogleRedirect);
-    
-    if (auth.currentUser) {
-      console.log("User already logged in:", auth.currentUser);
-      generateCalendar();
-    }
   });
 </script>
 
