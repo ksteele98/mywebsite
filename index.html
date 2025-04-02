@@ -1,1525 +1,1553 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendar App</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-        .calendar-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
-        }
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            background-color: #ddd;
-        }
-        .calendar-cell {
-            background-color: white;
-            min-height: 100px;
-            padding: 10px;
-            cursor: pointer;
-            user-select: none;
-            overflow: hidden;
-        }
-        .day-header {
-            background-color: #f8f9fa;
-            padding: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .date-number {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        .event {
-            color: white;
-            padding: 2px 5px;
-            border-radius: 3px;
-            margin-bottom: 2px;
-            font-size: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-align: center;
-        }
-        .nav-button {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            padding: 8px 16px;
-            cursor: pointer;
-            width: auto;
-            min-width: 100px;
-        }
-        .current-month {
-            font-size: 20px;
-            font-weight: bold;
-            text-align: center;
-        }
-        .event-form {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: none;
-            width: 90%;
-            max-width: 300px;
-            z-index: 1000;
-        }
-        .event-form input {
-            width: 100%;
-            padding: 8px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .event-form h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-        }
-        .color-picker {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(25px, 1fr));
-            gap: 5px;
-            margin: 10px 0;
-        }
-        .color-option {
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-        }
-        .color-option.selected {
-            border: 2px solid #000;
-        }
-        .time-inputs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .time-inputs div {
-            flex: 1;
-            min-width: 120px;
-        }
-        .time-inputs label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        .event-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .event-actions button {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            min-width: 80px;
-        }
-        .event-actions button:first-child {
-            background: #4285f4;
-            color: white;
-        }
-        .event-actions button:last-child {
-            background: #ddd;
-        }
-        .delete-event-btn {
-            background: #dc3545 !important;
-            color: white;
-        }
-        .journal-form {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: none;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            z-index: 1000;
-        }
-        .close-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        .journal-textarea {
-            width: 100%;
-            height: 150px;
-            margin: 10px 0;
-            padding: 10px;
-            resize: vertical;
-            box-sizing: border-box;
-        }
-        .other-month {
-            background-color: #f5f5f5;
-        }
-        .task-list {
-            list-style: none;
-            padding: 0;
-            margin: 10px 0;
-            max-height: 200px;
-            overflow-y: auto;
-            position: relative;
-        }
-        .task-item {
-            display: flex;
-            align-items: center;
-            padding: 5px;
-            border-bottom: 1px solid #eee;
-            flex-wrap: wrap;
-            gap: 5px;
-            transition: opacity 5s ease;
-            opacity: 1;
-        }
-        .task-item.fade-out {
-            opacity: 0;
-        }
-        .task-item input[type="checkbox"] {
-            margin-right: 10px;
-        }
-        .task-input {
-            width: 100%;
-            padding: 8px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .add-task-btn {
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-bottom: 10px;
-            width: 100%;
-        }
-        .completed-task {
-            text-decoration: line-through;
-            color: #888;
-        }
-        .task-container {
-            margin-top: 20px;
-            border-top: 1px solid #ddd;
-            padding-top: 20px;
-            position: relative;
-        }
-        .task-toggle {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .task-toggle button {
-            flex: 1;
-            padding: 8px 16px;
-            border: 1px solid #ddd;
-            background: #fff;
-            cursor: pointer;
-            border-radius: 4px;
-            min-width: 120px;
-        }
-        .task-toggle button.active {
-            background: #4285f4;
-            color: white;
-            border-color: #4285f4;
-        }
-        .daily-events {
-            margin-bottom: 20px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-        .daily-events h4 {
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-        .add-event-btn {
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-        }
-        .new-list-btn {
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: auto;
-            min-width: auto;
-            flex: 0;
-        }
-        .delete-list-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            min-width: auto;
-            flex: 0;
-        }
-        .tasks-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .change-habit-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .habit-form {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: none;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            z-index: 1000;
-        }
-        #habitDate {
-            margin-bottom: 10px;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendar App (Google Auth)</title>
 
-        .new-habit-form {
-            margin-top: 20px;
-            display: none; 
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-        }
+  <style>
+    /* === Your existing CSS unchanged === */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    .calendar-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background-color: #ddd;
+    }
+    .calendar-cell {
+      background-color: white;
+      min-height: 100px;
+      padding: 10px;
+      cursor: pointer;
+      user-select: none;
+      overflow: hidden;
+    }
+    .day-header {
+      background-color: #f8f9fa;
+      padding: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .date-number {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .event {
+      color: white;
+      padding: 2px 5px;
+      border-radius: 3px;
+      margin-bottom: 2px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+    }
+    .nav-button {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 8px 16px;
+      cursor: pointer;
+      width: auto;
+      min-width: 100px;
+    }
+    .current-month {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .event-form {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: none;
+      width: 90%;
+      max-width: 300px;
+      z-index: 1000;
+    }
+    .event-form input {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .event-form h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+    .color-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(25px, 1fr));
+      gap: 5px;
+      margin: 10px 0;
+    }
+    .color-option {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .color-option.selected {
+      border: 2px solid #000;
+    }
+    .time-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .time-inputs div {
+      flex: 1;
+      min-width: 120px;
+    }
+    .time-inputs label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    .event-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .event-actions button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      min-width: 80px;
+    }
+    .event-actions button:first-child {
+      background: #4285f4;
+      color: white;
+    }
+    .event-actions button:last-child {
+      background: #ddd;
+    }
+    .delete-event-btn {
+      background: #dc3545 !important;
+      color: white;
+    }
+    .journal-form {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: none;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .journal-textarea {
+      width: 100%;
+      height: 150px;
+      margin: 10px 0;
+      padding: 10px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    .other-month {
+      background-color: #f5f5f5;
+    }
+    .task-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+      max-height: 200px;
+      overflow-y: auto;
+      position: relative;
+    }
+    .task-item {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+      flex-wrap: wrap;
+      gap: 5px;
+      transition: opacity 5s ease;
+      opacity: 1;
+    }
+    .task-item.fade-out {
+      opacity: 0;
+    }
+    .task-item input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    .task-input {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .add-task-btn {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+    .completed-task {
+      text-decoration: line-through;
+      color: #888;
+    }
+    .task-container {
+      margin-top: 20px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+      position: relative;
+    }
+    .task-toggle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .task-toggle button {
+      flex: 1;
+      padding: 8px 16px;
+      border: 1px solid #ddd;
+      background: #fff;
+      cursor: pointer;
+      border-radius: 4px;
+      min-width: 120px;
+    }
+    .task-toggle button.active {
+      background: #4285f4;
+      color: white;
+      border-color: #4285f4;
+    }
+    .daily-events {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .daily-events h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    .add-event-btn {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .new-list-btn {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: auto;
+      min-width: auto;
+      flex: 0;
+    }
+    .delete-list-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      min-width: auto;
+      flex: 0;
+    }
+    .tasks-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .change-habit-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .habit-form {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: none;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    #habitDate {
+      margin-bottom: 10px;
+    }
+    .new-habit-form {
+      margin-top: 20px;
+      display: none; 
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .new-habit-form h4 {
+      margin-top: 0;
+    }
+    .habit-type-options label {
+      margin-right: 10px;
+    }
+    .goals-btn {
+      background: #4285f4;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
 
-        .new-habit-form h4 {
-            margin-top: 0;
-        }
-
-        .habit-type-options label {
-            margin-right: 10px;
-        }
-        .goals-btn {
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        @media screen and (max-width: 768px) {
-            .calendar-grid {
-                font-size: 14px;
-            }
-            
-            .calendar-cell {
-                min-height: 80px;
-                padding: 5px;
-            }
-
-            .event {
-                font-size: 10px;
-                padding: 1px 3px;
-            }
-
-            .current-month {
-                font-size: 16px;
-                width: 100%;
-                text-align: center;
-                order: -1;
-            }
-
-            .nav-button {
-                padding: 6px 12px;
-                min-width: auto;
-                flex: 1;
-            }
-            .journal-form button {
-                margin-bottom: 20px;
-                padding: 12px;
-                font-size: 16px;
-            }
-        }
-
-        @media screen and (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-
-            .calendar-cell {
-                min-height: 60px;
-            }
-
-            .day-header {
-                padding: 5px;
-                font-size: 12px;
-            }
-
-            .date-number {
-                font-size: 12px;
-            }
-
-            .event {
-                margin-bottom: 1px;
-            }
-
-            .event-form, .journal-form {
-                width: 95%;
-                padding: 15px;
-            }
-
-            .time-inputs div {
-                flex: 100%;
-            }
-
-            .task-toggle button {
-                flex: 100%;
-            }
-
-            .journal-form button {
-                margin-bottom: 20px;
-                padding: 12px;
-                font-size: 16px;
-            }
-
-        }
-    </style>
+    @media screen and (max-width: 768px) {
+      .calendar-grid {
+        font-size: 14px;
+      }
+      .calendar-cell {
+        min-height: 80px;
+        padding: 5px;
+      }
+      .event {
+        font-size: 10px;
+        padding: 1px 3px;
+      }
+      .current-month {
+        font-size: 16px;
+        width: 100%;
+        text-align: center;
+        order: -1;
+      }
+      .nav-button {
+        padding: 6px 12px;
+        min-width: auto;
+        flex: 1;
+      }
+      .journal-form button {
+        margin-bottom: 20px;
+        padding: 12px;
+        font-size: 16px;
+      }
+    }
+    @media screen and (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      .calendar-cell {
+        min-height: 60px;
+      }
+      .day-header {
+        padding: 5px;
+        font-size: 12px;
+      }
+      .date-number {
+        font-size: 12px;
+      }
+      .event {
+        margin-bottom: 1px;
+      }
+      .event-form, .journal-form {
+        width: 95%;
+        padding: 15px;
+      }
+      .time-inputs div {
+        flex: 100%;
+      }
+      .task-toggle button {
+        flex: 100%;
+      }
+      .journal-form button {
+        margin-bottom: 20px;
+        padding: 12px;
+        font-size: 16px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="calendar-container">
-        <div class="calendar-header">
-            <button class="nav-button" onclick="previousMonth()">&lt; Previous</button>
-            <div class="current-month">September 2023</div>
-            <button class="nav-button" onclick="nextMonth()">Next &gt;</button>
-        </div>
-        
-        <div class="calendar-grid">
-            <div class="day-header">Sun</div>
-            <div class="day-header">Mon</div>
-            <div class="day-header">Tue</div>
-            <div class="day-header">Wed</div>
-            <div class="day-header">Thu</div>
-            <div class="day-header">Fri</div>
-            <div class="day-header">Sat</div>
-        </div>
-    </div>
 
-    <div class="event-form" id="eventForm">
-        <h3>Add Event</h3>
-        <input type="text" id="eventDescription" placeholder="Event Name" required>
-        <div class="time-inputs">
-            <div>
-                <label for="eventStartTime">Start Time:</label>
-                <input type="time" id="eventStartTime" required>
-            </div>
-            <div>
-                <label for="eventEndTime">End Time:</label>
-                <input type="time" id="eventEndTime" required>
-            </div>
-        </div>
-        <h4>Select Color:</h4>
-        <div class="color-picker" id="colorPicker"></div>
-        <input type="hidden" id="eventDate">
-        <input type="hidden" id="eventId">
-        <div class="event-actions">
-            <button onclick="saveEvent()">Save Event</button>
-            <button onclick="closeEventForm()">Cancel</button>
-            <button onclick="deleteEvent()" class="delete-event-btn">Delete</button>
-        </div>
-    </div>
-
-    <div class="journal-form" id="journalForm">
-        <button class="goals-btn" onclick="goToGoalsPage()">Go To Goals</button>
-        <button class="change-habit-btn" onclick="changeToHabit()">Change to Habit</button>
-        <h3>Daily Overview</h3>
-        <div id="journalDate" style="margin-bottom: 10px;"></div>
-
-        <div class="daily-events">
-            <h4>Events</h4>
-            <div id="dailyEventsList"></div>
-            <button class="add-event-btn" onclick="addEvent(document.getElementById('journalForm').dataset.date)">Add Event</button>
-        </div>
-    
-        <h4>Journal Entry</h4>
-        <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
-        
-        <div class="task-container">
-            <div class="tasks-header">
-                <h3>Tasks</h3>
-                <div>
-                    <button class="new-list-btn" onclick="createNewList()">+ New List</button>
-                    <button class="delete-list-btn" onclick="deleteCurrentList()">Delete List</button>
-                </div>
-            </div>
-            <div class="task-toggle">
-                <button onclick="switchTaskList('personal')" id="personalTasksBtn" class="active">Personal Tasks</button>
-                <button onclick="switchTaskList('work')" id="workTasksBtn">Work Tasks</button>
-            </div>
-            
-            <label style="display: block; margin: 8px 0; font-size: 14px;">
-                <input type="checkbox" id="taskDailyCheckbox" style="margin-right: 6px;">
-                Repeat Daily?
-            </label>
-
-            <input type="text" id="taskInput" class="task-input" placeholder="Add a new task">
-            <button class="add-task-btn" onclick="addTask()">Add Task</button>
-            <ul class="task-list" id="taskList"></ul>
-        </div>
-        
-        <button onclick="saveJournal()">Save</button>
-        <button onclick="closeJournalForm()">Cancel</button>
-    </div>
-
-    <button id="prevDayButton" 
-        class="nav-button" 
-        style="position:fixed; left:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
-        onclick="changeJournalDay(-1)">&lt;</button>
-
-    <button id="nextDayButton" 
-        class="nav-button" 
-        style="position:fixed; right:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
-        onclick="changeJournalDay(1)">&gt;</button>
-
-    <div class="habit-form" id="habitForm" style="display: none;" data-date="">
-        <div id="habitDate" style="margin-bottom: 10px;"></div>
-        <button class="change-habit-btn" onclick="changeToJournal()">Change to Journal</button>
-        <h3>Habit Tracker</h3>
-        
-        <div id="habitList"></div>
-        <button onclick="showNewHabitForm()">Add Habit</button>
-        
-        <button onclick="saveHabitTracker()">Save</button>
-        <button onclick="cancelHabitTracker()">Cancel</button>
-
-        <div class="new-habit-form" id="newHabitForm">
-            <h4>Add a New Habit</h4>
-            <input type="text" id="newHabitName" placeholder="Habit Name">
-            <div class="habit-type-options">
-                <label><input type="radio" name="habitType" value="count" checked> Count</label>
-                <label><input type="radio" name="habitType" value="check"> Check</label>
-            </div>
-            <button onclick="confirmAddHabit()">Save New Habit</button>
-            <button onclick="cancelAddHabit()">Cancel</button>
-        </div>
-    </div>
-
-    <div class="goals-form" id="goalsForm" style="display: none; position: fixed; top: 50%; left: 50%;
-transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; 
-box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; z-index: 1000;">
-    <button onclick="goToJournalFromGoals()" 
-    style="position: absolute; top: 10px; right: 10px; background:#4285f4; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">
-Go to Journal
-</button>
-    
-    <h3>Goals</h3>
-    <p>Write your goals here...</p>
-    
-    <textarea id="goalsText" style="width:100%; height:100px;" placeholder="Your goals..."></textarea>
-    
-    <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button onclick="saveGoals()" style="flex:1; background:#4285f4; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">
-            Save
-        </button>
-        <button onclick="closeGoalsForm()" style="flex:1; background:#ddd; border:none; padding:10px; border-radius:4px; cursor:pointer;">
-            Cancel
-        </button>
-    </div>
+<!-- A simple section to show/hide when not logged in -->
+<div id="authSection" style="display: none; text-align:center; margin-bottom: 20px;">
+  <button onclick="loginWithGoogle()" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
+    Sign in with Google
+  </button>
 </div>
 
-<script>
-    let currentDate = new Date();
-    let events = [];
-    let selectedColor = '#4285f4';
-    let journalEntries = {};
-    let taskLists = {
-        personal: [],
-        work: []
-    };
-    let currentTaskList = 'personal';
+<div class="calendar-container">
+  <div class="calendar-header">
+    <button class="nav-button" onclick="previousMonth()">&lt; Previous</button>
+    <div class="current-month">September 2023</div>
+    <button class="nav-button" onclick="nextMonth()">Next &gt;</button>
+  </div>
+  <div class="calendar-grid">
+    <div class="day-header">Sun</div>
+    <div class="day-header">Mon</div>
+    <div class="day-header">Tue</div>
+    <div class="day-header">Wed</div>
+    <div class="day-header">Thu</div>
+    <div class="day-header">Fri</div>
+    <div class="day-header">Sat</div>
+  </div>
+</div>
 
-    const colors = [
-        '#FF0000', '#FF4500', '#FF6B6B', '#FFA500', '#FFD700', '#F1C40F', '#FFEEAD',
-        '#90EE90', '#2ECC71', '#27AE60', '#16A085', '#96CEB4', '#4ECDC4',
-        '#45B7D1', '#3498DB', '#2980B9', '#0000FF', '#8E44AD', '#9B59B6', '#D4A5A5'
-    ];
+<!-- Event Form -->
+<div class="event-form" id="eventForm">
+  <h3>Add Event</h3>
+  <input type="text" id="eventDescription" placeholder="Event Name" required>
+  <div class="time-inputs">
+    <div>
+      <label for="eventStartTime">Start Time:</label>
+      <input type="time" id="eventStartTime" required>
+    </div>
+    <div>
+      <label for="eventEndTime">End Time:</label>
+      <input type="time" id="eventEndTime" required>
+    </div>
+  </div>
+  <h4>Select Color:</h4>
+  <div class="color-picker" id="colorPicker"></div>
+  <input type="hidden" id="eventDate">
+  <input type="hidden" id="eventId">
+  <div class="event-actions">
+    <button onclick="saveEvent()">Save Event</button>
+    <button onclick="closeEventForm()">Cancel</button>
+    <button onclick="deleteEvent()" class="delete-event-btn">Delete</button>
+  </div>
+</div>
 
-    // Habit tracker object
-    let habitTracker = JSON.parse(localStorage.getItem('habitTracker')) || {};
-    // Global habits
-    let globalHabits = JSON.parse(localStorage.getItem('globalHabits')) || [];
+<!-- Journal Form -->
+<div class="journal-form" id="journalForm">
+  <button class="goals-btn" onclick="goToGoalsPage()">Go To Goals</button>
+  <button class="change-habit-btn" onclick="changeToHabit()">Change to Habit</button>
+  <h3>Daily Overview</h3>
+  <div id="journalDate" style="margin-bottom: 10px;"></div>
 
-    // CHANGED: Instead of "completed: false", daily tasks will store completions by date.
-    // We'll still keep "completed" for once-only tasks.
-    function addTask() {
+  <div class="daily-events">
+    <h4>Events</h4>
+    <div id="dailyEventsList"></div>
+    <button class="add-event-btn" onclick="addEvent(document.getElementById('journalForm').dataset.date)">Add Event</button>
+  </div>
+
+  <h4>Journal Entry</h4>
+  <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
+        
+  <div class="task-container">
+    <div class="tasks-header">
+      <h3>Tasks</h3>
+      <div>
+        <button class="new-list-btn" onclick="createNewList()">+ New List</button>
+        <button class="delete-list-btn" onclick="deleteCurrentList()">Delete List</button>
+      </div>
+    </div>
+    <div class="task-toggle">
+      <button onclick="switchTaskList('personal')" id="personalTasksBtn" class="active">Personal Tasks</button>
+      <button onclick="switchTaskList('work')" id="workTasksBtn">Work Tasks</button>
+    </div>
+            
+    <label style="display: block; margin: 8px 0; font-size: 14px;">
+      <input type="checkbox" id="taskDailyCheckbox" style="margin-right: 6px;">
+      Repeat Daily?
+    </label>
+
+    <input type="text" id="taskInput" class="task-input" placeholder="Add a new task">
+    <button class="add-task-btn" onclick="addTask()">Add Task</button>
+    <ul class="task-list" id="taskList"></ul>
+  </div>
+
+  <button onclick="saveJournal()">Save</button>
+  <button onclick="closeJournalForm()">Cancel</button>
+</div>
+
+<!-- Prev / Next Journal Buttons -->
+<button id="prevDayButton" 
+  class="nav-button" 
+  style="position:fixed; left:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
+  onclick="changeJournalDay(-1)">&lt;</button>
+
+<button id="nextDayButton" 
+  class="nav-button" 
+  style="position:fixed; right:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
+  onclick="changeJournalDay(1)">&gt;</button>
+
+<!-- Habit Form -->
+<div class="habit-form" id="habitForm" style="display: none;" data-date="">
+  <div id="habitDate" style="margin-bottom: 10px;"></div>
+  <button class="change-habit-btn" onclick="changeToJournal()">Change to Journal</button>
+  <h3>Habit Tracker</h3>
+  <div id="habitList"></div>
+  <button onclick="showNewHabitForm()">Add Habit</button>
+  <button onclick="saveHabitTracker()">Save</button>
+  <button onclick="cancelHabitTracker()">Cancel</button>
+
+  <div class="new-habit-form" id="newHabitForm">
+    <h4>Add a New Habit</h4>
+    <input type="text" id="newHabitName" placeholder="Habit Name">
+    <div class="habit-type-options">
+      <label><input type="radio" name="habitType" value="count" checked> Count</label>
+      <label><input type="radio" name="habitType" value="check"> Check</label>
+    </div>
+    <button onclick="confirmAddHabit()">Save New Habit</button>
+    <button onclick="cancelAddHabit()">Cancel</button>
+  </div>
+</div>
+
+<!-- Goals Form -->
+<div class="goals-form" id="goalsForm" style="display: none; position: fixed; top: 50%; left: 50%;
+transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; 
+box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; z-index: 1000;">
+  <button onclick="goToJournalFromGoals()" 
+    style="position: absolute; top: 10px; right: 10px; background:#4285f4; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">
+    Go to Journal
+  </button>
+  <h3>Goals</h3>
+  <p>Write your goals here...</p>
+  <textarea id="goalsText" style="width:100%; height:100px;" placeholder="Your goals..."></textarea>
+  <div style="display: flex; gap: 10px; margin-top: 20px;">
+    <button onclick="saveGoals()" style="flex:1; background:#4285f4; color:white; border:none; padding:10px; border-radius:4px; cursor:pointer;">
+      Save
+    </button>
+    <button onclick="closeGoalsForm()" style="flex:1; background:#ddd; border:none; padding:10px; border-radius:4px; cursor:pointer;">
+      Cancel
+    </button>
+  </div>
+</div>
+
+<!-- ====================== Firebase + App Script ====================== -->
+<script type="module">
+  /********************** 
+    1) Firebase Imports
+  ***********************/
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
+  import { 
+    getAuth, 
+    GoogleAuthProvider, 
+    signInWithPopup, 
+    onAuthStateChanged 
+  } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+  /********************** 
+    2) Firebase Config 
+       (from your snippet)
+  ***********************/
+  const firebaseConfig = {
+    apiKey: "AIzaSyCmtc69JDgCWtxPNgPU73Y4n7-asl6M72w",
+    authDomain: "my-website-5dfa1.firebaseapp.com",
+    projectId: "my-website-5dfa1",
+    storageBucket: "my-website-5dfa1.firebasestorage.app",
+    messagingSenderId: "36790147861",
+    appId: "1:36790147861:web:6391e58fe3193c4fabe71c",
+    measurementId: "G-SSJEV8WQFT"
+  };
+
+  /********************** 
+    3) Init Firebase
+  ***********************/
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let userId = null;  // will store current Google user’s uid here
+  const provider = new GoogleAuthProvider();
+
+  // This function triggers the Google popup
+  async function loginWithGoogle() {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      // If successful, user is now signed in
+      console.log("Google sign-in success!");
+      // userId is set via onAuthStateChanged below
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+    }
+  }
+
+  // On page load, watch for auth changes
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      userId = user.uid;
+      // Hide sign in button
+      document.getElementById('authSection').style.display = 'none';
+      // Load data from Firestore
+      await loadUserData();
+      // Generate calendar, tasks, etc.
+      generateCalendar();
+      renderTasks();
+    } else {
+      // Show sign in button
+      document.getElementById('authSection').style.display = 'block';
+    }
+  });
+
+  /******************************************************* 
+   4) In-Memory Data
+  *******************************************************/
+  let currentDate   = new Date();
+  let events        = [];
+  let selectedColor = '#4285f4';
+  let journalEntries = {};
+  let taskLists     = { personal: [], work: [] };
+  let currentTaskList = 'personal';
+
+  let habitTracker = {};
+  let globalHabits = [];
+
+  /******************************************************* 
+   5) Firestore Load/Save 
+  *******************************************************/
+  async function loadUserData() {
+    if (!userId) return;
+    try {
+      const docRef = doc(db, "users", userId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        events          = data.events          || [];
+        journalEntries  = data.journalEntries  || {};
+        taskLists       = data.taskLists       || { personal: [], work: [] };
+        habitTracker    = data.habitTracker    || {};
+        globalHabits    = data.globalHabits    || [];
+        document.getElementById('goalsText').value = data.userGoals || '';
+      } else {
+        console.log("No existing Firestore doc for this user; starting fresh.");
+      }
+    } catch (err) {
+      console.error("Error loading user data:", err);
+    }
+  }
+
+  async function saveUserData() {
+    if (!userId) return; // not signed in yet
+    try {
+      const docRef = doc(db, "users", userId);
+      await setDoc(docRef, {
+        events,
+        journalEntries,
+        taskLists,
+        habitTracker,
+        globalHabits,
+        userGoals: document.getElementById('goalsText')?.value || ''
+      });
+      console.log("Data saved to Firestore!");
+    } catch (err) {
+      console.error("Error saving user data:", err);
+    }
+  }
+
+  /******************************************************* 
+   6) Color Picker
+  *******************************************************/
+  const colors = [
+    '#FF0000','#FF4500','#FF6B6B','#FFA500','#FFD700','#F1C40F','#FFEEAD',
+    '#90EE90','#2ECC71','#27AE60','#16A085','#96CEB4','#4ECDC4',
+    '#45B7D1','#3498DB','#2980B9','#0000FF','#8E44AD','#9B59B6','#D4A5A5'
+  ];
+
+  function initializeColorPicker() {
+    const colorPicker = document.getElementById('colorPicker');
+    colorPicker.innerHTML = '';
+    colors.forEach(color => {
+      const colorOption = document.createElement('div');
+      colorOption.className = 'color-option';
+      colorOption.style.backgroundColor = color;
+      colorOption.onclick = () => {
+        document.querySelectorAll('.color-option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+        colorOption.classList.add('selected');
+        selectedColor = color;
+      };
+      colorPicker.appendChild(colorOption);
+    });
+  }
+
+  /******************************************************* 
+   7) Calendar Navigation 
+  *******************************************************/
+  function previousMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    generateCalendar();
+  }
+
+  function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    generateCalendar();
+  }
+
+  /******************************************************* 
+   8) Calendar Generation
+  *******************************************************/
+  function generateCalendar() {
+    const monthYear = document.querySelector('.current-month');
+    const headers = document.querySelectorAll('.day-header');
+    const oldGrid = document.querySelector('.calendar-grid');
+    oldGrid.innerHTML = '';
+    headers.forEach(header => oldGrid.appendChild(header.cloneNode(true)));
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const monthNames = ["January","February","March","April","May","June",
+                        "July","August","September","October","November","December"];
+    monthYear.textContent = `${monthNames[month]} ${year}`;
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay  = new Date(year, month + 1, 0);
+    const firstDayIndex = firstDay.getDay();
+
+    for (let i = firstDayIndex; i > 0; i--) {
+      const prevDate = new Date(year, month, -i + 1);
+      const cell = createCalendarCell(prevDate, true);
+      oldGrid.appendChild(cell);
+    }
+
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const date = new Date(year, month, day);
+      const cell = createCalendarCell(date, false);
+      oldGrid.appendChild(cell);
+    }
+
+    const remainingCells = 42 - (firstDayIndex + lastDay.getDate());
+    for (let i = 1; i <= remainingCells; i++) {
+      const nextDate = new Date(year, month + 1, i);
+      const cell = createCalendarCell(nextDate, true);
+      oldGrid.appendChild(cell);
+    }
+  }
+
+  function createCalendarCell(date, isOtherMonth) {
+    const cell = document.createElement('div');
+    cell.className = `calendar-cell${isOtherMonth ? ' other-month' : ''}`;
+    const dateNumber = document.createElement('div');
+    dateNumber.className = 'date-number';
+    dateNumber.textContent = date.getDate();
+    cell.appendChild(dateNumber);
+
+    const dateStr = date.toISOString().split('T')[0];
+    cell.addEventListener('click', () => {
+      openJournal(dateStr);
+    });
+
+    // Show events
+    events.forEach((event) => {
+      if (event.date === dateStr) {
+        const eventDiv = document.createElement('div');
+        eventDiv.className = 'event';
+        eventDiv.style.backgroundColor = event.color;
+        eventDiv.textContent = event.description;
+        eventDiv.onclick = (e) => {
+          e.stopPropagation();
+          editEvent(event, events.indexOf(event));
+        };
+        cell.appendChild(eventDiv);
+      }
+    });
+
+    // Show a small "Journal" tag if there's a journal entry
+    if (journalEntries[dateStr]) {
+      const journalIndicator = document.createElement('div');
+      journalIndicator.className = 'event';
+      journalIndicator.style.backgroundColor = '#666';
+      journalIndicator.textContent = '📝 Journal Entry';
+      cell.appendChild(journalIndicator);
+    }
+
+    return cell;
+  }
+
+  /******************************************************* 
+   9) Open/Close Journal
+  *******************************************************/
+  function openJournal(date) {
+    const journalForm = document.getElementById('journalForm');
+    const journalDate = document.getElementById('journalDate');
+    const journalText = document.getElementById('journalText');
+
+    const displayDate = new Date(date + 'T00:00:00');
+    journalDate.textContent = displayDate.toLocaleDateString();
+    journalText.value = journalEntries[date] || '';
+    journalForm.dataset.date = date;
+    journalForm.style.display = 'block';
+
+    document.getElementById('prevDayButton').style.display = 'block';
+    document.getElementById('nextDayButton').style.display = 'block';
+
+    updateDailyEventsList(date);
+    renderTasks(); // re-render tasks for this date
+  }
+
+  function closeJournalForm() {
+    document.getElementById('journalForm').style.display = 'none';
+    document.getElementById('prevDayButton').style.display = 'none';
+    document.getElementById('nextDayButton').style.display = 'none';
+  }
+
+  function changeJournalDay(direction) {
+    const journalForm = document.getElementById('journalForm');
+    const currentDateStr = journalForm.dataset.date;
+    if (!currentDateStr) return;
+
+    const [year, month, day] = currentDateStr.split('-').map(Number);
+    const currentDate = new Date(year, month - 1, day);
+    currentDate.setDate(currentDate.getDate() + direction);
+
+    const newDateStr = currentDate.toISOString().split('T')[0];
+    openJournal(newDateStr);
+  }
+
+  /******************************************************* 
+   10) Events
+  *******************************************************/
+  function addEvent(date) {
+    const eventForm = document.getElementById('eventForm');
+    document.getElementById('eventDate').value = date;
+    document.getElementById('eventId').value = '';
+    document.getElementById('eventDescription').value = '';
+    document.getElementById('eventStartTime').value = '';
+    document.getElementById('eventEndTime').value = '';
+    eventForm.style.display = 'block';
+    initializeColorPicker();
+    document.querySelector('.delete-event-btn').style.display = 'none';
+    eventForm.style.zIndex = '1002'; // above the journal form
+  }
+
+  function editEvent(event, index) {
+    const eventForm = document.getElementById('eventForm');
+    document.getElementById('eventDate').value = event.date;
+    document.getElementById('eventStartTime').value = event.startTime;
+    document.getElementById('eventEndTime').value = event.endTime;
+    document.getElementById('eventDescription').value = event.description;
+    document.getElementById('eventId').value = index;
+    selectedColor = event.color;
+
+    eventForm.style.display = 'block';
+    initializeColorPicker();
+    document.querySelector('.delete-event-btn').style.display = 'block';
+
+    // Mark selected color
+    const colorOptions = document.querySelectorAll('.color-option');
+    colorOptions.forEach(opt => {
+      if (opt.style.backgroundColor === event.color) {
+        opt.classList.add('selected');
+      }
+    });
+    document.getElementById('journalForm').style.display = 'none';
+  }
+
+  function closeEventForm() {
+    document.getElementById('eventForm').style.display = 'none';
+    selectedColor = '#4285f4';
+  }
+
+  function saveEvent() {
+    const date = document.getElementById('eventDate').value;
+    const startTime = document.getElementById('eventStartTime').value;
+    const endTime = document.getElementById('eventEndTime').value;
+    const description = document.getElementById('eventDescription').value;
+    const eventId = document.getElementById('eventId').value;
+
+    if (!description || !startTime || !endTime) {
+      alert('Please fill in all fields');
+      return;
+    }
+    if (endTime <= startTime) {
+      alert('End time must be after start time');
+      return;
+    }
+
+    const eventData = { date, startTime, endTime, description, color: selectedColor };
+    if (eventId !== '') {
+      // Editing existing
+      events[parseInt(eventId)] = eventData;
+    } else {
+      // New
+      events.push(eventData);
+    }
+    saveUserData();
+
+    closeEventForm();
+    generateCalendar();
+    updateDailyEventsList(date);
+  }
+
+  function deleteEvent() {
+    const eventId = document.getElementById('eventId').value;
+    if (eventId !== '') {
+      events.splice(parseInt(eventId), 1);
+      saveUserData();
+      closeEventForm();
+      generateCalendar();
+
+      const date = document.getElementById('eventDate').value;
+      updateDailyEventsList(date);
+    }
+  }
+
+  function updateDailyEventsList(date) {
+    const dailyEventsList = document.getElementById('dailyEventsList');
+    dailyEventsList.innerHTML = '';
+    const dayEvents = events.filter(event => event.date === date);
+
+    if (dayEvents.length === 0) {
+      dailyEventsList.innerHTML = '<p>No events scheduled for this day.</p>';
+      return;
+    }
+    dayEvents.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    dayEvents.forEach((event) => {
+      const eventDiv = document.createElement('div');
+      eventDiv.className = 'event';
+      eventDiv.style.backgroundColor = event.color;
+      eventDiv.style.margin = '5px 0';
+      eventDiv.style.padding = '8px';
+      eventDiv.textContent = `${event.startTime} - ${event.endTime}: ${event.description}`;
+      eventDiv.onclick = () => editEvent(event, events.indexOf(event));
+      dailyEventsList.appendChild(eventDiv);
+    });
+  }
+
+  /******************************************************* 
+   11) Journal
+  *******************************************************/
+  function saveJournal() {
+    const journalForm = document.getElementById('journalForm');
+    const date = journalForm.dataset.date;
+    const text = document.getElementById('journalText').value;
+
+    journalEntries[date] = text;
+    saveUserData();
+    closeJournalForm();
+  }
+
+  /******************************************************* 
+   12) Goals
+  *******************************************************/
+  function goToGoalsPage() {
+    closeJournalForm();
+    document.getElementById('goalsForm').style.display = 'block';
+  }
+
+  function saveGoals() {
+    // We store goals in userGoals field in Firestore doc
+    saveUserData();
+    closeGoalsForm();
+  }
+
+  function closeGoalsForm() {
+    document.getElementById('goalsForm').style.display = 'none';
+    document.getElementById('journalForm').style.display = 'none';
+  }
+
+  function goToJournalFromGoals() {
+    document.getElementById('goalsForm').style.display = 'none';
+    document.getElementById('journalForm').style.display = 'block';
+    document.getElementById('prevDayButton').style.display = 'block';
+    document.getElementById('nextDayButton').style.display = 'block';
+  }
+
+  /******************************************************* 
+   13) Task Lists
+  *******************************************************/
+  function switchTaskList(type) {
+    currentTaskList = type;
+    document.querySelectorAll('.task-toggle button').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.toLowerCase().includes(type));
+    });
+    renderTasks();
+  }
+
+  function createNewList() {
+    const listName = prompt("Enter name for new list:");
+    if (listName && listName.trim()) {
+      const listKey = listName.toLowerCase().replace(/\s+/g, '-');
+      if (!taskLists[listKey]) {
+        taskLists[listKey] = [];
+        const newBtn = document.createElement('button');
+        newBtn.textContent = listName;
+        newBtn.onclick = () => switchTaskList(listKey);
+
+        const taskToggle = document.querySelector('.task-toggle');
+        taskToggle.appendChild(newBtn);
+        switchTaskList(listKey);
+        saveUserData();
+      } else {
+        alert("A list with this name already exists!");
+      }
+    }
+  }
+
+  function deleteCurrentList() {
+    if (confirm(`Are you sure you want to delete the "${currentTaskList}" list?`)) {
+      if (currentTaskList === 'personal' || currentTaskList === 'work') {
+        alert("Cannot delete default lists!");
+        return;
+      }
+      const buttonToRemove = Array.from(document.querySelector('.task-toggle').children)
+        .find(btn => btn.textContent.toLowerCase() === currentTaskList.replace(/-/g, ' '));
+      if (buttonToRemove) {
+        buttonToRemove.remove();
+      }
+      delete taskLists[currentTaskList];
+      currentTaskList = 'personal';
+      document.getElementById('personalTasksBtn').classList.add('active');
+      saveUserData();
+      renderTasks();
+    }
+  }
+
+  function addTask() {
     const taskInput = document.getElementById('taskInput');
     const rawText = taskInput.value.trim();
-
-    // If no text was entered, do nothing
     if (!rawText) return;
 
-    // Split by commas => array of strings
-    // e.g. "Buy milk, Walk the dog, Feed cat" => ["Buy milk", "Walk the dog", "Feed cat"]
-    const tasksTexts = rawText
-        .split(',')
-        .map(t => t.trim())  // remove extra spaces
-        .filter(Boolean);    // remove empty strings (in case of trailing commas)
-
-    // Check the "Repeat Daily?" checkbox
+    const tasksTexts = rawText.split(',').map(t => t.trim()).filter(Boolean);
     const dailyCheckbox = document.getElementById('taskDailyCheckbox');
     const isDaily = dailyCheckbox.checked;
 
-    // For each piece of text, create a new task
     tasksTexts.forEach((text, i) => {
-        if (isDaily) {
-            // Create a daily task with an empty completions object
-            const newTask = {
-                text: text,
-                id: Date.now() + i, // small offset so each gets a unique ID
-                repeat: 'daily',
-                completions: {}
-            };
-            taskLists[currentTaskList].push(newTask);
-        } else {
-            // Create a once-only task
-            const newTask = {
-                text: text,
-                id: Date.now() + i,
-                repeat: 'once',
-                completed: false
-            };
-            taskLists[currentTaskList].push(newTask);
-        }
+      if (isDaily) {
+        // daily
+        const newTask = {
+          text,
+          id: Date.now() + i,
+          repeat: 'daily',
+          completions: {}
+        };
+        taskLists[currentTaskList].push(newTask);
+      } else {
+        // once-only
+        const newTask = {
+          text,
+          id: Date.now() + i,
+          repeat: 'once',
+          completed: false
+        };
+        taskLists[currentTaskList].push(newTask);
+      }
     });
-
-    localStorage.setItem('taskLists', JSON.stringify(taskLists));
-    renderTasks();
-
-    // Reset
     taskInput.value = '';
     dailyCheckbox.checked = false;
-}
 
-
-    function switchTaskList(type) {
-        currentTaskList = type;
-        document.querySelectorAll('.task-toggle button').forEach(btn => {
-            btn.classList.toggle('active', btn.textContent.toLowerCase().includes(type));
-        });
-        renderTasks();
-    }
-
-    function deleteCurrentList() {
-        if (confirm(`Are you sure you want to delete the "${currentTaskList}" list?`)) {
-            if (currentTaskList === 'personal' || currentTaskList === 'work') {
-                alert("Cannot delete default lists!");
-                return;
-            }
-            
-            const buttonToRemove = Array.from(document.querySelector('.task-toggle').children)
-                .find(btn => btn.textContent.toLowerCase() === currentTaskList.replace(/-/g, ' '));
-            if (buttonToRemove) {
-                buttonToRemove.remove();
-            }
-            
-            delete taskLists[currentTaskList];
-            
-            currentTaskList = 'personal';
-            document.getElementById('personalTasksBtn').classList.add('active');
-            
-            localStorage.setItem('taskLists', JSON.stringify(taskLists));
-            renderTasks();
-        }
-    }
-
-    function createNewList() {
-        const listName = prompt("Enter name for new list:");
-        if (listName && listName.trim()) {
-            const listKey = listName.toLowerCase().replace(/\s+/g, '-');
-            
-            if (!taskLists[listKey]) {
-                taskLists[listKey] = [];
-                
-                const newBtn = document.createElement('button');
-                newBtn.textContent = listName;
-                newBtn.onclick = () => switchTaskList(listKey);
-                
-                const taskToggle = document.querySelector('.task-toggle');
-                taskToggle.appendChild(newBtn);
-                
-                switchTaskList(listKey);
-                
-                localStorage.setItem('taskLists', JSON.stringify(taskLists));
-            } else {
-                alert("A list with this name already exists!");
-            }
-        }
-    }
-
-    // CHANGED: We only show daily tasks if they haven't been marked complete for the current day.
-    function renderTasks() {
-        const taskList = document.getElementById('taskList');
-        taskList.innerHTML = '';
-        
-        const tasks = taskLists[currentTaskList];
-        
-        // Get the date from the journal (if open), else use today's date
-        const journalForm = document.getElementById('journalForm');
-        const dateKey = journalForm.dataset.date || new Date().toISOString().split('T')[0];
-
-        tasks.forEach(task => {
-            // If it's daily, check if "completions[dateKey]" is true => if so, skip
-            if (task.repeat === 'daily') {
-                if (task.completions && task.completions[dateKey]) {
-                    // Already done for this date, so don't render it
-                    return;
-                }
-            } else {
-                // If it's once-only and "completed" is true => skip
-                if (task.repeat === 'once' && task.completed) {
-                    return;
-                }
-            }
-
-            const li = document.createElement('li');
-            li.className = 'task-item';
-            li.setAttribute('data-task-id', task.id);
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-
-            // If it's daily, we can't rely on "task.completed"
-            // If it's once, check task.completed
-            if (task.repeat === 'once') {
-                checkbox.checked = task.completed;
-            } else {
-                checkbox.checked = false; // daily tasks are incomplete for this date (since we skip if completed)
-            }
-
-            checkbox.onclick = () => toggleTask(task.id, dateKey);
-
-            const span = document.createElement('span');
-            span.textContent = task.text;
-
-            // For once-only tasks that are completed, style them
-            if (task.repeat === 'once' && task.completed) {
-                span.className = 'completed-task';
-            }
-
-            // If daily, show a small badge
-            if (task.repeat === 'daily') {
-                const dailyBadge = document.createElement('span');
-                dailyBadge.textContent = 'Repeat Daily';
-                dailyBadge.style.marginLeft = '8px';
-                dailyBadge.style.fontSize = '0.85rem';
-                dailyBadge.style.color = '#888';
-
-                // Insert the daily badge after the main text
-                li.appendChild(checkbox);
-                li.appendChild(span);
-                li.appendChild(dailyBadge);
-            } else {
-                li.appendChild(checkbox);
-                li.appendChild(span);
-            }
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = '×';
-            deleteBtn.style.marginLeft = 'auto';
-            deleteBtn.onclick = () => deleteTask(task.id);
-            li.appendChild(deleteBtn);
-
-            taskList.appendChild(li);
-        });
-    }
-
-    // CHANGED: toggleTask checks if the task is "daily" or "once."
-    // If daily, we only "fade out" for this day and store completions[dateKey] = true, but do NOT remove from array.
-    function toggleTask(taskId, dateKey) {
-        const tasks = taskLists[currentTaskList];
-        const task = tasks.find(t => t.id === taskId);
-        if (!task) return;
-
-        if (task.repeat === 'once') {
-            // old behavior
-            task.completed = !task.completed;
-            if (task.completed) {
-                // fade-out in 5s
-                const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-                taskElement.classList.add('fade-out');
-                setTimeout(() => {
-                    deleteTask(taskId);
-                }, 5000);
-            }
-        } else {
-            // daily => set completions for this date
-            if (!task.completions) task.completions = {};
-            task.completions[dateKey] = true;
-
-            // fade out in UI
-            const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-            taskElement.classList.add('fade-out');
-            setTimeout(() => {
-                // don't delete the entire task; just re-render so it disappears for today
-                renderTasks();
-            }, 5000);
-        }
-
-        localStorage.setItem('taskLists', JSON.stringify(taskLists));
-    }
-
-    function deleteTask(taskId) {
-        // This completely removes the task from the list, used for "once" tasks
-        // or if user manually presses the "×" button
-        taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id !== taskId);
-        localStorage.setItem('taskLists', JSON.stringify(taskLists));
-        renderTasks();
-    }
-
-    function previousMonth() {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-        generateCalendar();
-    }
-
-    function nextMonth() {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-        generateCalendar();
-    }
-
-    function initializeColorPicker() {
-        const colorPicker = document.getElementById('colorPicker');
-        colorPicker.innerHTML = '';
-        
-        colors.forEach(color => {
-            const colorOption = document.createElement('div');
-            colorOption.className = 'color-option';
-            colorOption.style.backgroundColor = color;
-            colorOption.onclick = () => {
-                document.querySelectorAll('.color-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                colorOption.classList.add('selected');
-                selectedColor = color;
-            };
-            colorPicker.appendChild(colorOption);
-        });
-    }
-
-    function addEvent(date) {
-        const eventForm = document.getElementById('eventForm');
-        document.getElementById('eventDate').value = date;
-        document.getElementById('eventId').value = '';
-        document.getElementById('eventDescription').value = '';
-        document.getElementById('eventStartTime').value = '';
-        document.getElementById('eventEndTime').value = '';
-        eventForm.style.display = 'block';
-        initializeColorPicker();
-        
-        document.querySelector('.delete-event-btn').style.display = 'none';
-        
-        // Keep the journal form visible but put event form on top
-        eventForm.style.zIndex = '1002';
-    }
-
-    function editEvent(event, index) {
-        const eventForm = document.getElementById('eventForm');
-        document.getElementById('eventDate').value = event.date;
-        document.getElementById('eventStartTime').value = event.startTime;
-        document.getElementById('eventEndTime').value = event.endTime;
-        document.getElementById('eventDescription').value = event.description;
-        document.getElementById('eventId').value = index;
-        selectedColor = event.color;
-        eventForm.style.display = 'block';
-        initializeColorPicker();
-        
-        document.querySelector('.delete-event-btn').style.display = 'block';
-        
-        const colorOptions = document.querySelectorAll('.color-option');
-        colorOptions.forEach(opt => {
-            if (opt.style.backgroundColor === event.color) {
-                opt.classList.add('selected');
-            }
-        });
-        
-        document.getElementById('journalForm').style.display = 'none';
-    }
-
-    function deleteEvent() {
-        const eventId = document.getElementById('eventId').value;
-        if (eventId !== '') {
-            events.splice(parseInt(eventId), 1);
-            localStorage.setItem('events', JSON.stringify(events));
-            closeEventForm();
-            generateCalendar();
-            const date = document.getElementById('eventDate').value;
-            updateDailyEventsList(date);
-        }
-    }
-
-    function openJournal(date) {
-        const journalForm = document.getElementById('journalForm');
-        const journalDate = document.getElementById('journalDate');
-        const journalText = document.getElementById('journalText');
-
-        const displayDate = new Date(date + 'T00:00:00');
-        journalDate.textContent = displayDate.toLocaleDateString();
-        journalText.value = journalEntries[date] || '';
-        journalForm.dataset.date = date;
-        journalForm.style.display = 'block';
-
-        document.getElementById('prevDayButton').style.display = 'block';
-        document.getElementById('nextDayButton').style.display = 'block';
-
-        updateDailyEventsList(date);
-        renderTasks(); // re-render tasks for this date
-    }
-
-    function updateDailyEventsList(date) {
-        const dailyEventsList = document.getElementById('dailyEventsList');
-        dailyEventsList.innerHTML = '';
-        
-        const dayEvents = events.filter(event => event.date === date);
-        
-        if (dayEvents.length === 0) {
-            dailyEventsList.innerHTML = '<p>No events scheduled for this day.</p>';
-            return;
-        }
-        
-        // Sort events by start time
-        dayEvents.sort((a, b) => a.startTime.localeCompare(b.startTime));
-        
-        dayEvents.forEach((event, index) => {
-            const eventDiv = document.createElement('div');
-            eventDiv.className = 'event';
-            eventDiv.style.backgroundColor = event.color;
-            eventDiv.style.margin = '5px 0';
-            eventDiv.style.padding = '8px';
-            eventDiv.textContent = `${event.startTime} - ${event.endTime}: ${event.description}`;
-            eventDiv.onclick = () => editEvent(event, events.indexOf(event));
-            dailyEventsList.appendChild(eventDiv);
-        });
-    }
-
-    function saveJournal() {
-        const journalForm = document.getElementById('journalForm');
-        const date = journalForm.dataset.date;
-        const text = document.getElementById('journalText').value;
-        
-        journalEntries[date] = text;
-        localStorage.setItem('journalEntries', JSON.stringify(journalEntries));
-        closeJournalForm();
-    }
-
-    function closeJournalForm() {
-        document.getElementById('journalForm').style.display = 'none';
-        document.getElementById('prevDayButton').style.display = 'none';
-        document.getElementById('nextDayButton').style.display = 'none';
-    }
-
-    function saveEvent() {
-        const date = document.getElementById('eventDate').value;
-        const startTime = document.getElementById('eventStartTime').value;
-        const endTime = document.getElementById('eventEndTime').value;
-        const description = document.getElementById('eventDescription').value;
-        const eventId = document.getElementById('eventId').value;
-        
-        if (!description || !startTime || !endTime) {
-            alert('Please fill in all fields');
-            return;
-        }
-
-        if (endTime <= startTime) {
-            alert('End time must be after start time');
-            return;
-        }
-
-        const eventData = {
-            date: date,
-            startTime: startTime,
-            endTime: endTime,
-            description: description,
-            color: selectedColor
-        };
-        
-        if (eventId !== '') {
-            events[parseInt(eventId)] = eventData;
-        } else {
-            events.push(eventData);
-        }
-        
-        localStorage.setItem('events', JSON.stringify(events));
-        closeEventForm();
-        generateCalendar();
-        updateDailyEventsList(date);
-    }
-
-    function closeEventForm() {
-        document.getElementById('eventForm').style.display = 'none';
-        selectedColor = '#4285f4';
-    }
-
-    function generateCalendar() {
-        const monthYear = document.querySelector('.current-month');
-        const headers = document.querySelectorAll('.day-header');
-        const oldGrid = document.querySelector('.calendar-grid');
-        oldGrid.innerHTML = '';
-        
-        headers.forEach(header => oldGrid.appendChild(header.cloneNode(true)));
-
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        
-        const monthNames = ["January", "February", "March", "April", "May", "June",
-                            "July", "August", "September", "October", "November", "December"];
-        monthYear.textContent = `${monthNames[month]} ${year}`;
-
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        
-        const firstDayIndex = firstDay.getDay();
-        for (let i = firstDayIndex; i > 0; i--) {
-            const prevDate = new Date(year, month, -i + 1);
-            const cell = createCalendarCell(prevDate, true);
-            oldGrid.appendChild(cell);
-        }
-
-        for (let day = 1; day <= lastDay.getDate(); day++) {
-            const date = new Date(year, month, day);
-            const cell = createCalendarCell(date, false);
-            oldGrid.appendChild(cell);
-        }
-
-        const remainingCells = 42 - (firstDayIndex + lastDay.getDate());
-        for (let i = 1; i <= remainingCells; i++) {
-            const nextDate = new Date(year, month + 1, i);
-            const cell = createCalendarCell(nextDate, true);
-            oldGrid.appendChild(cell);
-        }
-    }
-
-    function createCalendarCell(date, isOtherMonth) {
-        const cell = document.createElement('div');
-        cell.className = `calendar-cell${isOtherMonth ? ' other-month' : ''}`;
-        
-        const dateNumber = document.createElement('div');
-        dateNumber.className = 'date-number';
-        dateNumber.textContent = date.getDate();
-        cell.appendChild(dateNumber);
-
-        const dateStr = date.toISOString().split('T')[0];
-        
-        cell.addEventListener('click', () => {
-            openJournal(dateStr);
-        });
-
-        events.forEach((event, index) => {
-            if (event.date === dateStr) {
-                const eventDiv = document.createElement('div');
-                eventDiv.className = 'event';
-                eventDiv.style.backgroundColor = event.color;
-                eventDiv.textContent = event.description;
-                eventDiv.onclick = (e) => {
-                    e.stopPropagation();
-                    editEvent(event, events.indexOf(event));
-                };
-                cell.appendChild(eventDiv);
-            }
-        });
-
-        if (journalEntries[dateStr]) {
-            const journalIndicator = document.createElement('div');
-            journalIndicator.className = 'event';
-            journalIndicator.style.backgroundColor = '#666';
-            journalIndicator.textContent = '📝 Journal Entry';
-            cell.appendChild(journalIndicator);
-        }
-
-        return cell;
-    }
-
-    function loadSavedData() {
-        const savedEvents = localStorage.getItem('events');
-        const savedJournalEntries = localStorage.getItem('journalEntries');
-        const savedTaskLists = localStorage.getItem('taskLists');
-        const savedGoals = localStorage.getItem('userGoals');
-        
-        if (savedGoals) {
-            document.getElementById('goalsText').value = savedGoals;
-        }
-        
-        if (savedEvents) {
-            events = JSON.parse(savedEvents);
-        }
-        
-        if (savedJournalEntries) {
-            journalEntries = JSON.parse(savedJournalEntries);
-        }
-
-        if (savedTaskLists) {
-            taskLists = JSON.parse(savedTaskLists);
-            const taskToggle = document.querySelector('.task-toggle');
-            Object.keys(taskLists).forEach(listKey => {
-                if (listKey !== 'personal' && listKey !== 'work') {
-                    const newBtn = document.createElement('button');
-                    newBtn.textContent = listKey.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    newBtn.onclick = () => switchTaskList(listKey);
-                    taskToggle.appendChild(newBtn);
-                }
-            });
-        }
-    }
-
-    loadSavedData();
-    generateCalendar();
-
-    function changeToHabit() {
-        const journalForm = document.getElementById('journalForm');
-        const habitForm = document.getElementById('habitForm');
-        
-        habitForm.dataset.date = journalForm.dataset.date;
-        const displayDate = new Date(habitForm.dataset.date + 'T00:00:00');
-        document.getElementById('habitDate').textContent = displayDate.toLocaleDateString();
-        
-        journalForm.style.display = 'none';
-        habitForm.style.display = 'block';
-
-        document.getElementById('prevDayButton').style.display = 'none';
-        document.getElementById('nextDayButton').style.display = 'none';
-        
-        updateHabitDisplay();
-    }
-
-    function changeToJournal() {
-        document.getElementById('habitForm').style.display = 'none';
-        document.getElementById('journalForm').style.display = 'block';
-
-        document.getElementById('prevDayButton').style.display = 'block';
-        document.getElementById('nextDayButton').style.display = 'block';
-    }
-
-    function getCurrentDateKey() {
-        const dateFromForm = document.getElementById('habitForm').dataset.date;
-        return dateFromForm || new Date().toISOString().split('T')[0];
-    }
-
-    function parseDateKey(dateKey) {
-        const parts = dateKey.split('-');
-        return new Date(parts[0], parts[1]-1, parts[2]);
-    }
-
-    function showNewHabitForm() {
-        document.getElementById('newHabitForm').style.display = 'block';
-    }
-
-    function cancelAddHabit() {
-        document.getElementById('newHabitForm').style.display = 'none';
-        document.getElementById('newHabitName').value = '';
-    }
-
-    function confirmAddHabit() {
-        const habitName = document.getElementById('newHabitName').value.trim();
-        if (!habitName) {
-            alert("Please enter a habit name");
-            return;
-        }
-        const habitType = document.querySelector('input[name="habitType"]:checked').value;
-        
-        const dateKey = getCurrentDateKey();
-        if (!habitTracker[dateKey]) {
-            habitTracker[dateKey] = {};
-        }
-
-        if (habitTracker[dateKey][habitName]) {
-            alert('This habit already exists for this day.');
-            return;
-        }
-
-        if (habitType === 'count') {
-            habitTracker[dateKey][habitName] = { type: 'count', value: 0 };
-        } else {
-            habitTracker[dateKey][habitName] = { type: 'check', value: false };
-        }
-
-        const existingGlobalHabit = globalHabits.find(h => h.name.toLowerCase() === habitName.toLowerCase());
-        if (!existingGlobalHabit) {
-            globalHabits.push({ name: habitName, startDate: dateKey, type: habitType });
-            localStorage.setItem('globalHabits', JSON.stringify(globalHabits));
-        } else {
-            const currentDateObj = parseDateKey(dateKey);
-            const globalStartDateObj = parseDateKey(existingGlobalHabit.startDate);
-            if (currentDateObj < globalStartDateObj) {
-                existingGlobalHabit.startDate = dateKey; 
-                localStorage.setItem('globalHabits', JSON.stringify(globalHabits));
-            }
-        }
-
-        document.getElementById('newHabitName').value = '';
-        document.getElementById('newHabitForm').style.display = 'none';
-        updateHabitDisplay();
-    }
-
-    function updateHabitDisplay() {
-        const dateKey = getCurrentDateKey();
-        const habitList = document.getElementById('habitList');
-        habitList.innerHTML = '';
-
-        if (!habitTracker[dateKey]) {
-            habitTracker[dateKey] = {};
-        }
-
-        const currentDateObj = parseDateKey(dateKey);
-        globalHabits.forEach(habit => {
-            const habitStartDate = parseDateKey(habit.startDate);
-            if (currentDateObj >= habitStartDate) {
-                if (habitTracker[dateKey][habit.name] === undefined) {
-                    if (habit.type === 'count') {
-                        habitTracker[dateKey][habit.name] = { type: 'count', value: 0 };
-                    } else {
-                        habitTracker[dateKey][habit.name] = { type: 'check', value: false };
-                    }
-                }
-            }
-        });
-
-        const habits = habitTracker[dateKey];
-
-        Object.keys(habits).forEach(habitName => {
-            const habitData = habits[habitName];
-            const habitDiv = document.createElement('div');
-            habitDiv.style.display = 'flex';
-            habitDiv.style.flexDirection = 'column';
-            habitDiv.style.marginBottom = '10px';
-
-            const topRow = document.createElement('div');
-            topRow.style.display = 'flex';
-            topRow.style.alignItems = 'center';
-            topRow.style.justifyContent = 'space-between';
-
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = habitName + ': ';
-
-            const controlsContainer = document.createElement('div');
-            controlsContainer.style.display = 'flex';
-            controlsContainer.style.alignItems = 'center';
-            controlsContainer.style.gap = '5px';
-
-            if (habitData.type === 'count') {
-                const decrementBtn = document.createElement('button');
-                decrementBtn.textContent = '-';
-                decrementBtn.onclick = () => {
-                    if (habitTracker[dateKey][habitName].value > 0) {
-                        habitTracker[dateKey][habitName].value--;
-                        countInput.value = habitTracker[dateKey][habitName].value;
-                    }
-                };
-
-                const countInput = document.createElement('input');
-                countInput.type = 'number';
-                countInput.value = habitData.value;
-                countInput.style.width = '60px';
-                countInput.onchange = () => {
-                    const val = parseInt(countInput.value, 10);
-                    if (!isNaN(val)) {
-                        habitTracker[dateKey][habitName].value = val;
-                    } else {
-                        countInput.value = habitTracker[dateKey][habitName].value;
-                    }
-                };
-
-                const incrementBtn = document.createElement('button');
-                incrementBtn.textContent = '+';
-                incrementBtn.onclick = () => {
-                    habitTracker[dateKey][habitName].value++;
-                    countInput.value = habitTracker[dateKey][habitName].value;
-                };
-
-                controlsContainer.appendChild(decrementBtn);
-                controlsContainer.appendChild(countInput);
-                controlsContainer.appendChild(incrementBtn);
-            } else {
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = habitData.value === true;
-                checkbox.onchange = () => {
-                    habitTracker[dateKey][habitName].value = checkbox.checked;
-                };
-                controlsContainer.appendChild(checkbox);
-            }
-
-            const progressBtn = document.createElement('button');
-            progressBtn.textContent = 'View Progress';
-            progressBtn.onclick = () => {
-                toggleHabitGraph(habitName);
-            };
-            controlsContainer.appendChild(progressBtn);
-
-            const timeFrameContainer = document.createElement('div');
-            timeFrameContainer.style.display = 'none';
-            timeFrameContainer.style.gap = '5px';
-
-            const weeklyBtn = document.createElement('button');
-            weeklyBtn.textContent = '7 Days';
-            weeklyBtn.onclick = () => {
-                drawHabitGraph(habitName, 7);
-            };
-
-            const monthlyBtn = document.createElement('button');
-            monthlyBtn.textContent = '30 Days';
-            monthlyBtn.onclick = () => {
-                drawHabitGraph(habitName, 30);
-            };
-
-            timeFrameContainer.appendChild(weeklyBtn);
-            timeFrameContainer.appendChild(monthlyBtn);
-
-            controlsContainer.timeFrameContainer = timeFrameContainer;
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Delete';
-            deleteBtn.style.marginLeft = '10px';
-            deleteBtn.onclick = () => {
-                if (confirm(`Delete habit "${habitName}" for all future dates as well?`)) {
-                    deleteHabitFromGlobal(habitName);
-                    updateHabitDisplay();
-                }
-            };
-            controlsContainer.appendChild(deleteBtn);
-
-            topRow.appendChild(nameSpan);
-            topRow.appendChild(controlsContainer);
-
-            const graphContainer = document.createElement('div');
-            graphContainer.style.display = 'none';
-            graphContainer.style.marginTop = '10px';
-            const canvas = document.createElement('canvas');
-            canvas.id = `graph-${habitName}`;
-            canvas.width = 300;
-            canvas.height = 100;
-            graphContainer.appendChild(canvas);
-
-            habitDiv.appendChild(topRow);
-            habitDiv.appendChild(controlsContainer.timeFrameContainer);
-            habitDiv.appendChild(graphContainer);
-
-            habitList.appendChild(habitDiv);
-        });
-    }
-
-    function deleteHabitFromGlobal(habitName) {
-        const dateKey = getCurrentDateKey();
-        delete habitTracker[dateKey][habitName];
-
-        globalHabits = globalHabits.filter(h => h.name.toLowerCase() !== habitName.toLowerCase());
-        localStorage.setItem('globalHabits', JSON.stringify(globalHabits));
-
-        const currentDateObj = parseDateKey(dateKey);
-        for (const dateKeyInTracker of Object.keys(habitTracker)) {
-            const dateObj = parseDateKey(dateKeyInTracker);
-            if (dateObj > currentDateObj && habitTracker[dateKeyInTracker][habitName]) {
-                delete habitTracker[dateKeyInTracker][habitName];
-            }
-        }
-
-        localStorage.setItem('habitTracker', JSON.stringify(habitTracker));
-    }
-
-    function toggleHabitGraph(habitName) {
-        const graphContainer = document.getElementById(`graph-${habitName}`).parentElement;
-        const topRow = graphContainer.parentElement.firstChild;
-        const controlsContainer = topRow.lastChild;
-
-        if (graphContainer.style.display === 'none' || graphContainer.style.display === '') {
-            graphContainer.style.display = 'block';
-            controlsContainer.timeFrameContainer.style.display = 'flex'; 
-            drawHabitGraph(habitName, 7); // default to 7-day view
-        } else {
-            graphContainer.style.display = 'none';
-            controlsContainer.timeFrameContainer.style.display = 'none';
-        }
-    }
-
-    function drawHabitGraph(habitName, daysRange = 7) {
-        const canvas = document.getElementById(`graph-${habitName}`);
-        const ctx = canvas.getContext('2d');
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const endDate = parseDateKey(getCurrentDateKey());
-        const dates = [];
-        for (let i = daysRange - 1; i >= 0; i--) {
-            const d = new Date(endDate);
-            d.setDate(d.getDate() - i);
-            const dateKey = d.toISOString().split('T')[0];
-            dates.push(dateKey);
-        }
-
-        const values = dates.map(d => {
-            if (habitTracker[d] && habitTracker[d][habitName]) {
-                const habitData = habitTracker[d][habitName];
-                return habitData.type === 'count' 
-                    ? habitData.value 
-                    : (habitData.value === true ? 1 : 0);
-            } else {
-                return 0;
-            }
-        });
-
-        const leftMargin = 30;
-        const bottomMargin = 30;
-        const topMargin = 10;
-        const rightMargin = canvas.width - 10; 
-        
-        ctx.strokeStyle = '#333';
-        ctx.beginPath();
-        ctx.moveTo(leftMargin, topMargin);
-        ctx.lineTo(leftMargin, canvas.height - bottomMargin);
-        ctx.lineTo(rightMargin, canvas.height - bottomMargin);
-        ctx.stroke();
-
-        const maxVal = Math.max(...values, 1);
-        const dataPoints = values.length;
-        const xStep = (rightMargin - leftMargin) / (dataPoints - 1);
-        const yScale = (canvas.height - bottomMargin - topMargin) / maxVal;
-
-        ctx.strokeStyle = '#4285f4';
-        ctx.beginPath();
-        values.forEach((v, i) => {
-            const x = leftMargin + i * xStep;
-            const y = (canvas.height - bottomMargin) - v * yScale;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-
-        ctx.fillStyle = '#4285f4';
-        values.forEach((v, i) => {
-            const x = leftMargin + i * xStep;
-            const y = (canvas.height - bottomMargin) - v * yScale;
-            ctx.beginPath();
-            ctx.arc(x, y, 3, 0, Math.PI * 2, true);
-            ctx.fill();
-        });
-
-        ctx.fillStyle = '#333';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-
-        const labelInterval = daysRange === 30 ? 5 : 1;
-        dates.forEach((dateStr, i) => {
-            if (i % labelInterval === 0) {
-                const x = leftMargin + i * xStep;
-                const [year, month, day] = dateStr.split('-');
-                const dateLabel = `${month}-${day}`;
-                ctx.fillText(dateLabel, x, canvas.height - bottomMargin + 5);
-            }
-        });
-    }
-
-    function saveHabitTracker() {
-        localStorage.setItem('habitTracker', JSON.stringify(habitTracker));
-        localStorage.setItem('globalHabits', JSON.stringify(globalHabits));
-        document.getElementById('habitForm').style.display = 'none';
-    }
-
-    function cancelHabitTracker() {
-        document.getElementById('habitForm').style.display = 'none';
-    }
-
+    saveUserData();
     renderTasks();
+  }
 
-    function goToGoalsPage() {
-        closeJournalForm();
-        document.getElementById('goalsForm').style.display = 'block';
+  function renderTasks() {
+    const taskList = document.getElementById('taskList');
+    taskList.innerHTML = '';
+
+    const tasks = taskLists[currentTaskList];
+    const journalForm = document.getElementById('journalForm');
+    const dateKey = journalForm.dataset.date || new Date().toISOString().split('T')[0];
+
+    tasks.forEach(task => {
+      // If it's daily and it's completed for dateKey, skip
+      if (task.repeat === 'daily' && task.completions && task.completions[dateKey]) {
+        return;
+      }
+      // If it's once-only and completed => skip
+      if (task.repeat === 'once' && task.completed) {
+        return;
+      }
+
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      li.setAttribute('data-task-id', task.id);
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+
+      if (task.repeat === 'once') {
+        checkbox.checked = task.completed;
+      } else {
+        checkbox.checked = false;
+      }
+      checkbox.onclick = () => toggleTask(task.id, dateKey);
+
+      const span = document.createElement('span');
+      span.textContent = task.text;
+      if (task.repeat === 'once' && task.completed) {
+        span.className = 'completed-task';
+      }
+
+      li.appendChild(checkbox);
+      li.appendChild(span);
+
+      if (task.repeat === 'daily') {
+        const dailyBadge = document.createElement('span');
+        dailyBadge.textContent = 'Repeat Daily';
+        dailyBadge.style.marginLeft = '8px';
+        dailyBadge.style.fontSize = '0.85rem';
+        dailyBadge.style.color = '#888';
+        li.appendChild(dailyBadge);
+      }
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '×';
+      deleteBtn.style.marginLeft = 'auto';
+      deleteBtn.onclick = () => deleteTask(task.id);
+      li.appendChild(deleteBtn);
+
+      taskList.appendChild(li);
+    });
+  }
+
+  function toggleTask(taskId, dateKey) {
+    const tasks = taskLists[currentTaskList];
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    if (task.repeat === 'once') {
+      task.completed = !task.completed;
+      if (task.completed) {
+        const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+        taskElement.classList.add('fade-out');
+        setTimeout(() => {
+          deleteTask(taskId);
+        }, 5000);
+      }
+    } else {
+      // daily
+      if (!task.completions) task.completions = {};
+      task.completions[dateKey] = true;
+      const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
+      taskElement.classList.add('fade-out');
+      setTimeout(() => {
+        renderTasks();
+      }, 5000);
+    }
+    saveUserData();
+  }
+
+  function deleteTask(taskId) {
+    taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id !== taskId);
+    saveUserData();
+    renderTasks();
+  }
+
+  /******************************************************* 
+   14) Habit Tracker
+  *******************************************************/
+  function changeToHabit() {
+    const journalForm = document.getElementById('journalForm');
+    const habitForm = document.getElementById('habitForm');
+
+    habitForm.dataset.date = journalForm.dataset.date;
+    const displayDate = new Date(habitForm.dataset.date + 'T00:00:00');
+    document.getElementById('habitDate').textContent = displayDate.toLocaleDateString();
+
+    journalForm.style.display = 'none';
+    habitForm.style.display = 'block';
+    document.getElementById('prevDayButton').style.display = 'none';
+    document.getElementById('nextDayButton').style.display = 'none';
+
+    updateHabitDisplay();
+  }
+
+  function changeToJournal() {
+    document.getElementById('habitForm').style.display = 'none';
+    document.getElementById('journalForm').style.display = 'block';
+    document.getElementById('prevDayButton').style.display = 'block';
+    document.getElementById('nextDayButton').style.display = 'block';
+  }
+
+  function getCurrentDateKey() {
+    const dateFromForm = document.getElementById('habitForm').dataset.date;
+    return dateFromForm || new Date().toISOString().split('T')[0];
+  }
+
+  function parseDateKey(dateKey) {
+    const parts = dateKey.split('-');
+    return new Date(parts[0], parts[1]-1, parts[2]);
+  }
+
+  function showNewHabitForm() {
+    document.getElementById('newHabitForm').style.display = 'block';
+  }
+
+  function cancelAddHabit() {
+    document.getElementById('newHabitForm').style.display = 'none';
+    document.getElementById('newHabitName').value = '';
+  }
+
+  function confirmAddHabit() {
+    const habitName = document.getElementById('newHabitName').value.trim();
+    if (!habitName) {
+      alert("Please enter a habit name");
+      return;
+    }
+    const habitType = document.querySelector('input[name="habitType"]:checked').value;
+    const dateKey = getCurrentDateKey();
+
+    if (!habitTracker[dateKey]) {
+      habitTracker[dateKey] = {};
+    }
+    if (habitTracker[dateKey][habitName]) {
+      alert('This habit already exists for this day.');
+      return;
     }
 
-    function saveGoals() {
-        const goalsText = document.getElementById('goalsText').value.trim();
-        localStorage.setItem('userGoals', goalsText);
-        closeGoalsForm();
+    if (habitType === 'count') {
+      habitTracker[dateKey][habitName] = { type: 'count', value: 0 };
+    } else {
+      habitTracker[dateKey][habitName] = { type: 'check', value: false };
     }
 
-    function closeGoalsForm() {
-        document.getElementById('goalsForm').style.display = 'none';
-        document.getElementById('journalForm').style.display = 'none';
+    const existingGlobalHabit = globalHabits.find(h => h.name.toLowerCase() === habitName.toLowerCase());
+    const currentDateObj = parseDateKey(dateKey);
+
+    if (!existingGlobalHabit) {
+      globalHabits.push({ name: habitName, startDate: dateKey, type: habitType });
+    } else {
+      const globalStartDateObj = parseDateKey(existingGlobalHabit.startDate);
+      if (currentDateObj < globalStartDateObj) {
+        existingGlobalHabit.startDate = dateKey;
+      }
     }
 
-    function goToJournalFromGoals() {
-        document.getElementById('goalsForm').style.display = 'none';
-        document.getElementById('journalForm').style.display = 'block';
-        document.getElementById('prevDayButton').style.display = 'block';
-        document.getElementById('nextDayButton').style.display = 'block';
+    document.getElementById('newHabitName').value = '';
+    document.getElementById('newHabitForm').style.display = 'none';
+    updateHabitDisplay();
+    saveUserData();
+  }
+
+  function updateHabitDisplay() {
+    const dateKey = getCurrentDateKey();
+    const habitList = document.getElementById('habitList');
+    habitList.innerHTML = '';
+
+    if (!habitTracker[dateKey]) {
+      habitTracker[dateKey] = {};
+    }
+    const currentDateObj = parseDateKey(dateKey);
+
+    // If a global habit started earlier and this date is after start, show it
+    globalHabits.forEach(habit => {
+      const habitStartDate = parseDateKey(habit.startDate);
+      if (currentDateObj >= habitStartDate) {
+        if (habitTracker[dateKey][habit.name] === undefined) {
+          if (habit.type === 'count') {
+            habitTracker[dateKey][habit.name] = { type: 'count', value: 0 };
+          } else {
+            habitTracker[dateKey][habit.name] = { type: 'check', value: false };
+          }
+        }
+      }
+    });
+
+    const habitsForDay = habitTracker[dateKey];
+    Object.keys(habitsForDay).forEach(habitName => {
+      const habitData = habitsForDay[habitName];
+      const habitDiv = document.createElement('div');
+      habitDiv.style.display = 'flex';
+      habitDiv.style.flexDirection = 'column';
+      habitDiv.style.marginBottom = '10px';
+
+      // top row
+      const topRow = document.createElement('div');
+      topRow.style.display = 'flex';
+      topRow.style.alignItems = 'center';
+      topRow.style.justifyContent = 'space-between';
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = habitName + ': ';
+
+      const controlsContainer = document.createElement('div');
+      controlsContainer.style.display = 'flex';
+      controlsContainer.style.alignItems = 'center';
+      controlsContainer.style.gap = '5px';
+
+      if (habitData.type === 'count') {
+        const decrementBtn = document.createElement('button');
+        decrementBtn.textContent = '-';
+        decrementBtn.onclick = () => {
+          if (habitTracker[dateKey][habitName].value > 0) {
+            habitTracker[dateKey][habitName].value--;
+            countInput.value = habitTracker[dateKey][habitName].value;
+          }
+          saveUserData();
+        };
+
+        const countInput = document.createElement('input');
+        countInput.type = 'number';
+        countInput.value = habitData.value;
+        countInput.style.width = '60px';
+        countInput.onchange = () => {
+          const val = parseInt(countInput.value, 10);
+          if (!isNaN(val)) {
+            habitTracker[dateKey][habitName].value = val;
+          } else {
+            countInput.value = habitTracker[dateKey][habitName].value;
+          }
+          saveUserData();
+        };
+
+        const incrementBtn = document.createElement('button');
+        incrementBtn.textContent = '+';
+        incrementBtn.onclick = () => {
+          habitTracker[dateKey][habitName].value++;
+          countInput.value = habitTracker[dateKey][habitName].value;
+          saveUserData();
+        };
+
+        controlsContainer.appendChild(decrementBtn);
+        controlsContainer.appendChild(countInput);
+        controlsContainer.appendChild(incrementBtn);
+
+      } else {
+        // check
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = habitData.value === true;
+        checkbox.onchange = () => {
+          habitTracker[dateKey][habitName].value = checkbox.checked;
+          saveUserData();
+        };
+        controlsContainer.appendChild(checkbox);
+      }
+
+      const progressBtn = document.createElement('button');
+      progressBtn.textContent = 'View Progress';
+      progressBtn.onclick = () => {
+        toggleHabitGraph(habitName);
+      };
+      controlsContainer.appendChild(progressBtn);
+
+      const timeFrameContainer = document.createElement('div');
+      timeFrameContainer.style.display = 'none';
+      timeFrameContainer.style.gap = '5px';
+
+      const weeklyBtn = document.createElement('button');
+      weeklyBtn.textContent = '7 Days';
+      weeklyBtn.onclick = () => {
+        drawHabitGraph(habitName, 7);
+      };
+
+      const monthlyBtn = document.createElement('button');
+      monthlyBtn.textContent = '30 Days';
+      monthlyBtn.onclick = () => {
+        drawHabitGraph(habitName, 30);
+      };
+
+      timeFrameContainer.appendChild(weeklyBtn);
+      timeFrameContainer.appendChild(monthlyBtn);
+
+      controlsContainer.timeFrameContainer = timeFrameContainer;
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.style.marginLeft = '10px';
+      deleteBtn.onclick = () => {
+        if (confirm(`Delete habit "${habitName}" for all future dates as well?`)) {
+          deleteHabitFromGlobal(habitName);
+          updateHabitDisplay();
+          saveUserData();
+        }
+      };
+      controlsContainer.appendChild(deleteBtn);
+
+      topRow.appendChild(nameSpan);
+      topRow.appendChild(controlsContainer);
+
+      const graphContainer = document.createElement('div');
+      graphContainer.style.display = 'none';
+      graphContainer.style.marginTop = '10px';
+      const canvas = document.createElement('canvas');
+      canvas.id = `graph-${habitName}`;
+      canvas.width = 300;
+      canvas.height = 100;
+      graphContainer.appendChild(canvas);
+
+      habitDiv.appendChild(topRow);
+      habitDiv.appendChild(controlsContainer.timeFrameContainer);
+      habitDiv.appendChild(graphContainer);
+      habitList.appendChild(habitDiv);
+    });
+  }
+
+  function deleteHabitFromGlobal(habitName) {
+    const dateKey = getCurrentDateKey();
+    delete habitTracker[dateKey][habitName];
+    globalHabits = globalHabits.filter(h => h.name.toLowerCase() !== habitName.toLowerCase());
+
+    const currentDateObj = parseDateKey(dateKey);
+    for (const dateKeyInTracker of Object.keys(habitTracker)) {
+      const dateObj = parseDateKey(dateKeyInTracker);
+      if (dateObj > currentDateObj && habitTracker[dateKeyInTracker][habitName]) {
+        delete habitTracker[dateKeyInTracker][habitName];
+      }
+    }
+  }
+
+  function toggleHabitGraph(habitName) {
+    const graphContainer = document.getElementById(`graph-${habitName}`).parentElement;
+    const topRow = graphContainer.parentElement.firstChild;
+    const controlsContainer = topRow.lastChild;
+
+    if (graphContainer.style.display === 'none' || graphContainer.style.display === '') {
+      graphContainer.style.display = 'block';
+      controlsContainer.timeFrameContainer.style.display = 'flex'; 
+      drawHabitGraph(habitName, 7); // default to 7-day view
+    } else {
+      graphContainer.style.display = 'none';
+      controlsContainer.timeFrameContainer.style.display = 'none';
+    }
+  }
+
+  function drawHabitGraph(habitName, daysRange = 7) {
+    const canvas = document.getElementById(`graph-${habitName}`);
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const endDate = parseDateKey(getCurrentDateKey());
+    const dates = [];
+    for (let i = daysRange - 1; i >= 0; i--) {
+      const d = new Date(endDate);
+      d.setDate(d.getDate() - i);
+      const dateKey = d.toISOString().split('T')[0];
+      dates.push(dateKey);
     }
 
-    function changeJournalDay(direction) {
-        const journalForm = document.getElementById('journalForm');
-        const currentDateStr = journalForm.dataset.date;
-        if (!currentDateStr) return;
+    const values = dates.map(d => {
+      if (habitTracker[d] && habitTracker[d][habitName]) {
+        const habitData = habitTracker[d][habitName];
+        return habitData.type === 'count' 
+          ? habitData.value 
+          : (habitData.value === true ? 1 : 0);
+      } else {
+        return 0;
+      }
+    });
 
-        const [year, month, day] = currentDateStr.split('-').map(Number);
-        const currentDate = new Date(year, month - 1, day);
-        currentDate.setDate(currentDate.getDate() + direction);
+    const leftMargin = 30;
+    const bottomMargin = 30;
+    const topMargin = 10;
+    const rightMargin = canvas.width - 10; 
 
-        const newDateStr = currentDate.toISOString().split('T')[0];
-        openJournal(newDateStr);
-    }
+    // Axes
+    ctx.strokeStyle = '#333';
+    ctx.beginPath();
+    ctx.moveTo(leftMargin, topMargin);
+    ctx.lineTo(leftMargin, canvas.height - bottomMargin);
+    ctx.lineTo(rightMargin, canvas.height - bottomMargin);
+    ctx.stroke();
+
+    const maxVal = Math.max(...values, 1);
+    const dataPoints = values.length;
+    const xStep = (rightMargin - leftMargin) / (dataPoints - 1);
+    const yScale = (canvas.height - bottomMargin - topMargin) / maxVal;
+
+    // Draw line
+    ctx.strokeStyle = '#4285f4';
+    ctx.beginPath();
+    values.forEach((v, i) => {
+      const x = leftMargin + i * xStep;
+      const y = (canvas.height - bottomMargin) - v * yScale;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Draw dots
+    ctx.fillStyle = '#4285f4';
+    values.forEach((v, i) => {
+      const x = leftMargin + i * xStep;
+      const y = (canvas.height - bottomMargin) - v * yScale;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2, true);
+      ctx.fill();
+    });
+
+    // X-axis labels
+    ctx.fillStyle = '#333';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const labelInterval = daysRange === 30 ? 5 : 1;
+    dates.forEach((dateStr, i) => {
+      if (i % labelInterval === 0) {
+        const x = leftMargin + i * xStep;
+        const [year, month, day] = dateStr.split('-');
+        const dateLabel = `${month}-${day}`;
+        ctx.fillText(dateLabel, x, canvas.height - bottomMargin + 5);
+      }
+    });
+  }
+
+  function saveHabitTracker() {
+    saveUserData();
+    document.getElementById('habitForm').style.display = 'none';
+  }
+
+  function cancelHabitTracker() {
+    document.getElementById('habitForm').style.display = 'none';
+  }
 </script>
+
 </body>
 </html>
