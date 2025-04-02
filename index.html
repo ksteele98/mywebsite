@@ -586,7 +586,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   import { 
     getAuth, 
     GoogleAuthProvider, 
-    signInWithPopup, 
+    signInWithPopup,
+    signOut,
     onAuthStateChanged 
   } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
@@ -619,12 +620,26 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   // This function triggers the Google popup
   async function loginWithGoogle() {
     try {
+      console.log("Login with Google function called"); // Debug
+      document.getElementById('authSection').innerHTML = "Connecting to Google...";
+      
+      // Force a fresh login every time
+      await signOut(auth);
+      
       const result = await signInWithPopup(auth, provider);
       // If successful, user is now signed in
-      console.log("Google sign-in success!");
+      console.log("Google sign-in success!", result.user);
       // userId is set via onAuthStateChanged below
     } catch (error) {
       console.error("Google Sign-In Error:", error);
+      document.getElementById('authSection').innerHTML = 
+        `<p>Error: ${error.message}</p>
+         <button id="googleSignInButton" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
+           Try Again
+         </button>`;
+      
+      // Reattach event listener
+      document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogle);
     }
   }
 
@@ -1574,12 +1589,22 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   
   // Initialize calendar after page loads
   window.addEventListener('DOMContentLoaded', () => {
-    // Set up the sign-in button
-    document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogle);
+    console.log("DOM loaded, setting up Google sign-in button"); // Debug
+    
+    // Make the auth section visible immediately
+    document.getElementById('authSection').style.display = 'block';
+    
+    // Set up the sign-in button with direct event handler
+    const signInButton = document.getElementById('googleSignInButton');
+    signInButton.addEventListener('click', function() {
+      console.log("Button clicked, calling loginWithGoogle"); // Debug
+      loginWithGoogle();
+    });
     
     // Check if user is already logged in from a previous session
-    // If not, calendar will be generated after login in the onAuthStateChanged handler
+    console.log("Checking for existing auth:", auth.currentUser);
     if (auth.currentUser) {
+      console.log("User already logged in:", auth.currentUser);
       generateCalendar();
     }
   });
