@@ -613,7 +613,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  let userId = null;  // will store current Google user’s uid here
+  let userId = null;  // will store current Google user's uid here
   const provider = new GoogleAuthProvider();
 
   // This function triggers the Google popup
@@ -1547,6 +1547,39 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   function cancelHabitTracker() {
     document.getElementById('habitForm').style.display = 'none';
   }
+
+  // Make functions available globally to be called from HTML
+  window.loginWithGoogle = loginWithGoogle;
+  window.previousMonth = previousMonth;
+  window.nextMonth = nextMonth;
+  window.openJournal = openJournal;
+  window.closeJournalForm = closeJournalForm;
+  window.changeJournalDay = changeJournalDay;
+  window.addEvent = addEvent;
+  window.saveEvent = saveEvent;
+  window.closeEventForm = closeEventForm;
+  window.deleteEvent = deleteEvent;
+  window.saveJournal = saveJournal;
+  window.goToGoalsPage = goToGoalsPage;
+  window.saveGoals = saveGoals;
+  window.closeGoalsForm = closeGoalsForm;
+  window.goToJournalFromGoals = goToJournalFromGoals;
+  window.changeToHabit = changeToHabit;
+  window.changeToJournal = changeToJournal;
+  window.showNewHabitForm = showNewHabitForm;
+  window.confirmAddHabit = confirmAddHabit;
+  window.cancelAddHabit = cancelAddHabit;
+  window.saveHabitTracker = saveHabitTracker;
+  window.cancelHabitTracker = cancelHabitTracker;
+  
+  // Initialize calendar after page loads
+  window.addEventListener('DOMContentLoaded', () => {
+    // Check if user is already logged in from a previous session
+    // If not, calendar will be generated after login in the onAuthStateChanged handler
+    if (auth.currentUser) {
+      generateCalendar();
+    }
+  });
 </script>
 
 </body>
