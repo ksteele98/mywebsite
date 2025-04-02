@@ -716,7 +716,13 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       document.getElementById('authSection').style.display = 'none';
       
       // Set userId and generate calendar
+      console.log("Setting userId:", user.uid);
       userId = user.uid;
+      
+      // Add userId to localStorage for persistence
+      localStorage.setItem('lastUserId', user.uid);
+      
+      // Load data and render UI
       loadUserData().then(() => {
         generateCalendar();
         renderTasks();
@@ -802,13 +808,28 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   async function saveUserData() {
+    // First, ensure userId is set - try to recover if possible
     if (!userId) {
-      console.error("Cannot save: No user ID found. User may not be authenticated.");
-      return;
+      console.error("No userId found when trying to save data");
+      
+      // Try to recover from localStorage
+      const storedUserId = localStorage.getItem('lastUserId');
+      if (storedUserId && auth.currentUser) {
+        console.log("Recovered userId from localStorage:", storedUserId);
+        userId = storedUserId;
+      } else if (auth.currentUser) {
+        console.log("Recovered userId from auth.currentUser:", auth.currentUser.uid);
+        userId = auth.currentUser.uid;
+      } else {
+        console.error("Cannot save: No user ID found and unable to recover. User not authenticated.");
+        alert("You need to be logged in to save data. Please sign in again.");
+        document.getElementById('authSection').style.display = 'block';
+        return;
+      }
     }
     
     try {
-      console.log("Attempting to save data to Firestore...");
+      console.log("Saving data to Firestore with userId:", userId);
       console.log("Current user ID:", userId);
       
       // Create a structured data object
