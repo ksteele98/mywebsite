@@ -702,8 +702,13 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
         habitTracker    = data.habitTracker    || {};
         globalHabits    = data.globalHabits    || [];
         document.getElementById('goalsText').value = data.userGoals || '';
+        
+        // Initialize task controls after loading data
+        setTimeout(initializeTaskControls, 100);
       } else {
         console.log("No existing Firestore doc for this user; starting fresh.");
+        taskLists = { personal: [], work: [] };
+        setTimeout(initializeTaskControls, 100);
       }
     } catch (err) {
       console.error("Error loading user data:", err);
@@ -867,6 +872,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
     updateDailyEventsList(date);
     renderTasks(); // re-render tasks for this date
+    initializeTaskControls(); // Initialize task controls each time the journal is opened
   }
 
   function closeJournalForm() {
@@ -1067,12 +1073,14 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
         taskLists[listKey] = [];
         const newBtn = document.createElement('button');
         newBtn.textContent = listName;
-        newBtn.onclick = () => switchTaskList(listKey);
-
+        
         const taskToggle = document.querySelector('.task-toggle');
         taskToggle.appendChild(newBtn);
-        switchTaskList(listKey);
         saveUserData();
+        
+        // Reinitialize all controls to ensure event handlers are attached
+        initializeTaskControls();
+        switchTaskList(listKey);
       } else {
         alert("A list with this name already exists!");
       }
@@ -1543,7 +1551,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     }
   }
 
-  function toggleHabitGraph(habitName) {
+  function toggleHabitGraph(habitName, daysRange = 7) {
     const graphContainer = document.getElementById(`graph-${habitName}`).parentElement;
     const topRow = graphContainer.parentElement.firstChild;
     const controlsContainer = topRow.lastChild;
@@ -1671,6 +1679,42 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   window.saveHabitTracker = saveHabitTracker;
   window.cancelHabitTracker = cancelHabitTracker;
   window.logoutFromGoogle = logoutFromGoogle;
+
+  // Make sure all task-related DOM elements are properly initialized
+  // Add this function to ensure all task controls are properly set up
+  function initializeTaskControls() {
+    // Set up task toggle buttons
+    document.querySelectorAll('.task-toggle button').forEach(button => {
+      const listType = button.textContent.toLowerCase().includes('personal') ? 'personal' : 
+                      button.textContent.toLowerCase().includes('work') ? 'work' : 
+                      button.textContent.toLowerCase().replace(/\s+/g, '-');
+      
+      // Remove existing event listeners (to prevent duplicates)
+      button.replaceWith(button.cloneNode(true));
+      
+      // Get the fresh button and add event listener
+      const freshButton = document.querySelector(`.task-toggle button:nth-child(${Array.from(button.parentNode.children).indexOf(button) + 1})`);
+      freshButton.addEventListener('click', () => switchTaskList(listType));
+    });
+    
+    // Set up Add Task button
+    const addTaskBtn = document.querySelector('.add-task-btn');
+    if (addTaskBtn) {
+      addTaskBtn.replaceWith(addTaskBtn.cloneNode(true));
+      document.querySelector('.add-task-btn').addEventListener('click', addTask);
+    }
+    
+    // Initialize the active task list
+    if (currentTaskList && taskLists[currentTaskList]) {
+      switchTaskList(currentTaskList);
+    } else {
+      // Default to personal if the current list doesn't exist
+      currentTaskList = 'personal';
+      switchTaskList('personal');
+    }
+    
+    console.log("Task controls initialized");
+  }
 </script>
 
 </body>
