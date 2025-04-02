@@ -587,6 +587,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     getAuth, 
     GoogleAuthProvider, 
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     signOut,
     onAuthStateChanged 
   } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
@@ -618,18 +620,17 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const provider = new GoogleAuthProvider();
 
   // This function triggers the Google popup
-  async function loginWithGoogle() {
+  async function loginWithGoogleRedirect() {
     try {
-      console.log("Login with Google function called"); // Debug
-      document.getElementById('authSection').innerHTML = "Connecting to Google...";
+      console.log("Login with Google redirect started");
+      document.getElementById('authSection').innerHTML = "Redirecting to Google...";
       
-      // Force a fresh login every time
+      // Force fresh login
       await signOut(auth);
       
-      const result = await signInWithPopup(auth, provider);
-      // If successful, user is now signed in
-      console.log("Google sign-in success!", result.user);
-      // userId is set via onAuthStateChanged below
+      // Use redirect instead of popup
+      await signInWithRedirect(auth, provider);
+      // This page will reload after redirect
     } catch (error) {
       console.error("Google Sign-In Error:", error);
       document.getElementById('authSection').innerHTML = 
@@ -638,8 +639,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
            Try Again
          </button>`;
       
-      // Reattach event listener
-      document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogle);
+      document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogleRedirect);
     }
   }
 
@@ -1564,7 +1564,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   // Make functions available globally to be called from HTML
-  window.loginWithGoogle = loginWithGoogle;
+  window.loginWithGoogleRedirect = loginWithGoogleRedirect;
   window.previousMonth = previousMonth;
   window.nextMonth = nextMonth;
   window.openJournal = openJournal;
@@ -1588,21 +1588,27 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   window.cancelHabitTracker = cancelHabitTracker;
   
   // Initialize calendar after page loads
-  window.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM loaded, setting up Google sign-in button"); // Debug
+  window.addEventListener('DOMContentLoaded', async () => {
+    console.log("DOM loaded, checking for redirect result first");
     
-    // Make the auth section visible immediately
+    try {
+      // Check if we're returning from a redirect sign-in
+      const result = await getRedirectResult(auth);
+      if (result) {
+        console.log("Redirect result received:", result.user);
+        // User is signed in
+        // onAuthStateChanged will handle the rest
+      }
+    } catch (error) {
+      console.error("Redirect sign-in error:", error);
+    }
+    
     document.getElementById('authSection').style.display = 'block';
     
-    // Set up the sign-in button with direct event handler
+    // Use the redirect version
     const signInButton = document.getElementById('googleSignInButton');
-    signInButton.addEventListener('click', function() {
-      console.log("Button clicked, calling loginWithGoogle"); // Debug
-      loginWithGoogle();
-    });
+    signInButton.addEventListener('click', loginWithGoogleRedirect);
     
-    // Check if user is already logged in from a previous session
-    console.log("Checking for existing auth:", auth.currentUser);
     if (auth.currentUser) {
       console.log("User already logged in:", auth.currentUser);
       generateCalendar();
