@@ -432,7 +432,7 @@
 
 <!-- A simple section to show/hide when not logged in -->
 <div id="authSection" style="display: none; text-align:center; margin-bottom: 20px;">
-  <button onclick="loginWithGoogle()" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
+  <button id="googleSignInButton" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
     Sign in with Google
   </button>
 </div>
@@ -1574,6 +1574,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   
   // Initialize calendar after page loads
   window.addEventListener('DOMContentLoaded', () => {
+    // Set up the sign-in button
+    document.getElementById('googleSignInButton').addEventListener('click', loginWithGoogle);
+    
     // Check if user is already logged in from a previous session
     // If not, calendar will be generated after login in the onAuthStateChanged handler
     if (auth.currentUser) {
