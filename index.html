@@ -1055,9 +1055,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       btn.classList.remove('active');
     });
     
-    const activeButton = Array.from(document.querySelectorAll('.task-toggle button'))
-      .find(btn => btn.textContent.toLowerCase().includes(type));
-      
+    const activeButton = document.querySelector(`.task-toggle button[onclick*="${type}"]`);
     if (activeButton) {
       activeButton.classList.add('active');
     }
@@ -1073,13 +1071,14 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
         taskLists[listKey] = [];
         const newBtn = document.createElement('button');
         newBtn.textContent = listName;
+        newBtn.onclick = function() {
+          switchTaskList(listKey);
+        };
         
         const taskToggle = document.querySelector('.task-toggle');
         taskToggle.appendChild(newBtn);
         saveUserData();
         
-        // Reinitialize all controls to ensure event handlers are attached
-        initializeTaskControls();
         switchTaskList(listKey);
       } else {
         alert("A list with this name already exists!");
@@ -1159,10 +1158,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     const journalForm = document.getElementById('journalForm');
     const dateKey = journalForm.dataset.date || new Date().toISOString().split('T')[0];
 
-    console.log("Current task list:", currentTaskList);
-    console.log("Tasks for this list:", tasks);
-    console.log("Current date key:", dateKey);
-
     if (tasks.length === 0) {
       const emptyMessage = document.createElement('p');
       emptyMessage.textContent = 'No tasks yet. Add a task above.';
@@ -1173,12 +1168,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     }
 
     tasks.forEach(task => {
-      // Skip completed tasks
-      if ((task.repeat === 'daily' && task.completions && task.completions[dateKey]) ||
-          (task.repeat === 'once' && task.completed)) {
-        return;
-      }
-
       const li = document.createElement('li');
       li.className = 'task-item';
       li.setAttribute('data-task-id', task.id);
@@ -1186,11 +1175,18 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.id = `task-checkbox-${task.id}`;
-      checkbox.checked = (task.repeat === 'once' && task.completed) || 
-                        (task.repeat === 'daily' && task.completions && task.completions[dateKey]);
       
-      // Use setAttribute for onclick to ensure it works consistently
-      checkbox.setAttribute('onclick', `toggleTaskDirect('${task.id}', '${dateKey}')`);
+      // Check if task is completed based on its type
+      if (task.repeat === 'daily') {
+        checkbox.checked = task.completions && task.completions[dateKey];
+      } else {
+        checkbox.checked = task.completed;
+      }
+      
+      // Set the onclick handler directly as a function
+      checkbox.onclick = function() {
+        toggleTask(task.id, dateKey);
+      };
 
       const span = document.createElement('span');
       span.textContent = task.text;
@@ -1219,220 +1215,133 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       deleteBtn.style.fontSize = '18px';
       deleteBtn.style.cursor = 'pointer';
       deleteBtn.style.color = '#dc3545';
-      // Use setAttribute for onclick to ensure it works consistently
-      deleteBtn.setAttribute('onclick', `deleteTaskDirect('${task.id}')`);
+      
+      // Set the onclick handler directly as a function
+      deleteBtn.onclick = function() {
+        deleteTask(task.id);
+      };
+      
       li.appendChild(deleteBtn);
 
       taskList.appendChild(li);
+      
+      // Skip showing completed tasks after rendering them
+      if ((task.repeat === 'daily' && task.completions && task.completions[dateKey]) ||
+          (task.repeat === 'once' && task.completed)) {
+        li.classList.add('fade-out');
+        setTimeout(() => {
+          li.style.display = 'none';
+        }, 5000);
+      }
     });
   }
 
-  // Update the HTML for task toggle buttons and add task button
-  function fixTaskButtons() {
-    // Fix task toggle buttons
-    const personalTasksBtn = document.getElementById('personalTasksBtn');
-    const workTasksBtn = document.getElementById('workTasksBtn');
-    
-    if (personalTasksBtn) {
-      personalTasksBtn.setAttribute('onclick', "switchTaskDirect('personal')");
-    }
-    
-    if (workTasksBtn) {
-      workTasksBtn.setAttribute('onclick', "switchTaskDirect('work')");
-    }
-    
-    // Fix add task button
-    const addTaskBtn = document.querySelector('.add-task-btn');
-    if (addTaskBtn) {
-      addTaskBtn.setAttribute('onclick', 'addTaskDirect()');
-    }
-
-    // Fix "new list" button
-    const newListBtn = document.querySelector('.new-list-btn');
-    if (newListBtn) {
-      newListBtn.setAttribute('onclick', 'createNewListDirect()');
-    }
-
-    // Fix "delete list" button
-    const deleteListBtn = document.querySelector('.delete-list-btn');
-    if (deleteListBtn) {
-      deleteListBtn.setAttribute('onclick', 'deleteCurrentListDirect()');
-    }
-  }
-
-  // Direct action functions (exposed to window)
-  function toggleTaskDirect(taskId, dateKey) {
-    console.log("Toggle task called: ", taskId, dateKey);
-    if (!taskLists[currentTaskList]) {
-      console.error("Current task list doesn't exist:", currentTaskList);
-      return;
-    }
-    
+  // Use these internal functions for event handling
+  function toggleTask(taskId, dateKey) {
     const tasks = taskLists[currentTaskList];
-    const task = tasks.find(t => t.id == taskId); // Use == for string/number comparison
+    const task = tasks.find(t => t.id == taskId);
     
-    if (!task) {
-      console.error("Task not found with ID:", taskId);
-      return;
-    }
+    if (!task) return;
     
     if (task.repeat === 'once') {
       task.completed = !task.completed;
-      const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-      
-      if (task.completed && taskElement) {
-        const span = taskElement.querySelector('span');
-        if (span) span.className = 'completed-task';
-        taskElement.classList.add('fade-out');
-        setTimeout(() => renderTasks(), 5000);
-      }
     } else if (task.repeat === 'daily') {
       if (!task.completions) task.completions = {};
       task.completions[dateKey] = !task.completions[dateKey];
-      
-      const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-      if (taskElement) {
-        const span = taskElement.querySelector('span');
-        if (span) {
-          if (task.completions[dateKey]) {
-            span.className = 'completed-task';
-            taskElement.classList.add('fade-out');
-            setTimeout(() => renderTasks(), 5000);
-          } else {
-            span.className = '';
-            taskElement.classList.remove('fade-out');
-          }
-        }
-      }
     }
     
     saveUserData();
+    renderTasks();
   }
 
-  function deleteTaskDirect(taskId) {
-    console.log("Delete task called: ", taskId);
-    if (taskLists[currentTaskList]) {
-      taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
-      saveUserData();
-      renderTasks();
-    }
+  function deleteTask(taskId) {
+    taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
+    saveUserData();
+    renderTasks();
   }
 
-  function switchTaskDirect(type) {
-    console.log("Switch task list called: ", type);
-    currentTaskList = type;
+  // Replace the initializeTaskControls function with this improved version
+  function initializeTaskControls() {
+    console.log("Initializing task controls...");
     
+    // Setup task toggle buttons
+    document.querySelectorAll('.task-toggle button').forEach(button => {
+      // Clean up existing listeners
+      const newButton = button.cloneNode(true);
+      button.parentNode.replaceChild(newButton, button);
+      
+      // Determine which list this button is for
+      let listType;
+      if (newButton.id === 'personalTasksBtn') {
+        listType = 'personal';
+      } else if (newButton.id === 'workTasksBtn') {
+        listType = 'work';
+      } else {
+        listType = newButton.textContent.toLowerCase().replace(/\s+/g, '-');
+      }
+      
+      // Add new click handler
+      newButton.onclick = function() {
+        switchTaskList(listType);
+      };
+    });
+    
+    // Setup add task button
+    const addTaskBtn = document.querySelector('.add-task-btn');
+    if (addTaskBtn) {
+      const newAddTaskBtn = addTaskBtn.cloneNode(true);
+      addTaskBtn.parentNode.replaceChild(newAddTaskBtn, addTaskBtn);
+      newAddTaskBtn.onclick = addTask;
+    }
+    
+    // Setup new list and delete list buttons
+    const newListBtn = document.querySelector('.new-list-btn');
+    if (newListBtn) {
+      const newNewListBtn = newListBtn.cloneNode(true);
+      newListBtn.parentNode.replaceChild(newNewListBtn, newListBtn);
+      newNewListBtn.onclick = createNewList;
+    }
+    
+    const deleteListBtn = document.querySelector('.delete-list-btn');
+    if (deleteListBtn) {
+      const newDeleteListBtn = deleteListBtn.cloneNode(true);
+      deleteListBtn.parentNode.replaceChild(newDeleteListBtn, deleteListBtn);
+      newDeleteListBtn.onclick = deleteCurrentList;
+    }
+    
+    // Make sure current list exists
+    if (!taskLists[currentTaskList]) {
+      currentTaskList = 'personal';
+    }
+    
+    // Update UI to show current list as active
     document.querySelectorAll('.task-toggle button').forEach(btn => {
       btn.classList.remove('active');
-      if (btn.textContent.toLowerCase().includes(type)) {
+      if ((btn.id === 'personalTasksBtn' && currentTaskList === 'personal') ||
+          (btn.id === 'workTasksBtn' && currentTaskList === 'work') ||
+          (btn.textContent.toLowerCase().replace(/\s+/g, '-') === currentTaskList)) {
         btn.classList.add('active');
       }
     });
     
+    // Render tasks for current list
     renderTasks();
-  }
-
-  function addTaskDirect() {
-    console.log("Add task called");
-    const taskInput = document.getElementById('taskInput');
-    const rawText = taskInput.value.trim();
-    if (!rawText) {
-      alert("Please enter a task description");
-      return;
-    }
-
-    const tasksTexts = rawText.split(',').map(t => t.trim()).filter(Boolean);
-    const dailyCheckbox = document.getElementById('taskDailyCheckbox');
-    const isDaily = dailyCheckbox.checked;
     
-    if (!taskLists[currentTaskList]) {
-      taskLists[currentTaskList] = [];
-    }
-
-    tasksTexts.forEach((text, i) => {
-      const newTask = {
-        text,
-        id: Date.now() + i,
-        repeat: isDaily ? 'daily' : 'once',
-      };
-      
-      if (isDaily) {
-        newTask.completions = {};
-      } else {
-        newTask.completed = false;
-      }
-      
-      taskLists[currentTaskList].push(newTask);
-    });
-    
-    taskInput.value = '';
-    dailyCheckbox.checked = false;
-
-    saveUserData();
-    renderTasks();
+    console.log("Task controls initialized for list:", currentTaskList);
   }
 
-  function createNewListDirect() {
-    console.log("Create new list called");
-    const listName = prompt("Enter name for new list:");
-    if (listName && listName.trim()) {
-      const listKey = listName.toLowerCase().replace(/\s+/g, '-');
-      if (!taskLists[listKey]) {
-        taskLists[listKey] = [];
-        
-        const taskToggle = document.querySelector('.task-toggle');
-        const newBtn = document.createElement('button');
-        newBtn.textContent = listName;
-        newBtn.setAttribute('onclick', `switchTaskDirect('${listKey}')`);
-        taskToggle.appendChild(newBtn);
-        
-        saveUserData();
-        switchTaskDirect(listKey);
-      } else {
-        alert("A list with this name already exists!");
-      }
-    }
-  }
-
-  function deleteCurrentListDirect() {
-    console.log("Delete current list called");
-    if (confirm(`Are you sure you want to delete the "${currentTaskList}" list?`)) {
-      if (currentTaskList === 'personal' || currentTaskList === 'work') {
-        alert("Cannot delete default lists!");
-        return;
-      }
-      
-      const buttonToRemove = Array.from(document.querySelector('.task-toggle').children)
-        .find(btn => btn.textContent.toLowerCase() === currentTaskList.replace(/-/g, ' '));
-      
-      if (buttonToRemove) {
-        buttonToRemove.remove();
-      }
-      
-      delete taskLists[currentTaskList];
-      currentTaskList = 'personal';
-      
-      const personalBtn = document.getElementById('personalTasksBtn');
-      if (personalBtn) {
-        personalBtn.classList.add('active');
-      }
-      
-      saveUserData();
-      renderTasks();
-    }
-  }
-
-  // Add these functions to the window object for HTML access
+  // Remove direct action functions (we don't need them anymore)
   function initializeTaskFunctions() {
-    window.toggleTaskDirect = toggleTaskDirect;
-    window.deleteTaskDirect = deleteTaskDirect;
-    window.switchTaskDirect = switchTaskDirect;
-    window.addTaskDirect = addTaskDirect;
-    window.createNewListDirect = createNewListDirect;
-    window.deleteCurrentListDirect = deleteCurrentListDirect;
+    // Ensure our key task functions are available to the HTML
+    window.addTask = addTask;
+    window.toggleTask = toggleTask;
+    window.deleteTask = deleteTask;
+    window.switchTaskList = switchTaskList;
+    window.createNewList = createNewList;
+    window.deleteCurrentList = deleteCurrentList;
     
-    // Fix buttons in the DOM
-    setTimeout(fixTaskButtons, 100);
+    // Initialize the controls
+    setTimeout(initializeTaskControls, 100);
   }
 
   // Make functions available globally to be called from HTML
@@ -1460,44 +1369,16 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   window.cancelHabitTracker = cancelHabitTracker;
   window.logoutFromGoogle = logoutFromGoogle;
 
-  // Make sure all task-related DOM elements are properly initialized
-  // Add this function to ensure all task controls are properly set up
-  function initializeTaskControls() {
-    // Set up task toggle buttons
-    document.querySelectorAll('.task-toggle button').forEach(button => {
-      const listType = button.textContent.toLowerCase().includes('personal') ? 'personal' : 
-                      button.textContent.toLowerCase().includes('work') ? 'work' : 
-                      button.textContent.toLowerCase().replace(/\s+/g, '-');
-      
-      // Remove existing event listeners (to prevent duplicates)
-      button.replaceWith(button.cloneNode(true));
-      
-      // Get the fresh button and add event listener
-      const freshButton = document.querySelector(`.task-toggle button:nth-child(${Array.from(button.parentNode.children).indexOf(button) + 1})`);
-      freshButton.addEventListener('click', () => switchTaskList(listType));
-    });
-    
-    // Set up Add Task button
-    const addTaskBtn = document.querySelector('.add-task-btn');
-    if (addTaskBtn) {
-      addTaskBtn.replaceWith(addTaskBtn.cloneNode(true));
-      document.querySelector('.add-task-btn').addEventListener('click', addTask);
-    }
-    
-    // Initialize the active task list
-    if (currentTaskList && taskLists[currentTaskList]) {
-      switchTaskList(currentTaskList);
-    } else {
-      // Default to personal if the current list doesn't exist
-      currentTaskList = 'personal';
-      switchTaskList('personal');
-    }
-    
-    console.log("Task controls initialized");
-  }
+  // Add task functions to window object
+  window.addTask = addTask;
+  window.toggleTask = toggleTask;
+  window.deleteTask = deleteTask;
+  window.switchTaskList = switchTaskList;
+  window.createNewList = createNewList;
+  window.deleteCurrentList = deleteCurrentList;
 
-  // Make task functions globally available and initialize buttons
-  initializeTaskFunctions();
+  // Initialize the task functionality
+  initializeTaskControls();
 </script>
 
 </body>
