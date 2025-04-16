@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Calendar App (Google Auth)</title>
+  <link rel="manifest"      href="/manifest.json">
+<meta name="theme-color"  content="#4285f4">
+
+<link rel="icon"           type="image/png"      href="/icons/icon-192.png">
+<link rel="shortcut icon"                    
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-title"      content="My Calendar">
 
   <style>
     /* === Your existing CSS unchanged === */
@@ -447,7 +454,7 @@
 <div class="calendar-container">
   <div class="calendar-header">
     <button class="nav-button" onclick="previousMonth()">&lt; Previous</button>
-    <div class="current-month">September 2023</div>
+    <div class="current-month"></div>
     <button class="nav-button" onclick="nextMonth()">Next &gt;</button>
   </div>
   <div class="calendar-grid">
@@ -588,6 +595,15 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   /********************** 
     1) Firebase Imports
   ***********************/
+ // ----- PWA: register service worker -----
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('✅ SW registered'))
+      .catch(err => console.error('SW failed', err));
+  });
+}
+
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
   import { 
@@ -742,23 +758,34 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     '#45B7D1','#3498DB','#2980B9','#0000FF','#8E44AD','#9B59B6','#D4A5A5'
   ];
 
-  function initializeColorPicker() {
-    const colorPicker = document.getElementById('colorPicker');
-    colorPicker.innerHTML = '';
-    colors.forEach(color => {
-      const colorOption = document.createElement('div');
-      colorOption.className = 'color-option';
-      colorOption.style.backgroundColor = color;
-      colorOption.onclick = () => {
-        document.querySelectorAll('.color-option').forEach(opt => {
-          opt.classList.remove('selected');
-        });
-        colorOption.classList.add('selected');
-        selectedColor = color;
-      };
-      colorPicker.appendChild(colorOption);
-    });
-  }
+  // ─── converts "13:05" ➜ "1:05 PM" ───
+    function formatTime(timeStr) {
+  const [hStr, m] = timeStr.split(":");
+  let h = parseInt(hStr, 10);
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+
+function initializeColorPicker(preSelected = selectedColor) {
+  const colorPicker = document.getElementById("colorPicker");
+  colorPicker.innerHTML = "";
+  colors.forEach(color => {
+    const dot = document.createElement("div");
+    dot.className = "color-option";
+    dot.style.backgroundColor = color;
+    if (color === preSelected) dot.classList.add("selected");
+    dot.onclick = () => {
+      document.querySelectorAll(".color-option")
+              .forEach(o => o.classList.remove("selected"));
+      dot.classList.add("selected");
+      selectedColor = color;
+    };
+    colorPicker.appendChild(dot);
+  });
+}
 
   /******************************************************* 
    7) Calendar Navigation 
@@ -893,6 +920,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     const newDateStr = currentDate.toISOString().split('T')[0];
     openJournal(newDateStr);
   }
+  /********
+
 
   /******************************************************* 
    10) Events
@@ -982,28 +1011,32 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     }
   }
 
-  function updateDailyEventsList(date) {
-    const dailyEventsList = document.getElementById('dailyEventsList');
-    dailyEventsList.innerHTML = '';
-    const dayEvents = events.filter(event => event.date === date);
+ function updateDailyEventsList(date) {
+  const list = document.getElementById("dailyEventsList");
+  list.innerHTML = "";
 
-    if (dayEvents.length === 0) {
-      dailyEventsList.innerHTML = '<p>No events scheduled for this day.</p>';
-      return;
-    }
-    dayEvents.sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const dayEvents = events
+    .filter(ev => ev.date === date)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-    dayEvents.forEach((event) => {
-      const eventDiv = document.createElement('div');
-      eventDiv.className = 'event';
-      eventDiv.style.backgroundColor = event.color;
-      eventDiv.style.margin = '5px 0';
-      eventDiv.style.padding = '8px';
-      eventDiv.textContent = `${event.startTime} - ${event.endTime}: ${event.description}`;
-      eventDiv.onclick = () => editEvent(event, events.indexOf(event));
-      dailyEventsList.appendChild(eventDiv);
-    });
+  if (dayEvents.length === 0) {
+    list.innerHTML = "<p>No events scheduled for this day.</p>";
+    return;
   }
+
+  dayEvents.forEach(ev => {
+    const div = document.createElement("div");
+    div.className = "event";
+    div.style.backgroundColor = ev.color;
+    div.style.margin = "5px 0";
+    div.style.padding = "8px";
+    div.textContent =
+      `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}: ${ev.description}`;
+    div.onclick = () => editEvent(ev, events.indexOf(ev));
+    list.appendChild(div);
+  });
+}
+
 
   /******************************************************* 
    11) Journal
@@ -1064,87 +1097,64 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   function createNewList() {
-    const listName = prompt("Enter name for new list:");
-    if (listName && listName.trim()) {
-      const listKey = listName.toLowerCase().replace(/\s+/g, '-');
-      if (!taskLists[listKey]) {
-        taskLists[listKey] = [];
-        const newBtn = document.createElement('button');
-        newBtn.textContent = listName;
-        newBtn.onclick = function() {
-          switchTaskList(listKey);
-        };
-        
-        const taskToggle = document.querySelector('.task-toggle');
-        taskToggle.appendChild(newBtn);
-        saveUserData();
-        
-        switchTaskList(listKey);
-      } else {
-        alert("A list with this name already exists!");
-      }
-    }
-  }
+  const name = prompt("Name for new list:");
+  if (!name) return;
+  const key = name.toLowerCase().replace(/\\s+/g, "-");
+  if (taskLists[key]) return alert("That list already exists!");
 
-  function deleteCurrentList() {
-    if (confirm(`Are you sure you want to delete the "${currentTaskList}" list?`)) {
-      if (currentTaskList === 'personal' || currentTaskList === 'work') {
-        alert("Cannot delete default lists!");
-        return;
-      }
-      const buttonToRemove = Array.from(document.querySelector('.task-toggle').children)
-        .find(btn => btn.textContent.toLowerCase() === currentTaskList.replace(/-/g, ' '));
-      if (buttonToRemove) {
-        buttonToRemove.remove();
-      }
-      delete taskLists[currentTaskList];
-      currentTaskList = 'personal';
-      document.getElementById('personalTasksBtn').classList.add('active');
-      saveUserData();
-      renderTasks();
-    }
+  taskLists[key] = [];
+  const btn = document.createElement("button");
+  btn.textContent = name;
+  btn.onclick = () => switchTaskList(key);
+  document.querySelector(".task-toggle").appendChild(btn);
+
+  saveUserData();
+  switchTaskList(key);
+}
+
+function deleteCurrentList() {
+  if (["personal", "work"].includes(currentTaskList)) {
+    alert("Can't delete default lists");
+    return;
   }
+  if (!confirm("Delete this list?")) return;
+
+  delete taskLists[currentTaskList];
+  document
+    .querySelectorAll(".task-toggle button")
+    .forEach(b => {
+      if (b.textContent.toLowerCase().replace(/\\s+/g, "-") === currentTaskList)
+        b.remove();
+    });
+
+  currentTaskList = "personal";
+  document.getElementById("personalTasksBtn").classList.add("active");
+  saveUserData();
+  renderTasks();
+}
 
   function addTask() {
-    const taskInput = document.getElementById('taskInput');
-    const rawText = taskInput.value.trim();
-    if (!rawText) {
-      alert("Please enter a task description");
-      return;
-    }
+  const text = taskInput.value.trim();
+  if (!text) return alert("Please enter a task");
+  const parts = text.split(",").map(t => t.trim()).filter(Boolean);
+  const daily = taskDailyCheckbox.checked;
+  if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
 
-    const tasksTexts = rawText.split(',').map(t => t.trim()).filter(Boolean);
-    const dailyCheckbox = document.getElementById('taskDailyCheckbox');
-    const isDaily = dailyCheckbox.checked;
-    
-    // Make sure the current task list exists
-    if (!taskLists[currentTaskList]) {
-      taskLists[currentTaskList] = [];
-    }
-
-    tasksTexts.forEach((text, i) => {
-      const newTask = {
-        text,
-        id: Date.now() + i,
-        repeat: isDaily ? 'daily' : 'once',
-      };
-      
-      if (isDaily) {
-        newTask.completions = {};
-      } else {
-        newTask.completed = false;
-      }
-      
-      taskLists[currentTaskList].push(newTask);
+  parts.forEach((t, i) => {
+    taskLists[currentTaskList].push({
+      text: t,
+      id: Date.now() + i,
+      repeat: daily ? "daily" : "once",
+      completed: false,
+      completions: {}
     });
-    
-    taskInput.value = '';
-    dailyCheckbox.checked = false;
+  });
 
-    saveUserData();
-    renderTasks();
-  }
-
+  taskInput.value = "";
+  taskDailyCheckbox.checked = false;
+  saveUserData();
+  renderTasks();
+}
   function renderTasks() {
     const taskList = document.getElementById('taskList');
     taskList.innerHTML = '';
@@ -1379,6 +1389,25 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
   // Initialize the task functionality
   initializeTaskControls();
+
+  // ─── expose everything HTML calls ───
+Object.assign(window, {
+  // auth & nav
+  loginWithGoogle, logoutFromGoogle, previousMonth, nextMonth,
+  // journal & goals
+  openJournal, closeJournalForm, changeJournalDay, saveJournal,
+  goToGoalsPage, saveGoals, closeGoalsForm, goToJournalFromGoals,
+  // events
+  addEvent, editEvent, saveEvent, deleteEvent, closeEventForm,
+  // tasks
+  addTask, toggleTask, deleteTask, switchTaskList,
+  createNewList, deleteCurrentList,
+  // habits
+  changeToHabit, changeToJournal, showNewHabitForm,
+  confirmAddHabit, cancelAddHabit, saveHabitTracker, cancelHabitTracker
+});
+generateCalendar();   // render current month on first load
+
 </script>
 
 </body>
