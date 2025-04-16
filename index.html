@@ -1217,34 +1217,35 @@ function deleteCurrentList() {
 
       taskList.appendChild(li);
       
-      // Skip showing completed tasks after rendering them
-      if ((task.repeat === 'daily' && task.completions && task.completions[dateKey]) ||
-          (task.repeat === 'once' && task.completed)) {
-        li.classList.add('fade-out');
-        setTimeout(() => {
-          li.style.display = 'none';
-        }, 5000);
-      }
+     
     });
   }
 
   // Use these internal functions for event handling
   function toggleTask(taskId, dateKey) {
-    const tasks = taskLists[currentTaskList];
-    const task = tasks.find(t => t.id == taskId);
-    
-    if (!task) return;
-    
-    if (task.repeat === 'once') {
-      task.completed = !task.completed;
-    } else if (task.repeat === 'daily') {
-      if (!task.completions) task.completions = {};
-      task.completions[dateKey] = !task.completions[dateKey];
-    }
-    
-    saveUserData();
-    renderTasks();
+  const tasks = taskLists[currentTaskList];
+  const task  = tasks.find(t => t.id == taskId);
+  if (!task) return;
+
+  // flip the flag
+  if (task.repeat === 'once') {
+    task.completed = !task.completed;
+  } else {
+    task.completions = task.completions || {};
+    task.completions[dateKey] = !task.completions[dateKey];
   }
+
+  // if it’s now completed, fade it out
+  if ((task.repeat === 'once' && task.completed) ||
+      (task.repeat === 'daily' && task.completions[dateKey])) {
+    const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+    li.classList.add('fade-out');
+    setTimeout(() => li.remove(), 500);  // remove after 0.5s
+  }
+
+  saveUserData();
+  renderTasks();  // re-render the rest
+}
 
   function deleteTask(taskId) {
     taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
