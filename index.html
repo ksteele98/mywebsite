@@ -4,13 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Calendar App (Google Auth)</title>
-  <link rel="manifest"      href="/manifest.json">
-<meta name="theme-color"  content="#4285f4">
-
-<link rel="icon"           type="image/png"      href="/icons/icon-192.png">
-<link rel="shortcut icon"                    
-<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png">
-<meta name="apple-mobile-web-app-title"      content="My Calendar">
 
   <style>
     /* === Your existing CSS unchanged === */
@@ -595,15 +588,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   /********************** 
     1) Firebase Imports
   ***********************/
- // ----- PWA: register service worker -----
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(() => console.log('✅ SW registered'))
-      .catch(err => console.error('SW failed', err));
-  });
-}
-
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
   import { 
@@ -920,8 +904,6 @@ function initializeColorPicker(preSelected = selectedColor) {
     const newDateStr = currentDate.toISOString().split('T')[0];
     openJournal(newDateStr);
   }
-  /********
-
 
   /******************************************************* 
    10) Events
