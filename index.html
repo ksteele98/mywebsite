@@ -1137,92 +1137,78 @@ function deleteCurrentList() {
   saveUserData();
   renderTasks();
 }
-  function renderTasks() {
-    const taskList = document.getElementById('taskList');
-    taskList.innerHTML = '';
+function renderTasks() {
+  const taskList = document.getElementById('taskList');
+  taskList.innerHTML = '';
 
-    // Make sure currentTaskList exists in taskLists
-    if (!taskLists[currentTaskList]) {
-      taskLists[currentTaskList] = [];
-    }
+  // ensure list exists
+  if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
 
-    const tasks = taskLists[currentTaskList];
-    const journalForm = document.getElementById('journalForm');
-    const dateKey = journalForm.dataset.date || new Date().toISOString().split('T')[0];
+  const tasks       = taskLists[currentTaskList];
+  const journalForm = document.getElementById('journalForm');
+  const dateKey     = journalForm.dataset.date || new Date().toISOString().split('T')[0];
 
-    if (tasks.length === 0) {
-      const emptyMessage = document.createElement('p');
-      emptyMessage.textContent = 'No tasks yet. Add a task above.';
-      emptyMessage.style.color = '#666';
-      emptyMessage.style.fontStyle = 'italic';
-      taskList.appendChild(emptyMessage);
-      return;
-    }
+  // ─── filter out completed tasks ───
+  const visibleTasks = tasks.filter(t =>
+    t.repeat === 'once'
+      ? !t.completed
+      : !(t.completions && t.completions[dateKey])
+  );
 
-    tasks.forEach(task => {
-      const li = document.createElement('li');
-      li.className = 'task-item';
-      li.setAttribute('data-task-id', task.id);
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.id = `task-checkbox-${task.id}`;
-      
-      // Check if task is completed based on its type
-      if (task.repeat === 'daily') {
-        checkbox.checked = task.completions && task.completions[dateKey];
-      } else {
-        checkbox.checked = task.completed;
-      }
-      
-      // Set the onclick handler directly as a function
-      checkbox.onclick = function() {
-        toggleTask(task.id, dateKey);
-      };
-
-      const span = document.createElement('span');
-      span.textContent = task.text;
-      if ((task.repeat === 'once' && task.completed) || 
-          (task.repeat === 'daily' && task.completions && task.completions[dateKey])) {
-        span.className = 'completed-task';
-      }
-
-      li.appendChild(checkbox);
-      li.appendChild(span);
-
-      if (task.repeat === 'daily') {
-        const dailyBadge = document.createElement('span');
-        dailyBadge.textContent = 'Repeat Daily';
-        dailyBadge.style.marginLeft = '8px';
-        dailyBadge.style.fontSize = '0.85rem';
-        dailyBadge.style.color = '#888';
-        li.appendChild(dailyBadge);
-      }
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = '×';
-      deleteBtn.style.marginLeft = 'auto';
-      deleteBtn.style.background = 'none';
-      deleteBtn.style.border = 'none';
-      deleteBtn.style.fontSize = '18px';
-      deleteBtn.style.cursor = 'pointer';
-      deleteBtn.style.color = '#dc3545';
-      
-      // Set the onclick handler directly as a function
-      deleteBtn.onclick = function() {
-        deleteTask(task.id);
-      };
-      
-      li.appendChild(deleteBtn);
-
-      taskList.appendChild(li);
-      
-     
-    });
+  // show “all done” message
+  if (visibleTasks.length === 0) {
+    const msg = document.createElement('p');
+    msg.textContent = 'All done! 🎉';
+    msg.style.color = '#666';
+    msg.style.fontStyle = 'italic';
+    taskList.appendChild(msg);
+    return;
   }
 
+  // ─── build the <li>s ───
+  visibleTasks.forEach(task => {
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.dataset.taskId = task.id;
+
+    const checkbox = document.createElement('input');
+    checkbox.type  = 'checkbox';
+    checkbox.id    = `task-checkbox-${task.id}`;
+    checkbox.checked =
+      task.repeat === 'daily'
+        ? task.completions && task.completions[dateKey]
+        : task.completed;
+    checkbox.onclick = () => toggleTask(task.id, dateKey);
+
+    const span = document.createElement('span');
+    span.textContent = task.text;
+
+    if (task.repeat === 'daily') {
+      const badge = document.createElement('span');
+      badge.textContent = 'Repeat Daily';
+      badge.style.cssText = 'margin-left:8px;font-size:0.85rem;color:#888;';
+      li.appendChild(badge);
+    }
+
+    const del = document.createElement('button');
+    del.textContent = '×';
+    del.style.cssText =
+      'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#dc3545;';
+    del.onclick = () => deleteTask(task.id);
+
+    li.append(checkbox, span, del);
+    taskList.appendChild(li);
+  });
+}
+
+
+
+    
+     
+
+
   // Use these internal functions for event handling
-  function toggleTask(taskId, dateKey) {
+function toggleTask(taskId, dateKey) {
   const tasks = taskLists[currentTaskList];
   const task  = tasks.find(t => t.id == taskId);
   if (!task) return;
