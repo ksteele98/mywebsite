@@ -439,7 +439,7 @@
 
 <!-- Add logout button that shows when logged in -->
 <div id="logoutSection" style="display: none; text-align:right; margin-bottom: 20px;">
-  <button onclick="logoutFromGoogle()" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
+  <button id="logoutButton" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
     Sign Out
   </button>
 </div>
@@ -584,6 +584,18 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 </div>
 
 <!-- ====================== Firebase + App Script ====================== -->
+<script>
+  // Create global function that will call the internal module function
+  function logoutFromGoogle() {
+    // This will be defined by the module script
+    window._logoutFromGoogle && window._logoutFromGoogle();
+  }
+  
+  function loginWithGoogle() {
+    window._loginWithGoogle && window._loginWithGoogle();
+  }
+</script>
+
 <script type="module">
   /********************** 
     1) Firebase Imports
@@ -625,7 +637,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const provider = new GoogleAuthProvider();
 
   // This function triggers the Google popup
-  async function loginWithGoogle() {
+  async function _loginWithGoogle() {
     try {
       const result = await signInWithPopup(auth, provider);
       // If successful, user is now signed in
@@ -655,8 +667,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     }
   });
 
-  // Log out the user from Google
-  async function logoutFromGoogle() {
+  // Update the logout function to store on window
+  async function _logoutFromGoogle() {
     try {
       await signOut(auth);
       console.log("User signed out successfully");
@@ -672,6 +684,10 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       console.error("Error signing out:", error);
     }
   }
+
+  // Store the internal function on window
+  window._logoutFromGoogle = _logoutFromGoogle;
+  window._loginWithGoogle = loginWithGoogle;
 
   /******************************************************* 
    4) In-Memory Data
@@ -1370,6 +1386,17 @@ Object.assign(window, {
   confirmAddHabit, cancelAddHabit, saveHabitTracker, cancelHabitTracker
 });
 generateCalendar();   // render current month on first load
+
+// Add an event listener to the button directly
+document.getElementById('logoutButton').addEventListener('click', async () => {
+  try {
+    await signOut(auth);
+    console.log("User signed out successfully");
+    // Clear local data and UI updates...
+  } catch (error) {
+    console.error("Error signing out:", error);
+  }
+});
 
 </script>
 
