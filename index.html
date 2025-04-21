@@ -439,7 +439,7 @@
 
 <!-- Add logout button that shows when logged in -->
 <div id="logoutSection" style="display: none; text-align:right; margin-bottom: 20px;">
-  <button id="logoutButton" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
+  <button onclick="logoutFromGoogle()" id="logoutButton" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
     Sign Out
   </button>
 </div>
@@ -593,6 +593,34 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   
   function loginWithGoogle() {
     window._loginWithGoogle && window._loginWithGoogle();
+  }
+
+  function changeToHabit() {
+    window._changeToHabit && window._changeToHabit();
+  }
+  
+  function changeToJournal() {
+    window._changeToJournal && window._changeToJournal();
+  }
+  
+  function showNewHabitForm() {
+    window._showNewHabitForm && window._showNewHabitForm();
+  }
+  
+  function confirmAddHabit() {
+    window._confirmAddHabit && window._confirmAddHabit();
+  }
+  
+  function cancelAddHabit() {
+    window._cancelAddHabit && window._cancelAddHabit();
+  }
+  
+  function saveHabitTracker() {
+    window._saveHabitTracker && window._saveHabitTracker();
+  }
+  
+  function cancelHabitTracker() {
+    window._cancelHabitTracker && window._cancelHabitTracker();
   }
 </script>
 
@@ -1398,6 +1426,126 @@ document.getElementById('logoutButton').addEventListener('click', async () => {
   }
 });
 
+// Implement the habit functions
+function _changeToHabit() {
+  const journalForm = document.getElementById('journalForm');
+  const habitForm = document.getElementById('habitForm');
+  const date = journalForm.dataset.date;
+  
+  journalForm.style.display = 'none';
+  habitForm.style.display = 'block';
+  habitForm.dataset.date = date;
+  
+  document.getElementById('habitDate').textContent = new Date(date + 'T00:00:00').toLocaleDateString();
+  renderHabits(date);
+}
+
+function _changeToJournal() {
+  document.getElementById('habitForm').style.display = 'none';
+  document.getElementById('journalForm').style.display = 'block';
+}
+
+function _showNewHabitForm() {
+  document.getElementById('newHabitForm').style.display = 'block';
+}
+
+function _confirmAddHabit() {
+  const habitName = document.getElementById('newHabitName').value.trim();
+  if (!habitName) return alert('Please enter a habit name');
+  
+  const habitType = document.querySelector('input[name="habitType"]:checked').value;
+  
+  globalHabits.push({
+    id: Date.now(),
+    name: habitName,
+    type: habitType
+  });
+  
+  saveUserData();
+  document.getElementById('newHabitForm').style.display = 'none';
+  renderHabits(document.getElementById('habitForm').dataset.date);
+}
+
+function _cancelAddHabit() {
+  document.getElementById('newHabitForm').style.display = 'none';
+}
+
+function _saveHabitTracker() {
+  saveUserData();
+  document.getElementById('habitForm').style.display = 'none';
+  document.getElementById('journalForm').style.display = 'block';
+}
+
+function _cancelHabitTracker() {
+  document.getElementById('habitForm').style.display = 'none';
+  document.getElementById('journalForm').style.display = 'block';
+}
+
+function renderHabits(date) {
+  const habitList = document.getElementById('habitList');
+  habitList.innerHTML = '';
+  
+  if (globalHabits.length === 0) {
+    habitList.innerHTML = '<p>No habits created yet. Click "Add Habit" to get started.</p>';
+    return;
+  }
+  
+  globalHabits.forEach(habit => {
+    const div = document.createElement('div');
+    div.style.margin = '10px 0';
+    div.style.padding = '10px';
+    div.style.border = '1px solid #ddd';
+    div.style.borderRadius = '4px';
+    
+    const label = document.createElement('label');
+    label.style.display = 'flex';
+    label.style.alignItems = 'center';
+    
+    if (habit.type === 'check') {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.style.marginRight = '10px';
+      checkbox.checked = habitTracker[date]?.[habit.id]?.completed || false;
+      checkbox.onchange = () => {
+        habitTracker[date] = habitTracker[date] || {};
+        habitTracker[date][habit.id] = habitTracker[date][habit.id] || {};
+        habitTracker[date][habit.id].completed = checkbox.checked;
+      };
+      
+      label.appendChild(checkbox);
+    } else { // count type
+      const count = document.createElement('input');
+      count.type = 'number';
+      count.min = '0';
+      count.style.width = '60px';
+      count.style.marginRight = '10px';
+      count.value = habitTracker[date]?.[habit.id]?.count || 0;
+      count.onchange = () => {
+        habitTracker[date] = habitTracker[date] || {};
+        habitTracker[date][habit.id] = habitTracker[date][habit.id] || {};
+        habitTracker[date][habit.id].count = parseInt(count.value) || 0;
+      };
+      
+      label.appendChild(count);
+    }
+    
+    const name = document.createElement('span');
+    name.textContent = habit.name;
+    label.appendChild(name);
+    
+    div.appendChild(label);
+    habitList.appendChild(div);
+  });
+}
+
+// Expose habit functions to window
+window._changeToHabit = _changeToHabit;
+window._changeToJournal = _changeToJournal;
+window._showNewHabitForm = _showNewHabitForm;
+window._confirmAddHabit = _confirmAddHabit;
+window._cancelAddHabit = _cancelAddHabit;
+window._saveHabitTracker = _saveHabitTracker;
+window._cancelHabitTracker = _cancelHabitTracker;
 </script>
 
 </body>
