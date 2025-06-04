@@ -1187,38 +1187,44 @@ function initializeColorPicker(preSelected = selectedColor) {
     const date = journalForm.dataset.date;
     const text = document.getElementById('journalText').value;
 
-    // if recording is still in progress, stop and wait for the blob
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      await new Promise(resolve => {
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-          const url = URL.createObjectURL(blob);
-          document.getElementById('audioPlayer').src = url;
-          document.getElementById('audioPlayer').style.display = 'block';
-          pendingAudioFile = new File([blob], 'journal.webm', { type: 'audio/webm' });
-          document.getElementById('recordAudioBtn').textContent = 'Start Recording';
-          resolve();
-        };
-        mediaRecorder.stop();
-      });
-    }
-
-    // upload audio if a new file is pending
-    if (pendingAudioFile) {
-      try {
-        const storageRef = ref(storage, `journalAudio/${userId}/${date}/${pendingAudioFile.name}`);
-        await uploadBytes(storageRef, pendingAudioFile);
-        const url = await getDownloadURL(storageRef);
-        journalAudios[date] = url;
-      } catch (err) {
-        console.error('Error uploading audio:', err);
+    try {
+      // if recording is still in progress, stop and wait for the blob
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        await new Promise(resolve => {
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+            const url = URL.createObjectURL(blob);
+            document.getElementById('audioPlayer').src = url;
+            document.getElementById('audioPlayer').style.display = 'block';
+            pendingAudioFile = new File([blob], 'journal.webm', { type: 'audio/webm' });
+            document.getElementById('recordAudioBtn').textContent = 'Start Recording';
+            resolve();
+          };
+          mediaRecorder.stop();
+        });
       }
-      pendingAudioFile = null;
-    }
 
-    journalEntries[date] = text;
-    saveUserData();
-    closeJournalForm();
+      // upload audio if a new file is pending
+      if (pendingAudioFile) {
+        try {
+          const storageRef = ref(storage, `journalAudio/${userId}/${date}/${pendingAudioFile.name}`);
+          await uploadBytes(storageRef, pendingAudioFile);
+          const url = await getDownloadURL(storageRef);
+          journalAudios[date] = url;
+        } catch (err) {
+          console.error('Error uploading audio:', err);
+        }
+        pendingAudioFile = null;
+      }
+
+      journalEntries[date] = text;
+      await saveUserData();
+    } catch (err) {
+      console.error('Error saving journal:', err);
+      alert('Failed to save journal entry. Please try again.');
+    } finally {
+      closeJournalForm();
+    }
   }
 
   /******************************************************* 
