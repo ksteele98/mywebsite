@@ -666,7 +666,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     apiKey: "AIzaSyCmtc69JDgCWtxPNgPU73Y4n7-asl6M72w",
     authDomain: "my-website-5dfa1.firebaseapp.com",
     projectId: "my-website-5dfa1",
-    storageBucket: "my-website-5dfa1.firebasestorage.app",
+    storageBucket: "my-website-5dfa1.appspot.com",
     messagingSenderId: "36790147861",
     appId: "1:36790147861:web:6391e58fe3193c4fabe71c",
     measurementId: "G-SSJEV8WQFT"
@@ -1035,6 +1035,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       mediaRecorder.stop();
       return;
     }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
@@ -1187,6 +1188,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     const date = journalForm.dataset.date;
     const text = document.getElementById('journalText').value;
 
+
     // if recording is still in progress, stop and wait for the blob
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       await new Promise(resolve => {
@@ -1216,9 +1218,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       pendingAudioFile = null;
     }
 
-    journalEntries[date] = text;
-    saveUserData();
-    closeJournalForm();
+<<
   }
 
   /******************************************************* 
