@@ -1035,14 +1035,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       mediaRecorder.stop();
       return;
     }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('Audio recording is not supported in this browser.');
-      return;
-    }
-    if (!window.isSecureContext) {
-      alert('Audio recording requires HTTPS to access the microphone.');
-      return;
-    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
@@ -1195,7 +1188,6 @@ function initializeColorPicker(preSelected = selectedColor) {
     const date = journalForm.dataset.date;
     const text = document.getElementById('journalText').value;
 
-    try {
 
     // if recording is still in progress, stop and wait for the blob
     if (mediaRecorder && mediaRecorder.state === 'recording') {
@@ -1226,11 +1218,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       pendingAudioFile = null;
     }
 
-      journalEntries[date] = text;
-      await saveUserData();
-    } finally {
-      closeJournalForm();
-    }
+<<
   }
 
   /******************************************************* 
