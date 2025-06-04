@@ -363,6 +363,13 @@
       border-radius: 4px;
       cursor: pointer;
     }
+    .audio-section button {
+      padding: 6px 12px;
+      margin-right: 10px;
+    }
+    .audio-section input[type="file"] {
+      display: inline-block;
+    }
 
     @media screen and (max-width: 768px) {
       .calendar-grid {
@@ -504,6 +511,14 @@
 
   <h4>Journal Entry</h4>
   <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
+
+  <div class="audio-section">
+    <audio id="audioPlayer" controls style="display:none; width:100%; margin:10px 0;"></audio>
+    <div style="margin-bottom:10px;">
+      <button id="recordAudioBtn" onclick="toggleRecording()">Start Recording</button>
+      <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioUpload(event)" style="margin-left:10px;">
+    </div>
+  </div>
         
   <div class="task-container">
     <div class="tasks-header">
@@ -633,14 +648,15 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   ***********************/
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-analytics.js";
-  import { 
-    getAuth, 
-    GoogleAuthProvider, 
-    signInWithPopup, 
+  import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
     onAuthStateChanged,
     signOut
   } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
 
   /********************** 
     2) Firebase Config 
@@ -663,6 +679,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const analytics = getAnalytics(app);
   const auth = getAuth(app);
   const db   = getFirestore(app);
+  const storage = getStorage(app);
 
   let userId = null;  // will store current Google user's uid here
   const provider = new GoogleAuthProvider();
@@ -732,6 +749,10 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
   let habitTracker = {};
   let globalHabits = [];
+  let journalAudios = {};
+  let pendingAudioFile = null;
+  let mediaRecorder = null;
+  let recordedChunks = [];
 
   // journal navigation mode
   let journalMode = false;
@@ -750,6 +771,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
         const data = docSnap.data();
         events          = data.events          || [];
         journalEntries  = data.journalEntries  || {};
+        journalAudios   = data.journalAudios   || {};
         taskLists       = data.taskLists       || { personal: [], work: [] };
         habitTracker    = data.habitTracker    || {};
         globalHabits    = data.globalHabits    || [];
@@ -774,6 +796,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       await setDoc(docRef, {
         events,
         journalEntries,
+        journalAudios,
         taskLists,
         habitTracker,
         globalHabits,
@@ -923,12 +946,31 @@ function initializeColorPicker(preSelected = selectedColor) {
     const journalForm = document.getElementById('journalForm');
     const journalDate = document.getElementById('journalDate');
     const journalText = document.getElementById('journalText');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const recordBtn = document.getElementById('recordAudioBtn');
+    const fileInput = document.getElementById('audioFileInput');
+
+    pendingAudioFile = null;
+    recordedChunks = [];
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
+    recordBtn.textContent = 'Start Recording';
+    fileInput.value = '';
 
     const displayDate = new Date(date + 'T00:00:00');
     journalDate.textContent = displayDate.toLocaleDateString();
     journalText.value = journalEntries[date] || '';
     journalForm.dataset.date = date;
     journalForm.style.display = 'block';
+
+    if (journalAudios[date]) {
+      audioPlayer.src = journalAudios[date];
+      audioPlayer.style.display = 'block';
+    } else {
+      audioPlayer.src = '';
+      audioPlayer.style.display = 'none';
+    }
 
     document.getElementById('prevDayButton').style.display = 'block';
     document.getElementById('nextDayButton').style.display = 'block';
@@ -985,7 +1027,44 @@ function initializeColorPicker(preSelected = selectedColor) {
     openJournal(newDateStr);
   }
 
-  /******************************************************* 
+  /*******************************************************
+   10) Audio Recording/Upload
+  *******************************************************/
+  async function toggleRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        document.getElementById('audioPlayer').src = url;
+        document.getElementById('audioPlayer').style.display = 'block';
+        pendingAudioFile = new File([blob], 'journal.webm', { type: 'audio/webm' });
+        document.getElementById('recordAudioBtn').textContent = 'Start Recording';
+      };
+      mediaRecorder.start();
+      document.getElementById('recordAudioBtn').textContent = 'Stop Recording';
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+    }
+  }
+
+  function handleAudioUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    pendingAudioFile = file;
+    const url = URL.createObjectURL(file);
+    document.getElementById('audioPlayer').src = url;
+    document.getElementById('audioPlayer').style.display = 'block';
+  }
+
+  /*******************************************************
    10) Events
   *******************************************************/
   function addEvent(date) {
@@ -1103,10 +1182,23 @@ function initializeColorPicker(preSelected = selectedColor) {
   /******************************************************* 
    11) Journal
   *******************************************************/
-  function saveJournal() {
+  async function saveJournal() {
     const journalForm = document.getElementById('journalForm');
     const date = journalForm.dataset.date;
     const text = document.getElementById('journalText').value;
+
+    // upload audio if a new file is pending
+    if (pendingAudioFile) {
+      try {
+        const storageRef = ref(storage, `journalAudio/${userId}/${date}/${pendingAudioFile.name}`);
+        await uploadBytes(storageRef, pendingAudioFile);
+        const url = await getDownloadURL(storageRef);
+        journalAudios[date] = url;
+      } catch (err) {
+        console.error('Error uploading audio:', err);
+      }
+      pendingAudioFile = null;
+    }
 
     journalEntries[date] = text;
     saveUserData();
@@ -1410,6 +1502,8 @@ function toggleTask(taskId, dateKey) {
   window.closeEventForm = closeEventForm;
   window.deleteEvent = deleteEvent;
   window.saveJournal = saveJournal;
+  window.toggleRecording = toggleRecording;
+  window.handleAudioUpload = handleAudioUpload;
   window.goToGoalsPage = goToGoalsPage;
   window.saveGoals = saveGoals;
   window.closeGoalsForm = closeGoalsForm;
@@ -1442,6 +1536,7 @@ Object.assign(window, {
   openJournal, closeJournalForm, changeJournalDay, saveJournal,
   openJournalMode,
   goToGoalsPage, saveGoals, closeGoalsForm, goToJournalFromGoals,
+  toggleRecording, handleAudioUpload,
   // events
   addEvent, editEvent, saveEvent, deleteEvent, closeEventForm,
   // tasks
