@@ -1183,49 +1183,62 @@ function initializeColorPicker(preSelected = selectedColor) {
    11) Journal
   *******************************************************/
   async function saveJournal() {
-    const journalForm = document.getElementById('journalForm');
-    const date = journalForm.dataset.date;
-    const text = document.getElementById('journalText').value;
+  const journalForm = document.getElementById('journalForm');
+  const date        = journalForm.dataset.date;
+  const text        = document.getElementById('journalText').value.trim();
 
-    try {
-      // if recording is still in progress, stop and wait for the blob
-      if (mediaRecorder && mediaRecorder.state === 'recording') {
-        await new Promise(resolve => {
-          mediaRecorder.onstop = () => {
-            const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-            const url = URL.createObjectURL(blob);
-            document.getElementById('audioPlayer').src = url;
-            document.getElementById('audioPlayer').style.display = 'block';
-            pendingAudioFile = new File([blob], 'journal.webm', { type: 'audio/webm' });
-            document.getElementById('recordAudioBtn').textContent = 'Start Recording';
-            resolve();
-          };
-          mediaRecorder.stop();
-        });
-      }
-
-      // upload audio if a new file is pending
-      if (pendingAudioFile) {
-        try {
-          const storageRef = ref(storage, `journalAudio/${userId}/${date}/${pendingAudioFile.name}`);
-          await uploadBytes(storageRef, pendingAudioFile);
-          const url = await getDownloadURL(storageRef);
-          journalAudios[date] = url;
-        } catch (err) {
-          console.error('Error uploading audio:', err);
-        }
-        pendingAudioFile = null;
-      }
-
-      journalEntries[date] = text;
-      await saveUserData();
-    } catch (err) {
-      console.error('Error saving journal:', err);
-      alert('Failed to save journal entry. Please try again.');
-    } finally {
-      closeJournalForm();
-    }
+  if (!userId) {
+    alert('You need to sign in first.');       // early exit guard
+    return;
   }
+
+  try {
+    /* ── 1. Stop a live recording, if any ── */
+    if (mediaRecorder?.state === 'recording') {
+      await new Promise(res => {
+        mediaRecorder.addEventListener('stop', res, { once: true });
+        mediaRecorder.stop();
+      });
+    }
+
+    /* ── 2. Upload audio (unique name to avoid collisions) ── */
+    if (pendingAudioFile) {
+      const safeName  = `${Date.now()}-${pendingAudioFile.name}`;
+      const storageRef = ref(
+        storage,
+        `journalAudio/${userId}/${date}/${safeName}`
+      );
+
+      const snap  = await uploadBytes(storageRef, pendingAudioFile);
+      const url   = await getDownloadURL(snap.ref);
+      journalAudios[date] = url;
+      pendingAudioFile = null;
+    }
+
+    /* ── 3. Store text right away ── */
+    journalEntries[date] = text;
+
+    /* ── 4. Persist only the changed fields ── */
+    await setDoc(
+      doc(db, 'users', userId),
+      {
+        journalEntries,
+        journalAudios,
+        userGoals: document.getElementById('goalsText')?.value || ''
+      },
+      { merge: true }
+    );
+
+    /* ── 5. Visual feedback ── */
+    generateCalendar();
+    updateDailyEventsList(date);
+    closeJournalForm();
+  } catch (err) {
+    console.error('Error saving journal:', err);
+    alert('Could not save your journal entry. Check the console for details.');
+  }
+}
+
 
   /******************************************************* 
    12) Goals
