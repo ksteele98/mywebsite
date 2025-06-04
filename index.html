@@ -439,6 +439,9 @@
 
 <!-- Add logout button that shows when logged in -->
 <div id="logoutSection" style="display: none; text-align:right; margin-bottom: 20px;">
+  <button onclick="openJournalMode()" id="journalModeBtn" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 10px;">
+    Journal Mode
+  </button>
   <button onclick="logoutFromGoogle()" id="logoutButton" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
     Sign Out
   </button>
@@ -730,6 +733,11 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   let habitTracker = {};
   let globalHabits = [];
 
+  // journal navigation mode
+  let journalMode = false;
+  let journalEntryDates = [];
+  let journalEntryIndex = 0;
+
   /******************************************************* 
    5) Firestore Load/Save 
   *******************************************************/
@@ -930,13 +938,41 @@ function initializeColorPicker(preSelected = selectedColor) {
     initializeTaskControls(); // Initialize task controls each time the journal is opened
   }
 
+  function openJournalMode() {
+    journalEntryDates = Object.keys(journalEntries)
+      .filter(d => journalEntries[d] && journalEntries[d].trim() !== '')
+      .sort();
+    if (journalEntryDates.length === 0) {
+      alert('No journal entries to display.');
+      return;
+    }
+    journalEntryIndex = journalEntryDates.length - 1; // most recent
+    journalMode = true;
+    document.querySelector('.calendar-container').style.display = 'none';
+    openJournal(journalEntryDates[journalEntryIndex]);
+  }
+
   function closeJournalForm() {
     document.getElementById('journalForm').style.display = 'none';
     document.getElementById('prevDayButton').style.display = 'none';
     document.getElementById('nextDayButton').style.display = 'none';
+    if (journalMode) {
+      document.querySelector('.calendar-container').style.display = 'block';
+      journalMode = false;
+    }
   }
 
   function changeJournalDay(direction) {
+    if (journalMode) {
+      if (journalEntryDates.length === 0) return;
+      journalEntryIndex += direction;
+      if (journalEntryIndex < 0) journalEntryIndex = 0;
+      if (journalEntryIndex >= journalEntryDates.length) journalEntryIndex = journalEntryDates.length - 1;
+      const newDateStr = journalEntryDates[journalEntryIndex];
+      openJournal(newDateStr);
+      return;
+    }
+
     const journalForm = document.getElementById('journalForm');
     const currentDateStr = journalForm.dataset.date;
     if (!currentDateStr) return;
@@ -1366,6 +1402,7 @@ function toggleTask(taskId, dateKey) {
   window.previousMonth = previousMonth;
   window.nextMonth = nextMonth;
   window.openJournal = openJournal;
+  window.openJournalMode = openJournalMode;
   window.closeJournalForm = closeJournalForm;
   window.changeJournalDay = changeJournalDay;
   window.addEvent = addEvent;
@@ -1403,6 +1440,7 @@ Object.assign(window, {
   loginWithGoogle, logoutFromGoogle, previousMonth, nextMonth,
   // journal & goals
   openJournal, closeJournalForm, changeJournalDay, saveJournal,
+  openJournalMode,
   goToGoalsPage, saveGoals, closeGoalsForm, goToJournalFromGoals,
   // events
   addEvent, editEvent, saveEvent, deleteEvent, closeEventForm,
