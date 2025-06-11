@@ -208,7 +208,7 @@
       border-bottom: 1px solid #eee;
       flex-wrap: wrap;
       gap: 5px;
-      transition: opacity 5s ease;
+      transition: opacity 4s ease;
       opacity: 1;
     }
     .task-item.fade-out {
@@ -1427,7 +1427,12 @@ function toggleTask(taskId, dateKey) {
       (task.repeat === 'daily' && task.completions[dateKey])) {
     const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
     li.classList.add('fade-out');
-    setTimeout(() => li.remove(), 500);  // remove after 0.5s
+    setTimeout(() => {
+      li.remove();
+      saveUserData();
+      renderTasks();
+    }, 4000);  // remove after fade-out
+    return;
   }
 
   saveUserData();
@@ -1435,9 +1440,20 @@ function toggleTask(taskId, dateKey) {
 }
 
   function deleteTask(taskId) {
-    taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
-    saveUserData();
-    renderTasks();
+    const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+    if (li) {
+      li.classList.add('fade-out');
+      setTimeout(() => {
+        li.remove();
+        taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
+        saveUserData();
+        renderTasks();
+      }, 4000);
+    } else {
+      taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
+      saveUserData();
+      renderTasks();
+    }
   }
 
   // Replace the initializeTaskControls function with this improved version
