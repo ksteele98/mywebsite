@@ -1221,77 +1221,76 @@ function initializeColorPicker(preSelected = selectedColor) {
   /******************************************************* 
    11) Journal
   *******************************************************/
-  async function saveJournal() {
+async function saveJournal() {
   const journalForm = document.getElementById('journalForm');
-  const date        = journalForm.dataset.date;
-  const text        = document.getElementById('journalText').value.trim();
+  const date = journalForm.dataset.date;
+  const text = document.getElementById('journalText').value.trim();
 
   if (!userId) {
-    alert('You need to sign in first.');       // early exit guard
+    alert('You need to sign in first.');
     return;
   }
 
+  // Ensure mediaRecorder is finished before saving
+  if (mediaRecorder?.state === 'recording') {
+    await new Promise((resolve) => {
+      mediaRecorder.addEventListener('stop', resolve, { once: true });
+      mediaRecorder.stop();
+    });
+  }
+
   try {
-    /* ── 1. Stop a live recording, if any ── */
-    if (mediaRecorder?.state === 'recording') {
-      await new Promise(res => {
-        mediaRecorder.addEventListener('stop', res, { once: true });
-        mediaRecorder.stop();
-      });
-    }
-
-    /* ── 2. Upload audio (unique name to avoid collisions) ── */
+    // Upload audio
     if (pendingAudioFile) {
-      const safeName  = `${Date.now()}-${pendingAudioFile.name}`;
-      const storageRef = ref(
+      const audioRef = ref(
         storage,
-        `journalAudio/${userId}/${date}/${safeName}`
+        `journalAudio/${userId}/${date}/${Date.now()}-${pendingAudioFile.name}`
       );
-
-      const snap  = await uploadBytes(storageRef, pendingAudioFile);
-      const url   = await getDownloadURL(snap.ref);
-      journalAudios[date] = url;
+      const audioSnap = await uploadBytes(audioRef, pendingAudioFile, {
+        contentType: pendingAudioFile.type,
+      });
+      const audioURL = await getDownloadURL(audioSnap.ref);
+      journalAudios[date] = audioURL;
       pendingAudioFile = null;
     }
 
-    /* ── 3. Upload image (unique name as well) ── */
+    // Upload image
     if (pendingImageFile) {
-      const safeName  = `${Date.now()}-${pendingImageFile.name}`;
-      const storageRef = ref(
+      const imgRef = ref(
         storage,
-        `journalImages/${userId}/${date}/${safeName}`
+        `journalImages/${userId}/${date}/${Date.now()}-${pendingImageFile.name}`
       );
-
-      const snap  = await uploadBytes(storageRef, pendingImageFile);
-      const url   = await getDownloadURL(snap.ref);
-      journalImages[date] = url;
+      const imgSnap = await uploadBytes(imgRef, pendingImageFile, {
+        contentType: pendingImageFile.type,
+      });
+      const imageURL = await getDownloadURL(imgSnap.ref);
+      journalImages[date] = imageURL;
       pendingImageFile = null;
     }
 
-    /* ── 4. Store text right away ── */
+    // Save journal text
     journalEntries[date] = text;
 
-    /* ── 5. Persist only the changed fields ── */
     await setDoc(
       doc(db, 'users', userId),
       {
         journalEntries,
         journalAudios,
         journalImages,
-        userGoals: document.getElementById('goalsText')?.value || ''
       },
       { merge: true }
     );
 
-    /* ── 6. Visual feedback ── */
     generateCalendar();
     updateDailyEventsList(date);
     closeJournalForm();
+    console.log('Journal saved ✅');
   } catch (err) {
     console.error('Error saving journal:', err);
-    alert('Could not save your journal entry. Check the console for details.');
+    alert('Saving failed. Check your console for details.');
   }
 }
+
 
 
   /******************************************************* 
