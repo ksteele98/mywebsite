@@ -1354,15 +1354,6 @@ async function saveJournal() {
 // 🔁 Make sure your button is using the latest version
 window.saveJournal = saveJournal;
 
-    generateCalendar();
-    updateDailyEventsList(date);
-    closeJournalForm();
-    console.log('Journal saved ✅');
-  } catch (err) {
-    console.error('Error saving journal:', err);
-    alert('Saving failed. Check your console for details.');
-  }
-}
 
 
 
