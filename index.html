@@ -132,14 +132,7 @@
       margin-bottom: 5px;
       font-size: 14px;
     }
-    .time-picker {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    /* custom time picker dropdowns for desktop */
-    .time-picker select {
-      padding: 8px;
+
       margin-right: 4px;
     }
     .event-actions {
@@ -788,48 +781,31 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     const input = document.getElementById(inputId);
     if (!input || isMobileDevice()) return;
 
+
     const container = document.createElement('div');
     container.className = 'time-picker';
     const hours = document.createElement('select');
     const minutes = document.createElement('select');
 
-    for (let h = 0; h < 24; h++) {
-      const opt = document.createElement('option');
-      opt.value = opt.textContent = String(h).padStart(2, '0');
       hours.appendChild(opt);
     }
     for (let m = 0; m < 60; m++) {
       const opt = document.createElement('option');
-      opt.value = opt.textContent = String(m).padStart(2, '0');
-      minutes.appendChild(opt);
-    }
+
 
     container.appendChild(hours);
     container.appendChild(document.createTextNode(' : '));
     container.appendChild(minutes);
 
-    function syncFromInput() {
-      if (input.value) {
-        const [h, m] = input.value.split(':');
-        hours.value = h;
-        minutes.value = m;
-      } else {
-        hours.value = '00';
-        minutes.value = '00';
       }
     }
 
     function syncToInput() {
-      input.value = hours.value + ':' + minutes.value;
+<
     }
 
     hours.onchange = syncToInput;
     minutes.onchange = syncToInput;
-
-    syncFromInput();
-
-    input.style.display = 'none';
-    input.parentNode.insertBefore(container, input.nextSibling);
 
     input.setTimePicker = { syncFromInput };
   }
