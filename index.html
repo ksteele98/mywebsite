@@ -371,6 +371,12 @@
       display: inline-block;
     }
 
+    .image-section img {
+      max-width: 100%;
+      margin: 10px 0;
+      display: block;
+    }
+
     @media screen and (max-width: 768px) {
       .calendar-grid {
         font-size: 14px;
@@ -519,7 +525,12 @@
       <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioUpload(event)" style="margin-left:10px;">
     </div>
   </div>
-        
+
+  <div class="image-section">
+    <img id="imagePreview" style="display:none; width:100%; margin:10px 0;" />
+    <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)">
+  </div>
+
   <div class="task-container">
     <div class="tasks-header">
       <h3>Tasks</h3>
@@ -723,6 +734,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       // Clear local data
       events = [];
       journalEntries = {};
+      journalAudios = {};
+      journalImages = {};
       taskLists = { personal: [], work: [] };
       habitTracker = {};
       globalHabits = [];
@@ -750,7 +763,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   let habitTracker = {};
   let globalHabits = [];
   let journalAudios = {};
+  let journalImages = {};
   let pendingAudioFile = null;
+  let pendingImageFile = null;
   let mediaRecorder = null;
   let recordedChunks = [];
 
@@ -772,6 +787,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
         events          = data.events          || [];
         journalEntries  = data.journalEntries  || {};
         journalAudios   = data.journalAudios   || {};
+        journalImages   = data.journalImages   || {};
         taskLists       = data.taskLists       || { personal: [], work: [] };
         habitTracker    = data.habitTracker    || {};
         globalHabits    = data.globalHabits    || [];
@@ -797,6 +813,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
         events,
         journalEntries,
         journalAudios,
+        journalImages,
         taskLists,
         habitTracker,
         globalHabits,
@@ -949,14 +966,18 @@ function initializeColorPicker(preSelected = selectedColor) {
     const audioPlayer = document.getElementById('audioPlayer');
     const recordBtn = document.getElementById('recordAudioBtn');
     const fileInput = document.getElementById('audioFileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const imageInput = document.getElementById('imageFileInput');
 
     pendingAudioFile = null;
+    pendingImageFile = null;
     recordedChunks = [];
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
     }
     recordBtn.textContent = 'Start Recording';
     fileInput.value = '';
+    imageInput.value = '';
 
     const displayDate = new Date(date + 'T00:00:00');
     journalDate.textContent = displayDate.toLocaleDateString();
@@ -970,6 +991,14 @@ function initializeColorPicker(preSelected = selectedColor) {
     } else {
       audioPlayer.src = '';
       audioPlayer.style.display = 'none';
+    }
+
+    if (journalImages[date]) {
+      imagePreview.src = journalImages[date];
+      imagePreview.style.display = 'block';
+    } else {
+      imagePreview.src = '';
+      imagePreview.style.display = 'none';
     }
 
     document.getElementById('prevDayButton').style.display = 'block';
@@ -1062,6 +1091,16 @@ function initializeColorPicker(preSelected = selectedColor) {
     const url = URL.createObjectURL(file);
     document.getElementById('audioPlayer').src = url;
     document.getElementById('audioPlayer').style.display = 'block';
+  }
+
+  function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    pendingImageFile = file;
+    const url = URL.createObjectURL(file);
+    const preview = document.getElementById('imagePreview');
+    preview.src = url;
+    preview.style.display = 'block';
   }
 
   /*******************************************************
@@ -1215,21 +1254,36 @@ function initializeColorPicker(preSelected = selectedColor) {
       pendingAudioFile = null;
     }
 
-    /* ── 3. Store text right away ── */
+    /* ── 3. Upload image (unique name as well) ── */
+    if (pendingImageFile) {
+      const safeName  = `${Date.now()}-${pendingImageFile.name}`;
+      const storageRef = ref(
+        storage,
+        `journalImages/${userId}/${date}/${safeName}`
+      );
+
+      const snap  = await uploadBytes(storageRef, pendingImageFile);
+      const url   = await getDownloadURL(snap.ref);
+      journalImages[date] = url;
+      pendingImageFile = null;
+    }
+
+    /* ── 4. Store text right away ── */
     journalEntries[date] = text;
 
-    /* ── 4. Persist only the changed fields ── */
+    /* ── 5. Persist only the changed fields ── */
     await setDoc(
       doc(db, 'users', userId),
       {
         journalEntries,
         journalAudios,
+        journalImages,
         userGoals: document.getElementById('goalsText')?.value || ''
       },
       { merge: true }
     );
 
-    /* ── 5. Visual feedback ── */
+    /* ── 6. Visual feedback ── */
     generateCalendar();
     updateDailyEventsList(date);
     closeJournalForm();
@@ -1555,6 +1609,7 @@ function toggleTask(taskId, dateKey) {
   window.saveJournal = saveJournal;
   window.toggleRecording = toggleRecording;
   window.handleAudioUpload = handleAudioUpload;
+  window.handleImageUpload = handleImageUpload;
   window.goToGoalsPage = goToGoalsPage;
   window.saveGoals = saveGoals;
   window.closeGoalsForm = closeGoalsForm;
@@ -1587,7 +1642,7 @@ Object.assign(window, {
   openJournal, closeJournalForm, changeJournalDay, saveJournal,
   openJournalMode,
   goToGoalsPage, saveGoals, closeGoalsForm, goToJournalFromGoals,
-  toggleRecording, handleAudioUpload,
+  toggleRecording, handleAudioUpload, handleImageUpload,
   // events
   addEvent, editEvent, saveEvent, deleteEvent, closeEventForm,
   // tasks
