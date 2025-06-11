@@ -132,25 +132,7 @@
       margin-bottom: 5px;
       font-size: 14px;
     }
-    .time-picker-wrapper {
-      position: relative;
-      display: inline-block;
-    }
-    .time-picker {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      padding: 6px;
-      z-index: 1001;
-      display: none;
-      align-items: center;
-      margin-top: 4px;
-    }
-    /* custom time picker dropdowns for desktop */
-    .time-picker select {
-      padding: 6px;
+
       margin-right: 4px;
     }
     .event-actions {
@@ -799,82 +781,31 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     const input = document.getElementById(inputId);
     if (!input || isMobileDevice()) return;
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'time-picker-wrapper';
-    input.parentNode.insertBefore(wrapper, input);
-    wrapper.appendChild(input);
 
     const container = document.createElement('div');
     container.className = 'time-picker';
     const hours = document.createElement('select');
     const minutes = document.createElement('select');
-    const ampm = document.createElement('select');
 
-    for (let h = 1; h <= 12; h++) {
-      const opt = document.createElement('option');
-      opt.value = String(h).padStart(2, '0');
-      opt.textContent = opt.value;
       hours.appendChild(opt);
     }
     for (let m = 0; m < 60; m++) {
       const opt = document.createElement('option');
-      opt.value = String(m).padStart(2, '0');
-      opt.textContent = opt.value;
-      minutes.appendChild(opt);
-    }
-    ['AM', 'PM'].forEach(ap => {
-      const opt = document.createElement('option');
-      opt.value = ap;
-      opt.textContent = ap;
-      ampm.appendChild(opt);
-    });
+
 
     container.appendChild(hours);
     container.appendChild(document.createTextNode(' : '));
     container.appendChild(minutes);
-    container.appendChild(ampm);
-    wrapper.appendChild(container);
 
-    function syncFromInput() {
-      if (input.value) {
-        const [hStr, mStr] = input.value.split(':');
-        let h = parseInt(hStr, 10);
-        const ap = h >= 12 ? 'PM' : 'AM';
-        h = h % 12;
-        if (h === 0) h = 12;
-        hours.value = String(h).padStart(2, '0');
-        minutes.value = mStr;
-        ampm.value = ap;
-      } else {
-        hours.value = '12';
-        minutes.value = '00';
-        ampm.value = 'AM';
       }
     }
 
     function syncToInput() {
-      let h = parseInt(hours.value, 10);
-      if (ampm.value === 'PM' && h < 12) h += 12;
-      if (ampm.value === 'AM' && h === 12) h = 0;
-      input.value = String(h).padStart(2, '0') + ':' + minutes.value;
+<
     }
 
     hours.onchange = syncToInput;
     minutes.onchange = syncToInput;
-    ampm.onchange = syncToInput;
-
-    syncFromInput();
-
-    input.addEventListener('focus', () => {
-      syncFromInput();
-      container.style.display = 'flex';
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!wrapper.contains(e.target)) {
-        container.style.display = 'none';
-      }
-    });
 
     input.setTimePicker = { syncFromInput };
   }
