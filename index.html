@@ -789,6 +789,26 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   let journalEntryDates = [];
   let journalEntryIndex = 0;
 
+
+
+  async function hydrateDownloadURLs(obj, folderName) {
+  const out = {};
+  for (const [date, value] of Object.entries(obj)) {
+    // Already a signed URL? keep it.
+    if (value.includes('alt=media')) { out[date] = value; continue; }
+
+    // Otherwise treat it as a Storage fullPath and get the URL.
+    try {
+      const refFromPath = ref(storage, value); // value == 'journalImages/uid/...'
+      out[date] = await getDownloadURL(refFromPath);
+      console.log(`🔄 Fixed ${folderName} for ${date}`);
+    } catch (e) {
+      console.warn(`⚠️  Could not resolve ${value}`, e);
+    }
+  }
+  return out;
+}
+
   /******************************************************* 
    5) Firestore Load/Save 
   *******************************************************/
