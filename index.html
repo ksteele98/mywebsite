@@ -1007,7 +1007,6 @@ function initializeColorPicker(preSelected = selectedColor) {
     const imagePreview = document.getElementById('imagePreview');
     const imageInput = document.getElementById('imageFileInput');
 
-    
     recordedChunks = [];
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
@@ -1022,11 +1021,36 @@ function initializeColorPicker(preSelected = selectedColor) {
     journalForm.dataset.date = date;
     journalForm.style.display = 'block';
 
-   audioPlayer.src  = journalAudios[date] ?? '';
-imagePreview.src = journalImages[date] ?? '';
+    // --- Always use download URL for audio ---
+    const audioVal = journalAudios[date] ?? '';
+    if (audioVal && !audioVal.startsWith('http')) {
+      // It's a storage path, get the download URL
+      getDownloadURL(ref(storage, audioVal)).then(url => {
+        audioPlayer.src = url;
+        audioPlayer.style.display = 'block';
+      }).catch(() => {
+        audioPlayer.src = '';
+        audioPlayer.style.display = 'none';
+      });
+    } else {
+      audioPlayer.src = audioVal;
+      audioPlayer.style.display = audioVal ? 'block' : 'none';
+    }
 
-  imagePreview.src  = journalImages[date] ?? '';
-imagePreview.style.display = journalImages[date] ? 'block' : 'none';
+    // --- Always use download URL for image ---
+    const imageVal = journalImages[date] ?? '';
+    if (imageVal && !imageVal.startsWith('http')) {
+      getDownloadURL(ref(storage, imageVal)).then(url => {
+        imagePreview.src = url;
+        imagePreview.style.display = 'block';
+      }).catch(() => {
+        imagePreview.src = '';
+        imagePreview.style.display = 'none';
+      });
+    } else {
+      imagePreview.src = imageVal;
+      imagePreview.style.display = imageVal ? 'block' : 'none';
+    }
 
     document.getElementById('prevDayButton').style.display = 'block';
     document.getElementById('nextDayButton').style.display = 'block';
