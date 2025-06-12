@@ -148,8 +148,6 @@
     .time-picker select {
       padding: 4px;
       margin-right: 4px;
-      height: 100px; /* show several options at once */
-      overflow-y: auto;
     }
     .time-picker select:last-child {
       margin-right: 0;
@@ -805,10 +803,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     const hours = document.createElement('select');
     const minutes = document.createElement('select');
     const ampm = document.createElement('select');
-
-    hours.size = 5;
-    minutes.size = 5;
-    ampm.size = 2;
 
     for (let h = 1; h <= 12; h++) {
       const opt = document.createElement('option');
