@@ -789,25 +789,66 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   let journalEntryDates = [];
   let journalEntryIndex = 0;
 
+  // === IndexedDB Wrapper for Local File Storage ===
+  const DB_NAME = 'journalMediaDB';
+  const DB_VERSION = 1;
+  let db = null;
 
-
-  async function hydrateDownloadURLs(obj, folderName) {
-  const out = {};
-  for (const [date, value] of Object.entries(obj)) {
-    // Already a signed URL? keep it.
-    if (value.includes('alt=media')) { out[date] = value; continue; }
-
-    // Otherwise treat it as a Storage fullPath and get the URL.
-    try {
-      const refFromPath = ref(storage, value); // value == 'journalImages/uid/...'
-      out[date] = await getDownloadURL(refFromPath);
-      console.log(`🔄 Fixed ${folderName} for ${date}`);
-    } catch (e) {
-      console.warn(`⚠️  Could not resolve ${value}`, e);
-    }
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      if (db) return resolve(db);
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = function (event) {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('images')) {
+          db.createObjectStore('images');
+        }
+        if (!db.objectStoreNames.contains('audios')) {
+          db.createObjectStore('audios');
+        }
+      };
+      request.onsuccess = function (event) {
+        db = event.target.result;
+        resolve(db);
+      };
+      request.onerror = function (event) {
+        reject(event.target.error);
+      };
+    });
   }
-  return out;
-}
+
+  function saveToDB(store, key, value) {
+    return openDB().then(db => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([store], 'readwrite');
+        tx.objectStore(store).put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = e => reject(e);
+      });
+    });
+  }
+
+  function getFromDB(store, key) {
+    return openDB().then(db => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([store], 'readonly');
+        const req = tx.objectStore(store).get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = e => reject(e);
+      });
+    });
+  }
+
+  function deleteFromDB(store, key) {
+    return openDB().then(db => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([store], 'readwrite');
+        tx.objectStore(store).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = e => reject(e);
+      });
+    });
+  }
 
   /******************************************************* 
    5) Firestore Load/Save 
@@ -1021,36 +1062,27 @@ function initializeColorPicker(preSelected = selectedColor) {
     journalForm.dataset.date = date;
     journalForm.style.display = 'block';
 
-    // --- Always use download URL for audio ---
-    const audioVal = journalAudios[date] ?? '';
-    if (audioVal && !audioVal.startsWith('http')) {
-      // It's a storage path, get the download URL
-      getDownloadURL(ref(storage, audioVal)).then(url => {
-        audioPlayer.src = url;
+    // Load audio from IndexedDB
+    getFromDB('audios', date).then(blob => {
+      if (blob) {
+        audioPlayer.src = URL.createObjectURL(blob);
         audioPlayer.style.display = 'block';
-      }).catch(() => {
+      } else {
         audioPlayer.src = '';
         audioPlayer.style.display = 'none';
-      });
-    } else {
-      audioPlayer.src = audioVal;
-      audioPlayer.style.display = audioVal ? 'block' : 'none';
-    }
+      }
+    });
 
-    // --- Always use download URL for image ---
-    const imageVal = journalImages[date] ?? '';
-    if (imageVal && !imageVal.startsWith('http')) {
-      getDownloadURL(ref(storage, imageVal)).then(url => {
-        imagePreview.src = url;
+    // Load image from IndexedDB
+    getFromDB('images', date).then(blob => {
+      if (blob) {
+        imagePreview.src = URL.createObjectURL(blob);
         imagePreview.style.display = 'block';
-      }).catch(() => {
+      } else {
         imagePreview.src = '';
         imagePreview.style.display = 'none';
-      });
-    } else {
-      imagePreview.src = imageVal;
-      imagePreview.style.display = imageVal ? 'block' : 'none';
-    }
+      }
+    });
 
     document.getElementById('prevDayButton').style.display = 'block';
     document.getElementById('nextDayButton').style.display = 'block';
@@ -1310,71 +1342,30 @@ async function saveJournal() {
   }
 
   try {
+    // IMAGE Save to IndexedDB
     if (pendingImageFile) {
-      console.log("Uploading image:", pendingImageFile);
-      const imagePath = `journalImages/${userId}/${date}/${Date.now()}-${pendingImageFile.name}`;
-      const imageRef = ref(storage, imagePath);
-      const uploadResult = await uploadBytes(imageRef, pendingImageFile, {
-        contentType: pendingImageFile.type
-      });
-      const imageURL = await getDownloadURL(uploadResult.ref);
-      journalImages[date] = imageURL;
-      console.log("Image uploaded! URL:", imageURL);
-    } else {
-      console.log("No pendingImageFile to upload.");
+      await saveToDB('images', date, pendingImageFile);
+      console.log("Image saved locally for date:", date);
     }
-
-    // AUDIO Upload
+    // AUDIO Save to IndexedDB
     if (pendingAudioFile) {
-      try {
-        const audioPath = `journalAudio/${userId}/${date}/${Date.now()}-${pendingAudioFile.name}`;
-        const audioRef = ref(storage, audioPath);
-        
-        // Upload with metadata and CORS headers
-        const uploadResult = await uploadBytes(audioRef, pendingAudioFile, {
-          contentType: pendingAudioFile.type,
-          customMetadata: {
-            'userId': userId,
-            'date': date,
-            'type': 'audio',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-            'Access-Control-Allow-Headers': 'Content-Type'
-          }
-        });
-        
-        // Get the download URL with CORS headers
-        const audioURL = await getDownloadURL(uploadResult.ref);
-        journalAudios[date] = audioURL;
-        console.log('✅ Audio saved:', audioURL);
-      } catch (err) {
-        console.error('❌ Failed to save audio:', err);
-        alert('Failed to save audio: ' + err.message);
-      }
+      await saveToDB('audios', date, pendingAudioFile);
+      console.log("Audio saved locally for date:", date);
     }
-
-    // TEXT Save
+    // TEXT Save (still in Firestore if you want)
     journalEntries[date] = text;
-
-    // Save everything to Firestore
     await setDoc(
       doc(db, 'users', userId),
-      { 
-        journalEntries, 
-        journalAudios, 
-        journalImages 
-      },
+      { journalEntries },
       { merge: true }
     );
-
     // Clear pending files
     pendingAudioFile = null;
     pendingImageFile = null;
-
     generateCalendar();
     updateDailyEventsList(date);
     closeJournalForm();
-    console.log('✅ Journal saved successfully');
+    console.log('✅ Journal saved locally');
   } catch (err) {
     console.error("Error in saveJournal:", err);
     alert("Error saving journal: " + err.message);
