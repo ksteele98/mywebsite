@@ -398,6 +398,21 @@
       display: block;
     }
 
+    .remove-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      font-size: 16px;
+      line-height: 20px;
+      cursor: pointer;
+    }
+
     @media screen and (max-width: 768px) {
       .calendar-grid {
         font-size: 14px;
@@ -540,15 +555,19 @@
   <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
 
   <div class="audio-section">
-    <audio id="audioPlayer" controls style="display:none; width:100%; margin:10px 0;"></audio>
+    <div style="position:relative;">
+      <audio id="audioPlayer" controls style="display:none; width:100%; margin:10px 0;"></audio>
+      <button id="removeAudioBtn" class="remove-btn" onclick="removeAudio()" style="display:none;">&#215;</button>
+    </div>
     <div style="margin-bottom:10px;">
       <button id="recordAudioBtn" onclick="toggleRecording()">Start Recording</button>
       <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioUpload(event)" style="margin-left:10px;">
     </div>
   </div>
 
-  <div class="image-section">
+  <div class="image-section" style="position:relative;">
     <img id="imagePreview" style="display:none; width:100%; margin:10px 0;" />
+    <button id="removeImageBtn" class="remove-btn" onclick="removeImage()" style="display:none;">&#215;</button>
     <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)">
   </div>
 
@@ -1063,6 +1082,8 @@ function initializeColorPicker(preSelected = selectedColor) {
     const fileInput = document.getElementById('audioFileInput');
     const imagePreview = document.getElementById('imagePreview');
     const imageInput = document.getElementById('imageFileInput');
+    const removeAudioBtn = document.getElementById('removeAudioBtn');
+    const removeImageBtn = document.getElementById('removeImageBtn');
 
     recordedChunks = [];
     if (mediaRecorder && mediaRecorder.state === 'recording') {
@@ -1083,9 +1104,11 @@ function initializeColorPicker(preSelected = selectedColor) {
       if (blob) {
         audioPlayer.src = URL.createObjectURL(blob);
         audioPlayer.style.display = 'block';
+        removeAudioBtn.style.display = 'block';
       } else {
         audioPlayer.src = '';
         audioPlayer.style.display = 'none';
+        removeAudioBtn.style.display = 'none';
       }
     });
 
@@ -1094,9 +1117,11 @@ function initializeColorPicker(preSelected = selectedColor) {
       if (blob) {
         imagePreview.src = URL.createObjectURL(blob);
         imagePreview.style.display = 'block';
+        removeImageBtn.style.display = 'block';
       } else {
         imagePreview.src = '';
         imagePreview.style.display = 'none';
+        removeImageBtn.style.display = 'none';
       }
     });
 
@@ -1204,6 +1229,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     const audioPlayer = document.getElementById('audioPlayer');
     audioPlayer.src = url;
     audioPlayer.style.display = 'block';
+    document.getElementById('removeAudioBtn').style.display = 'block';
   }
 
   function handleImageUpload(event) {
@@ -1227,6 +1253,33 @@ function initializeColorPicker(preSelected = selectedColor) {
     const preview = document.getElementById('imagePreview');
     preview.src = url;
     preview.style.display = 'block';
+    document.getElementById('removeImageBtn').style.display = 'block';
+  }
+
+  function removeAudio() {
+    const audioPlayer = document.getElementById('audioPlayer');
+    const recordBtn = document.getElementById('recordAudioBtn');
+    const audioInput = document.getElementById('audioFileInput');
+    const date = document.getElementById('journalForm').dataset.date;
+    audioPlayer.src = '';
+    audioPlayer.style.display = 'none';
+    audioInput.value = '';
+    pendingAudioFile = null;
+    deleteFromDB('audios', date);
+    document.getElementById('removeAudioBtn').style.display = 'none';
+    recordBtn.textContent = 'Start Recording';
+  }
+
+  function removeImage() {
+    const preview = document.getElementById('imagePreview');
+    const imageInput = document.getElementById('imageFileInput');
+    const date = document.getElementById('journalForm').dataset.date;
+    preview.src = '';
+    preview.style.display = 'none';
+    imageInput.value = '';
+    pendingImageFile = null;
+    deleteFromDB('images', date);
+    document.getElementById('removeImageBtn').style.display = 'none';
   }
 
   /*******************************************************
@@ -1745,6 +1798,8 @@ function toggleTask(taskId, dateKey) {
   window.toggleRecording = toggleRecording;
   window.handleAudioUpload = handleAudioUpload;
   window.handleImageUpload = handleImageUpload;
+  window.removeAudio = removeAudio;
+  window.removeImage = removeImage;
   window.goToGoalsPage = goToGoalsPage;
   window.saveGoals = saveGoals;
   window.closeGoalsForm = closeGoalsForm;
@@ -1778,6 +1833,7 @@ Object.assign(window, {
   openJournalMode,
   goToGoalsPage, saveGoals, closeGoalsForm, goToJournalFromGoals,
   toggleRecording, handleAudioUpload, handleImageUpload,
+  removeAudio, removeImage,
   // events
   addEvent, editEvent, saveEvent, deleteEvent, closeEventForm,
   // tasks
