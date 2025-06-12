@@ -132,15 +132,15 @@
       margin-bottom: 5px;
       font-size: 14px;
     }
-    .time-picker {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    /* custom time picker dropdowns for desktop */
-    .time-picker select {
+    .time-inputs input[type="time"] {
+      width: 100%;
       padding: 8px;
-      margin-right: 4px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .time-picker {
+      display: none;
     }
     .event-actions {
       display: flex;
@@ -784,56 +784,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     return /Mobi|Android/i.test(navigator.userAgent);
   }
 
-  function createTimePicker(inputId) {
-    const input = document.getElementById(inputId);
-    if (!input || isMobileDevice()) return;
-
-    const container = document.createElement('div');
-    container.className = 'time-picker';
-    const hours = document.createElement('select');
-    const minutes = document.createElement('select');
-
-    for (let h = 0; h < 24; h++) {
-      const opt = document.createElement('option');
-      opt.value = opt.textContent = String(h).padStart(2, '0');
-      hours.appendChild(opt);
-    }
-    for (let m = 0; m < 60; m++) {
-      const opt = document.createElement('option');
-      opt.value = opt.textContent = String(m).padStart(2, '0');
-      minutes.appendChild(opt);
-    }
-
-    container.appendChild(hours);
-    container.appendChild(document.createTextNode(' : '));
-    container.appendChild(minutes);
-
-    function syncFromInput() {
-      if (input.value) {
-        const [h, m] = input.value.split(':');
-        hours.value = h;
-        minutes.value = m;
-      } else {
-        hours.value = '00';
-        minutes.value = '00';
-      }
-    }
-
-    function syncToInput() {
-      input.value = hours.value + ':' + minutes.value;
-    }
-
-    hours.onchange = syncToInput;
-    minutes.onchange = syncToInput;
-
-    syncFromInput();
-
-    input.style.display = 'none';
-    input.parentNode.insertBefore(container, input.nextSibling);
-
-    input.setTimePicker = { syncFromInput };
-  }
-
   // journal navigation mode
   let journalMode = false;
   let journalEntryDates = [];
@@ -1178,8 +1128,6 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('eventDescription').value = '';
     document.getElementById('eventStartTime').value = '';
     document.getElementById('eventEndTime').value = '';
-    document.getElementById('eventStartTime').setTimePicker?.syncFromInput();
-    document.getElementById('eventEndTime').setTimePicker?.syncFromInput();
     eventForm.style.display = 'block';
     initializeColorPicker();
     document.querySelector('.delete-event-btn').style.display = 'none';
@@ -1191,8 +1139,6 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('eventDate').value = event.date;
     document.getElementById('eventStartTime').value = event.startTime;
     document.getElementById('eventEndTime').value = event.endTime;
-    document.getElementById('eventStartTime').setTimePicker?.syncFromInput();
-    document.getElementById('eventEndTime').setTimePicker?.syncFromInput();
     document.getElementById('eventDescription').value = event.description;
     document.getElementById('eventId').value = index;
     selectedColor = event.color;
@@ -1715,8 +1661,6 @@ Object.assign(window, {
   confirmAddHabit, cancelAddHabit, saveHabitTracker, cancelHabitTracker
 });
 generateCalendar();   // render current month on first load
-createTimePicker('eventStartTime');
-createTimePicker('eventEndTime');
 
 // Add an event listener to the button directly
 document.getElementById('logoutButton').addEventListener('click', async () => {
