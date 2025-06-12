@@ -1288,19 +1288,7 @@ if (pendingImageFile) {
   journalImages[date] = await getDownloadURL(imageRef);
   pendingImageFile    = null;
 }
-  // 1️⃣ PUT the file
-  await uploadBytes(imageRef, pendingImageFile, {
-    contentType: pendingImageFile.type
-  });
-
-  // 2️⃣ GET the *public download* link (contains alt=media&token=…)
- const imageURL = await getDownloadURL(imageRef);
-
-  // 3️⃣ Save that URL to Firestore / memory
-  journalImages[date] = imageURL;
-  pendingImageFile    = null;
-}
-
+  /?
     // TEXT Save
     journalEntries[date] = text;
 
