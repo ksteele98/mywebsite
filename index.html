@@ -984,8 +984,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     const imagePreview = document.getElementById('imagePreview');
     const imageInput = document.getElementById('imageFileInput');
 
-    pendingAudioFile = null;
-    pendingImageFile = null;
+    
     recordedChunks = [];
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
@@ -1000,21 +999,11 @@ function initializeColorPicker(preSelected = selectedColor) {
     journalForm.dataset.date = date;
     journalForm.style.display = 'block';
 
-    if (journalAudios[date]) {
-      audioPlayer.src = journalAudios[date];
-      audioPlayer.style.display = 'block';
-    } else {
-      audioPlayer.src = '';
-      audioPlayer.style.display = 'none';
-    }
+   audioPlayer.src  = journalAudios[date] ?? '';
+imagePreview.src = journalImages[date] ?? '';
 
-    if (journalImages[date]) {
-      imagePreview.src = journalImages[date];
-      imagePreview.style.display = 'block';
-    } else {
-      imagePreview.src = '';
-      imagePreview.style.display = 'none';
-    }
+  imagePreview.src  = journalImages[date] ?? '';
+imagePreview.style.display = journalImages[date] ? 'block' : 'none';
 
     document.getElementById('prevDayButton').style.display = 'block';
     document.getElementById('nextDayButton').style.display = 'block';
