@@ -1241,25 +1241,30 @@ async function saveJournal() {
   try {
     // AUDIO Upload
     if (pendingAudioFile) {
-      const audioRef = ref(
-        storage,
-        `journalAudio/${userId}/${date}/${Date.now()}-${pendingAudioFile.name}`
-      );
-      const snap = await uploadBytes(audioRef, pendingAudioFile, {
-        contentType: pendingAudioFile.type
-      });
-      const audioURL = await getDownloadURL(snap.ref);
-      journalAudios[date] = audioURL;
-      pendingAudioFile = null;
-    }
+  const audioRef = ref(
+    storage,
+    `journalAudio/${userId}/${date}/${Date.now()}-${pendingAudioFile.name}`
+  );
 
-    // IMAGE Upload
-    if (pendingImageFile) {
+  await uploadBytes(audioRef, pendingAudioFile, { contentType: pendingAudioFile.type });
+
+  // ← this URL contains …alt=media&token=XXXXXXXX
+  journalAudios[date] = await getDownloadURL(audioRef);
+  pendingAudioFile    = null;
+}
+
+// ─── IMAGE Upload ───
+if (pendingImageFile) {
   const imageRef = ref(
     storage,
     `journalImages/${userId}/${date}/${Date.now()}-${pendingImageFile.name}`
   );
 
+  await uploadBytes(imageRef, pendingImageFile, { contentType: pendingImageFile.type });
+
+  journalImages[date] = await getDownloadURL(imageRef);
+  pendingImageFile    = null;
+}
   // 1️⃣ PUT the file
   await uploadBytes(imageRef, pendingImageFile, {
     contentType: pendingImageFile.type
