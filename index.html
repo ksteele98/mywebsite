@@ -227,6 +227,17 @@
     .task-item input[type="checkbox"] {
       margin-right: 10px;
     }
+    .subtask-list {
+      list-style: none;
+      padding-left: 20px;
+      margin-top: 4px;
+    }
+    .subtask-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 0;
+    }
     .task-input {
       width: 100%;
       padding: 8px;
@@ -1467,12 +1478,24 @@ function deleteCurrentList() {
   if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
 
   parts.forEach((t, i) => {
+    const parentId = Date.now() + i;
+    let subtasks = [];
+    const match = t.match(/^(.*)\((.*)\)$/);
+    if (match) {
+      t = match[1].trim();
+      subtasks = match[2]
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map((st, j) => ({ text: st, id: `${parentId}-${j}`, completed: false }));
+    }
     taskLists[currentTaskList].push({
       text: t,
-      id: Date.now() + i,
+      id: parentId,
       repeat: daily ? "daily" : "once",
       completed: false,
-      completions: {}
+      completions: {},
+      subtasks
     });
   });
 
@@ -1540,7 +1563,27 @@ function renderTasks() {
       'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#dc3545;';
     del.onclick = () => deleteTask(task.id);
 
-    li.append(checkbox, span, del);
+    li.append(checkbox, span);
+
+    if (task.subtasks && task.subtasks.length) {
+      const subUl = document.createElement('ul');
+      subUl.className = 'subtask-list';
+      task.subtasks.forEach(sub => {
+        const subLi = document.createElement('li');
+        subLi.className = 'subtask-item';
+        const subCheckbox = document.createElement('input');
+        subCheckbox.type = 'checkbox';
+        subCheckbox.checked = sub.completed;
+        subCheckbox.onchange = () => { sub.completed = subCheckbox.checked; saveUserData(); };
+        const subSpan = document.createElement('span');
+        subSpan.textContent = sub.text;
+        subLi.append(subCheckbox, subSpan);
+        subUl.appendChild(subLi);
+      });
+      li.appendChild(subUl);
+    }
+
+    li.appendChild(del);
     taskList.appendChild(li);
   });
 }
