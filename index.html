@@ -1255,17 +1255,23 @@ async function saveJournal() {
 
     // IMAGE Upload
     if (pendingImageFile) {
-      const imageRef = ref(
-        storage,
-        `journalImages/${userId}/${date}/${Date.now()}-${pendingImageFile.name}`
-      );
-      const snap = await uploadBytes(imageRef, pendingImageFile, {
-        contentType: pendingImageFile.type
-      });
-      const imageURL = await getDownloadURL(snap.ref);
-      journalImages[date] = imageURL;
-      pendingImageFile = null;
-    }
+  const imageRef = ref(
+    storage,
+    `journalImages/${userId}/${date}/${Date.now()}-${pendingImageFile.name}`
+  );
+
+  // 1️⃣ PUT the file
+  await uploadBytes(imageRef, pendingImageFile, {
+    contentType: pendingImageFile.type
+  });
+
+  // 2️⃣ GET the *public download* link (contains alt=media&token=…)
+ const imageURL = await getDownloadURL(imageRef);
+
+  // 3️⃣ Save that URL to Firestore / memory
+  journalImages[date] = imageURL;
+  pendingImageFile    = null;
+}
 
     // TEXT Save
     journalEntries[date] = text;
