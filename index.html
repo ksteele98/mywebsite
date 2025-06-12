@@ -238,6 +238,13 @@
       gap: 5px;
       padding: 2px 0;
     }
+    .toggle-subtasks-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-left: 4px;
+      font-size: 14px;
+    }
     .task-input {
       width: 100%;
       padding: 8px;
@@ -1529,33 +1536,51 @@ function deleteCurrentList() {
 }
 
   function addTask() {
-  const text = taskInput.value.trim();
-  if (!text) return alert("Please enter a task");
-  const parts = text.split(",").map(t => t.trim()).filter(Boolean);
-  const daily = taskDailyCheckbox.checked;
-  if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
+    const text = taskInput.value.trim();
+    if (!text) return alert("Please enter a task");
+    const daily = taskDailyCheckbox.checked;
+    if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
 
-  parts.forEach((t, i) => {
-    const parentId = Date.now() + i;
-    let subtasks = [];
-    const match = t.match(/^(.*)\((.*)\)$/);
-    if (match) {
-      t = match[1].trim();
-      subtasks = match[2]
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean)
-        .map((st, j) => ({ text: st, id: `${parentId}-${j}`, completed: false }));
-    }
-    taskLists[currentTaskList].push({
-      text: t,
-      id: parentId,
-      repeat: daily ? "daily" : "once",
-      completed: false,
-      completions: {},
-      subtasks
+    const tokens = [...text.matchAll(/([^,;:]+)([;:,]?)/g)].map(m => ({
+      part: m[1].trim(),
+      delim: m[2]
+    }));
+
+    let inSub = false;
+    let currentTask = null;
+    let subIndex = 0;
+
+    tokens.forEach(({ part, delim }, i) => {
+      if (!inSub) {
+        const parentId = Date.now() + i;
+        currentTask = {
+          text: part,
+          id: parentId,
+          repeat: daily ? "daily" : "once",
+          completed: false,
+          completions: {},
+          subtasks: [],
+          collapsed: false
+        };
+        taskLists[currentTaskList].push(currentTask);
+        if (delim === ';' || delim === ':') {
+          inSub = true;
+          subIndex = 0;
+        } else {
+          currentTask = null;
+        }
+      } else {
+        currentTask.subtasks.push({
+          text: part,
+          id: `${currentTask.id}-${subIndex++}`,
+          completed: false
+        });
+        if (delim === ';' || delim === ':') {
+          inSub = false;
+          currentTask = null;
+        }
+      }
     });
-  });
 
   taskInput.value = "";
   taskDailyCheckbox.checked = false;
@@ -1592,6 +1617,7 @@ function renderTasks() {
 
   // ─── build the <li>s ───
   visibleTasks.forEach(task => {
+    if (typeof task.collapsed === 'undefined') task.collapsed = false;
     const li = document.createElement('li');
     li.className = 'task-item';
     li.dataset.taskId = task.id;
@@ -1640,8 +1666,19 @@ function renderTasks() {
     li.append(checkbox, span, addSub);
 
     if (task.subtasks && task.subtasks.length) {
+      const toggleBtn = document.createElement('button');
+      toggleBtn.textContent = task.collapsed ? '+' : '−';
+      toggleBtn.className = 'toggle-subtasks-btn';
+      toggleBtn.onclick = () => {
+        task.collapsed = !task.collapsed;
+        saveUserData();
+        renderTasks();
+      };
+
       const subUl = document.createElement('ul');
       subUl.className = 'subtask-list';
+      if (task.collapsed) subUl.style.display = 'none';
+
       task.subtasks.forEach(sub => {
         const subLi = document.createElement('li');
         subLi.className = 'subtask-item';
@@ -1654,7 +1691,8 @@ function renderTasks() {
         subLi.append(subCheckbox, subSpan);
         subUl.appendChild(subLi);
       });
-      li.appendChild(subUl);
+
+      li.append(toggleBtn, subUl);
     }
 
     li.appendChild(del);
