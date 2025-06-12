@@ -1114,15 +1114,42 @@ imagePreview.style.display = journalImages[date] ? 'block' : 'none';
   function handleAudioUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('audio/')) {
+      alert('Please select an audio file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Audio file size should be less than 10MB');
+      return;
+    }
+
     pendingAudioFile = file;
     const url = URL.createObjectURL(file);
-    document.getElementById('audioPlayer').src = url;
-    document.getElementById('audioPlayer').style.display = 'block';
+    const audioPlayer = document.getElementById('audioPlayer');
+    audioPlayer.src = url;
+    audioPlayer.style.display = 'block';
   }
 
   function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
     pendingImageFile = file;
     const url = URL.createObjectURL(file);
     const preview = document.getElementById('imagePreview');
@@ -1269,9 +1296,14 @@ async function saveJournal() {
         const audioPath = `journalAudio/${userId}/${date}/${Date.now()}-${pendingAudioFile.name}`;
         const audioRef = ref(storage, audioPath);
         
-        // Upload the file
+        // Upload with metadata
         const uploadResult = await uploadBytes(audioRef, pendingAudioFile, {
-          contentType: pendingAudioFile.type
+          contentType: pendingAudioFile.type,
+          customMetadata: {
+            'userId': userId,
+            'date': date,
+            'type': 'audio'
+          }
         });
         
         // Get the download URL
@@ -1290,9 +1322,14 @@ async function saveJournal() {
         const imagePath = `journalImages/${userId}/${date}/${Date.now()}-${pendingImageFile.name}`;
         const imageRef = ref(storage, imagePath);
         
-        // Upload the file
+        // Upload with metadata
         const uploadResult = await uploadBytes(imageRef, pendingImageFile, {
-          contentType: pendingImageFile.type
+          contentType: pendingImageFile.type,
+          customMetadata: {
+            'userId': userId,
+            'date': date,
+            'type': 'image'
+          }
         });
         
         // Get the download URL
