@@ -237,6 +237,11 @@
       align-items: center;
       gap: 5px;
       padding: 2px 0;
+      transition: opacity 5s ease;
+      opacity: 1;
+    }
+    .subtask-item.fade-out {
+      opacity: 0;
     }
     .toggle-subtasks-btn {
       background: none;
@@ -1655,13 +1660,19 @@ function renderTasks() {
     addSub.textContent = '+Sub';
     addSub.style.cssText = 'background:none;border:none;color:#28a745;cursor:pointer;margin-left:4px;';
     addSub.onclick = () => {
-      const subText = prompt('Enter subtask');
+      const subText = prompt('Enter subtask(s). Use commas to add multiple.');
       if (!subText) return;
       task.subtasks = task.subtasks || [];
-      task.subtasks.push({
-        text: subText,
-        id: `${task.id}-${Date.now()}`,
-        completed: false
+      const parts = subText.split(',');
+      const base = Date.now();
+      parts.forEach((p, idx) => {
+        const txt = p.trim();
+        if (!txt) return;
+        task.subtasks.push({
+          text: txt,
+          id: `${task.id}-${base + idx}`,
+          completed: false
+        });
       });
       saveUserData();
       renderTasks();
@@ -1689,7 +1700,18 @@ function renderTasks() {
         const subCheckbox = document.createElement('input');
         subCheckbox.type = 'checkbox';
         subCheckbox.checked = sub.completed;
-        subCheckbox.onchange = () => { sub.completed = subCheckbox.checked; saveUserData(); };
+        subCheckbox.onchange = () => {
+          sub.completed = subCheckbox.checked;
+          saveUserData();
+          if (subCheckbox.checked) {
+            subLi.classList.add('fade-out');
+            setTimeout(() => {
+              task.subtasks = task.subtasks.filter(s => s.id !== sub.id);
+              subLi.remove();
+              saveUserData();
+            }, 5000);
+          }
+        };
         const subSpan = document.createElement('span');
         subSpan.textContent = sub.text;
         subLi.append(subCheckbox, subSpan);
