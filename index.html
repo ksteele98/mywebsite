@@ -792,24 +792,24 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   // === IndexedDB Wrapper for Local File Storage ===
   const DB_NAME = 'journalMediaDB';
   const DB_VERSION = 1;
-  let db = null;
+  let idb = null;
 
   function openDB() {
     return new Promise((resolve, reject) => {
-      if (db) return resolve(db);
+      if (idb) return resolve(idb);
       const request = indexedDB.open(DB_NAME, DB_VERSION);
       request.onupgradeneeded = function (event) {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('images')) {
-          db.createObjectStore('images');
+        const idb = event.target.result;
+        if (!idb.objectStoreNames.contains('images')) {
+          idb.createObjectStore('images');
         }
-        if (!db.objectStoreNames.contains('audios')) {
-          db.createObjectStore('audios');
+        if (!idb.objectStoreNames.contains('audios')) {
+          idb.createObjectStore('audios');
         }
       };
       request.onsuccess = function (event) {
-        db = event.target.result;
-        resolve(db);
+        idb = event.target.result;
+        resolve(idb);
       };
       request.onerror = function (event) {
         reject(event.target.error);
@@ -818,9 +818,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   function saveToDB(store, key, value) {
-    return openDB().then(db => {
+    return openDB().then(idb => {
       return new Promise((resolve, reject) => {
-        const tx = db.transaction([store], 'readwrite');
+        const tx = idb.transaction([store], 'readwrite');
         tx.objectStore(store).put(value, key);
         tx.oncomplete = () => resolve();
         tx.onerror = e => reject(e);
@@ -829,9 +829,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   function getFromDB(store, key) {
-    return openDB().then(db => {
+    return openDB().then(idb => {
       return new Promise((resolve, reject) => {
-        const tx = db.transaction([store], 'readonly');
+        const tx = idb.transaction([store], 'readonly');
         const req = tx.objectStore(store).get(key);
         req.onsuccess = () => resolve(req.result);
         req.onerror = e => reject(e);
@@ -840,9 +840,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   function deleteFromDB(store, key) {
-    return openDB().then(db => {
+    return openDB().then(idb => {
       return new Promise((resolve, reject) => {
-        const tx = db.transaction([store], 'readwrite');
+        const tx = idb.transaction([store], 'readwrite');
         tx.objectStore(store).delete(key);
         tx.oncomplete = () => resolve();
         tx.onerror = e => reject(e);
