@@ -1296,17 +1296,20 @@ async function saveJournal() {
         const audioPath = `journalAudio/${userId}/${date}/${Date.now()}-${pendingAudioFile.name}`;
         const audioRef = ref(storage, audioPath);
         
-        // Upload with metadata
+        // Upload with metadata and CORS headers
         const uploadResult = await uploadBytes(audioRef, pendingAudioFile, {
           contentType: pendingAudioFile.type,
           customMetadata: {
             'userId': userId,
             'date': date,
-            'type': 'audio'
+            'type': 'audio',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+            'Access-Control-Allow-Headers': 'Content-Type'
           }
         });
         
-        // Get the download URL
+        // Get the download URL with CORS headers
         const audioURL = await getDownloadURL(uploadResult.ref);
         journalAudios[date] = audioURL;
         console.log('✅ Audio saved:', audioURL);
@@ -1322,17 +1325,20 @@ async function saveJournal() {
         const imagePath = `journalImages/${userId}/${date}/${Date.now()}-${pendingImageFile.name}`;
         const imageRef = ref(storage, imagePath);
         
-        // Upload with metadata
+        // Upload with metadata and CORS headers
         const uploadResult = await uploadBytes(imageRef, pendingImageFile, {
           contentType: pendingImageFile.type,
           customMetadata: {
             'userId': userId,
             'date': date,
-            'type': 'image'
+            'type': 'image',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+            'Access-Control-Allow-Headers': 'Content-Type'
           }
         });
         
-        // Get the download URL
+        // Get the download URL with CORS headers
         const imageURL = await getDownloadURL(uploadResult.ref);
         journalImages[date] = imageURL;
         console.log('✅ Image saved:', imageURL);
