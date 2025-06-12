@@ -1568,7 +1568,23 @@ function renderTasks() {
       'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#dc3545;';
     del.onclick = () => deleteTask(task.id);
 
-    li.append(checkbox, span);
+    const addSub = document.createElement('button');
+    addSub.textContent = '+Sub';
+    addSub.style.cssText = 'background:none;border:none;color:#28a745;cursor:pointer;margin-left:4px;';
+    addSub.onclick = () => {
+      const subText = prompt('Enter subtask');
+      if (!subText) return;
+      task.subtasks = task.subtasks || [];
+      task.subtasks.push({
+        text: subText,
+        id: `${task.id}-${Date.now()}`,
+        completed: false
+      });
+      saveUserData();
+      renderTasks();
+    };
+
+    li.append(checkbox, span, addSub);
 
     if (task.subtasks && task.subtasks.length) {
       const subUl = document.createElement('ul');
@@ -1607,16 +1623,13 @@ function toggleTask(taskId, dateKey) {
     task.completions[dateKey] = !task.completions[dateKey];
   }
 
-  // if it's now completed, fade it out
+  // if it's now completed, remove it immediately
   if ((task.repeat === 'once' && task.completed) ||
       (task.repeat === 'daily' && task.completions[dateKey])) {
     const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-    li.classList.add('fade-out');
-    setTimeout(() => {
-      li.remove();
-      saveUserData();
-      renderTasks();
-    }, 4000);  // remove after fade-out
+    if (li) li.remove();
+    saveUserData();
+    renderTasks();
     return;
   }
 
@@ -1626,19 +1639,10 @@ function toggleTask(taskId, dateKey) {
 
   function deleteTask(taskId) {
     const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-    if (li) {
-      li.classList.add('fade-out');
-      setTimeout(() => {
-        li.remove();
-        taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
-        saveUserData();
-        renderTasks();
-      }, 4000);
-    } else {
-      taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
-      saveUserData();
-      renderTasks();
-    }
+    if (li) li.remove();
+    taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
+    saveUserData();
+    renderTasks();
   }
 
   // Replace the initializeTaskControls function with this improved version
