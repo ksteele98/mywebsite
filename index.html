@@ -1303,15 +1303,25 @@ async function saveJournal() {
   const date = document.getElementById('journalForm').dataset.date;
   const text = document.getElementById('journalText').value.trim();
 
-  if (!userId) return alert("You must be signed in");
+  if (!userId) {
+    alert("You must be signed in");
+    console.error("No userId, not signed in!");
+    return;
+  }
 
   try {
-    // Stop recording if active
-    if (mediaRecorder?.state === 'recording') {
-      await new Promise(resolve => {
-        mediaRecorder.addEventListener('stop', resolve, { once: true });
-        mediaRecorder.stop();
+    if (pendingImageFile) {
+      console.log("Uploading image:", pendingImageFile);
+      const imagePath = `journalImages/${userId}/${date}/${Date.now()}-${pendingImageFile.name}`;
+      const imageRef = ref(storage, imagePath);
+      const uploadResult = await uploadBytes(imageRef, pendingImageFile, {
+        contentType: pendingImageFile.type
       });
+      const imageURL = await getDownloadURL(uploadResult.ref);
+      journalImages[date] = imageURL;
+      console.log("Image uploaded! URL:", imageURL);
+    } else {
+      console.log("No pendingImageFile to upload.");
     }
 
     // AUDIO Upload
@@ -1343,35 +1353,6 @@ async function saveJournal() {
       }
     }
 
-    // IMAGE Upload
-    if (pendingImageFile) {
-      try {
-        const imagePath = `journalImages/${userId}/${date}/${Date.now()}-${pendingImageFile.name}`;
-        const imageRef = ref(storage, imagePath);
-        
-        // Upload with metadata and CORS headers
-        const uploadResult = await uploadBytes(imageRef, pendingImageFile, {
-          contentType: pendingImageFile.type,
-          customMetadata: {
-            'userId': userId,
-            'date': date,
-            'type': 'image',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-            'Access-Control-Allow-Headers': 'Content-Type'
-          }
-        });
-        
-        // Get the download URL with CORS headers
-        const imageURL = await getDownloadURL(uploadResult.ref);
-        journalImages[date] = imageURL;
-        console.log('✅ Image saved:', imageURL);
-      } catch (err) {
-        console.error('❌ Failed to save image:', err);
-        alert('Failed to save image: ' + err.message);
-      }
-    }
-
     // TEXT Save
     journalEntries[date] = text;
 
@@ -1395,8 +1376,8 @@ async function saveJournal() {
     closeJournalForm();
     console.log('✅ Journal saved successfully');
   } catch (err) {
-    console.error('❌ Failed to save journal:', err);
-    alert('Something went wrong: ' + err.message);
+    console.error("Error in saveJournal:", err);
+    alert("Error saving journal: " + err.message);
   }
 }
 
