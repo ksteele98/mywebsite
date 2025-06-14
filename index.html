@@ -749,7 +749,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 const messaging = getMessaging(app);
 
 // Register service worker
-navigator.serviceWorker.register('/firebase-messaging-sw.js')
+navigator.serviceWorker.register('/mywebsite/firebase-messaging-sw.js')
   .then((registration) => {
     console.log('Service Worker registered:', registration);
     // Use this SW for messaging
