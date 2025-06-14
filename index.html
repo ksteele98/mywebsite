@@ -761,7 +761,7 @@ navigator.serviceWorker.register('/firebase-messaging-sw.js')
   .then((permission) => {
     if (permission === 'granted') {
       // Get FCM Token
-      return getToken(messaging, { vapidKey: 'YOUR_PUBLIC_VAPID_KEY' });
+      return getToken(messaging, { vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo' });
     } else {
       throw new Error("Notification permission denied");
     }
