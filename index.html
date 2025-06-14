@@ -1420,7 +1420,9 @@ function initializeColorPicker(preSelected = selectedColor) {
     if (reminderTimeouts[idx]) clearTimeout(reminderTimeouts[idx]);
     reminderTimeouts[idx] = setTimeout(() => {
       if (Notification.permission === 'granted') {
-        new Notification('Event Reminder', { body: ev.description });
+        const timeRange = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}`;
+        const body = `${timeRange}: ${ev.description}`;
+        new Notification('Event Reminder', { body });
       }
     }, timeout);
   }
