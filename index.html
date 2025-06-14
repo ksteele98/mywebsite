@@ -807,27 +807,29 @@ import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/fireb
 const messaging = getMessaging(app);
 
 // Register the service worker with the correct path
-navigator.serviceWorker.register('firebase-messaging-sw.js')
+// --- Service-worker + FCM permission / token --------------------------------
+navigator.serviceWorker.register('/firebase-messaging-sw.js')
   .then(async (registration) => {
-    console.log('✅ Service Worker registered');
+    console.log('✅ Service-worker ready');
 
+    // Ask the user for permission *after* the SW is active
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      throw new Error("❌ Notification permission denied");
+
+    if (permission === 'granted') {
+      // Grab the FCM token that iOS/Android/Desktop will receive pushes on
+      const token = await getToken(messaging, {
+        vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo',
+        serviceWorkerRegistration: registration     // ← tie the token to this SW
+      });
+      console.log('✅ FCM token:', token);
+      // TODO: save `token` in Firestore so your Cloud Function can push to it
+    } else if (permission === 'denied') {
+      console.warn('🔕 User blocked notifications – skipping FCM setup');
+    } else {
+      console.log('🔔 Permission prompt dismissed; will ask again later');
     }
-
-    // Use the registration object here
-    const token = await getToken(messaging, {
-      vapidKey: "BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo",
-      serviceWorkerRegistration: registration
-    });
-
-    console.log("✅ FCM Token:", token);
-    // Optionally save it to Firestore here
   })
-  .catch((err) => {
-    console.error("🚨 FCM Error:", err);
-  });
+  .catch(err => console.error('🚨 SW error', err));
 
 // Handle foreground messages
 onMessage(messaging, (payload) => {
