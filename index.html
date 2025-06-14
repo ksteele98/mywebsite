@@ -503,10 +503,15 @@
   <button onclick="openJournalMode()" id="journalModeBtn" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 10px;">
     Journal Mode
   </button>
+   <button id="subscribeBtn"          style="background:#FFB400;color:#000;padding:8px 16px;
+               border:none;border-radius:4px;cursor:pointer;margin-right:10px">   🔔 Enable Notifications
+  </button>
   <button onclick="logoutFromGoogle()" id="logoutButton" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
     Sign Out
   </button>
 </div>
+  
+
 
 <div class="calendar-container">
   <div class="calendar-header">
@@ -582,6 +587,7 @@
     <button id="removeImageBtn" class="remove-btn" onclick="removeImage()" style="display:none;">&#215;</button>
     <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)">
   </div>
+  
 
   <div class="task-container">
     <div class="tasks-header">
@@ -705,6 +711,11 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 </script>
 <script type="module">
+// ─── expose everything HTML calls ───
+
+generateCalendar();
+
+
 
   /********************** 
     1) Firebase Imports
@@ -721,6 +732,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
   import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
   import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js";
+// NEW: push-subscription flow -------------------------------
 
   /********************** 
     2) Firebase Config 
@@ -812,22 +824,16 @@ navigator.serviceWorker.register('/firebase-messaging-sw.js')
   .then(async (registration) => {
     console.log('✅ Service-worker ready');
 
-    // Ask the user for permission *after* the SW is active
-    const permission = await Notification.requestPermission();
+   
 
-    if (permission === 'granted') {
-      // Grab the FCM token that iOS/Android/Desktop will receive pushes on
+  
       const token = await getToken(messaging, {
         vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo',
         serviceWorkerRegistration: registration     // ← tie the token to this SW
       });
       console.log('✅ FCM token:', token);
       // TODO: save `token` in Firestore so your Cloud Function can push to it
-    } else if (permission === 'denied') {
-      console.warn('🔕 User blocked notifications – skipping FCM setup');
-    } else {
-      console.log('🔔 Permission prompt dismissed; will ask again later');
-    }
+    
   })
   .catch(err => console.error('🚨 SW error', err));
 
@@ -838,6 +844,35 @@ onMessage(messaging, (payload) => {
     body: payload.notification.body
   });
 });
+  if ('Notification' in window && 'serviceWorker' in navigator) {
+  const subBtn = document.getElementById('subscribeBtn');
+  subBtn?.addEventListener('click', async () => {
+    // 1️⃣ Ask permission FROM this click
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      alert('Please enable notifications to stay up-to-date!');
+      return;
+    }
+
+    // 2️⃣ Get FCM token (works on desktop + iOS PWA)
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const fcmToken = await getToken(messaging, {
+        vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo',
+        serviceWorkerRegistration: registration
+      });
+      console.log('✅ FCM token acquired:', fcmToken);
+
+      // TODO: send fcmToken to Firestore or your backend
+      alert('🎉 Notifications enabled!');
+      subBtn.disabled = true;
+      subBtn.textContent = 'Notifications On';
+    } catch (err) {
+      console.error('FCM token error', err);
+      alert('Could not subscribe for push. Check console.');
+    }
+  });
+  }
 
   /******************************************************* 
    4) In-Memory Data
