@@ -807,7 +807,7 @@ import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/fireb
 const messaging = getMessaging(app);
 
 // Register the service worker with the correct path
-navigator.serviceWorker.register('/mywebsite/firebase-messaging-sw.js')
+navigator.serviceWorker.register('firebase-messaging-sw.js')
   .then(async (registration) => {
     console.log('✅ Service Worker registered');
 
@@ -818,7 +818,7 @@ navigator.serviceWorker.register('/mywebsite/firebase-messaging-sw.js')
 
     // Use the registration object here
     const token = await getToken(messaging, {
-      vapidKey: "YOUR_REAL_VAPID_KEY",
+      vapidKey: "BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo",
       serviceWorkerRegistration: registration
     });
 
