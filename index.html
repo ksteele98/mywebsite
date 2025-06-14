@@ -139,6 +139,29 @@
       border-radius: 4px;
       font-size: 14px;
     }
+    .reminder-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .reminder-inputs div {
+      flex: 1;
+      min-width: 120px;
+    }
+    .reminder-inputs label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    .reminder-inputs input[type="time"],
+    .reminder-inputs input[type="date"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
     .time-picker {
       display: none;
     }
@@ -478,6 +501,9 @@
       .time-inputs div {
         flex: 100%;
       }
+      .reminder-inputs div {
+        flex: 100%;
+      }
       .task-toggle button {
         flex: 100%;
       }
@@ -542,6 +568,16 @@
     <div>
       <label for="eventEndTime">End Time:</label>
       <input type="time" id="eventEndTime" required>
+    </div>
+  </div>
+  <div class="reminder-inputs">
+    <div>
+      <label for="reminderDate">Reminder Date (optional):</label>
+      <input type="date" id="reminderDate">
+    </div>
+    <div>
+      <label for="reminderTime">Reminder Time (optional):</label>
+      <input type="time" id="reminderTime">
     </div>
   </div>
   <h4>Select Color:</h4>
@@ -782,6 +818,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       document.getElementById('logoutSection').style.display = 'block';
       // Load data from Firestore
       await loadUserData();
+      scheduleAllReminders();
       // Generate calendar, tasks, etc.
       generateCalendar();
       renderTasks();
@@ -892,6 +929,7 @@ onMessage(messaging, (payload) => {
   let pendingImageFile = null;
   let mediaRecorder = null;
   let recordedChunks = [];
+  let reminderTimeouts = {};
 
   // ─── Simple desktop time picker using dropdowns ───
   function isMobileDevice() {
@@ -1373,6 +1411,25 @@ function initializeColorPicker(preSelected = selectedColor) {
   /*******************************************************
    10) Events
   *******************************************************/
+  function scheduleReminder(ev) {
+    if (!ev.reminderDate || !ev.reminderTime) return;
+    const reminderMoment = new Date(ev.reminderDate + 'T' + ev.reminderTime);
+    const timeout = reminderMoment.getTime() - Date.now();
+    if (timeout <= 0) return;
+    const idx = events.indexOf(ev);
+    if (reminderTimeouts[idx]) clearTimeout(reminderTimeouts[idx]);
+    reminderTimeouts[idx] = setTimeout(() => {
+      if (Notification.permission === 'granted') {
+        new Notification('Event Reminder', { body: ev.description });
+      }
+    }, timeout);
+  }
+
+  function scheduleAllReminders() {
+    Object.values(reminderTimeouts).forEach(clearTimeout);
+    reminderTimeouts = {};
+    events.forEach(scheduleReminder);
+  }
   function addEvent(date) {
     const eventForm = document.getElementById('eventForm');
     document.getElementById('eventDate').value = date;
@@ -1380,6 +1437,8 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('eventDescription').value = '';
     document.getElementById('eventStartTime').value = '';
     document.getElementById('eventEndTime').value = '';
+    document.getElementById('reminderDate').value = '';
+    document.getElementById('reminderTime').value = '';
     eventForm.style.display = 'block';
     initializeColorPicker();
     document.querySelector('.delete-event-btn').style.display = 'none';
@@ -1393,6 +1452,8 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('eventEndTime').value = event.endTime;
     document.getElementById('eventDescription').value = event.description;
     document.getElementById('eventId').value = index;
+    document.getElementById('reminderDate').value = event.reminderDate || '';
+    document.getElementById('reminderTime').value = event.reminderTime || '';
     selectedColor = event.color;
 
     eventForm.style.display = 'block';
@@ -1420,6 +1481,8 @@ function initializeColorPicker(preSelected = selectedColor) {
     const endTime = document.getElementById('eventEndTime').value;
     const description = document.getElementById('eventDescription').value;
     const eventId = document.getElementById('eventId').value;
+    const reminderDate = document.getElementById('reminderDate').value;
+    const reminderTime = document.getElementById('reminderTime').value;
 
     if (!description || !startTime || !endTime) {
       alert('Please fill in all fields');
@@ -1430,7 +1493,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       return;
     }
 
-    const eventData = { date, startTime, endTime, description, color: selectedColor };
+    const eventData = { date, startTime, endTime, description, color: selectedColor, reminderDate, reminderTime };
     if (eventId !== '') {
       // Editing existing
       events[parseInt(eventId)] = eventData;
@@ -1439,6 +1502,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       events.push(eventData);
     }
     saveUserData();
+    scheduleAllReminders();
 
     closeEventForm();
     generateCalendar();
@@ -1450,6 +1514,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     if (eventId !== '') {
       events.splice(parseInt(eventId), 1);
       saveUserData();
+      scheduleAllReminders();
       closeEventForm();
       generateCalendar();
 
@@ -1980,6 +2045,7 @@ Object.assign(window, {
   confirmAddHabit, cancelAddHabit, saveHabitTracker, cancelHabitTracker
 });
 generateCalendar();   // render current month on first load
+scheduleAllReminders();
 
 // Add an event listener to the button directly
 document.getElementById('logoutButton').addEventListener('click', async () => {
