@@ -840,6 +840,40 @@ onMessage(messaging, (payload) => {
   // Store the internal function on window
   window._logoutFromGoogle = _logoutFromGoogle;
   window._loginWithGoogle = _loginWithGoogle;
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js";
+
+const messaging = getMessaging(app);
+
+// Register the service worker with the correct path
+navigator.serviceWorker.register('/mywebsite/firebase-messaging-sw.js')
+  .then(async (registration) => {
+    console.log('✅ Service Worker registered');
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      throw new Error("❌ Notification permission denied");
+    }
+
+    // Use the registration object here
+    const token = await getToken(messaging, {
+      vapidKey: "YOUR_REAL_VAPID_KEY",
+      serviceWorkerRegistration: registration
+    });
+
+    console.log("✅ FCM Token:", token);
+    // Optionally save it to Firestore here
+  })
+  .catch((err) => {
+    console.error("🚨 FCM Error:", err);
+  });
+
+// Handle foreground messages
+onMessage(messaging, (payload) => {
+  console.log("📬 Foreground message:", payload);
+  new Notification(payload.notification.title, {
+    body: payload.notification.body
+  });
+});
 
   /******************************************************* 
    4) In-Memory Data
