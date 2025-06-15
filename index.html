@@ -882,7 +882,6 @@ import { isSupported as messagingIsSupported } from
 
 
 /* 2️⃣ Register the service-worker & init Messaging (once) */
-let messaging;
 if (fcmSupported()) {
   messaging = getMessaging(app);
 
