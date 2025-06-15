@@ -878,8 +878,8 @@ async function initFCM() {
   if (!await fcmSupported()) return;
 
   const messaging = getMessaging(app);
-  await navigator.serviceWorker.register('/mywebsite/firebase-messaging-sw.js', {
-    scope: '/mywebsite/'
+  await navigator.serviceWorker.register('./firebase-messaging-sw.js', {
+    scope: './'
   });
   console.log('✅ SW registered');
 
