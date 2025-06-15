@@ -866,9 +866,16 @@ import {
   onMessage
 } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js';
 
+async function fcmSupported() {
+  try {
+    return await messagingIsSupported();
+  } catch {
+    return false;
+  }
+}
+
 async function initFCM() {
-  const supported = await messagingIsSupported();
-  if (!supported) return;
+  if (!await fcmSupported()) return;
 
   const messaging = getMessaging(app);
   await navigator.serviceWorker.register('/mywebsite/firebase-messaging-sw.js', {
@@ -931,6 +938,7 @@ initFCM();
   let mediaRecorder = null;
   let recordedChunks = [];
   let reminderTimeouts = {};
+  let taskControlsInitialized = false;
 
   // ─── Simple desktop time picker using dropdowns ───
   function isMobileDevice() {
@@ -1650,7 +1658,7 @@ window.saveJournal = saveJournal;
   function createNewList() {
   const name = prompt("Name for new list:");
   if (!name) return;
-  const key = name.toLowerCase().replace(/\\s+/g, "-");
+  const key = name.toLowerCase().replace(/\s+/g, "-");
   if (taskLists[key]) return alert("That list already exists!");
 
   taskLists[key] = [];
@@ -1674,7 +1682,7 @@ function deleteCurrentList() {
   document
     .querySelectorAll(".task-toggle button")
     .forEach(b => {
-      if (b.textContent.toLowerCase().replace(/\\s+/g, "-") === currentTaskList)
+      if (b.textContent.toLowerCase().replace(/\s+/g, "-") === currentTaskList)
         b.remove();
     });
 
@@ -1904,6 +1912,8 @@ function toggleTask(taskId, dateKey) {
 
   // Replace the initializeTaskControls function with this improved version
   function initializeTaskControls() {
+    if (taskControlsInitialized) return;
+    taskControlsInitialized = true;
     console.log("Initializing task controls...");
     
     // Setup task toggle buttons
