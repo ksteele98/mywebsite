@@ -768,25 +768,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
   import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-storage.js";
-  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js";
-  // Helper: is this browser capable of FCM push?
-async function fcmSupported() {
-  return (
-    'Notification' in window &&          // Notifications API
-    'serviceWorker' in navigator &&      // Service-workers
-    await messagingIsSupported()         // Firebase check (PROMISE!)
-  );
-}
-let messaging;
-if (await fcmSupported()) {              //  ← await here
-  messaging = getMessaging(app);
-  await navigator.serviceWorker.register('/mywebsite/firebase-messaging-sw.js', {
-    scope: '/mywebsite/'
-  });
-  console.log('✅ Service-worker registered');
-}
-
-// NEW: push-subscription flow -------------------------------
+  // NEW: push-subscription flow -------------------------------
 
   /********************** 
     2) Firebase Config 
@@ -877,34 +859,29 @@ if (await fcmSupported()) {              //  ← await here
 // 🔔 PUSH NOTIFICATION SETUP
 //******************************************************************
 
-import { isSupported as messagingIsSupported } from
-  'https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js';
+import {
+  isSupported as messagingIsSupported,
+  getMessaging,
+  getToken,
+  onMessage
+} from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js';
 
+async function initFCM() {
+  const supported = await messagingIsSupported();
+  if (!supported) return;
 
-/* 2️⃣ Register the service-worker & init Messaging (once) */
-if (fcmSupported()) {
-  messaging = getMessaging(app);
-
-  // Adjust the paths if you deploy somewhere other than /mywebsite/
+  const messaging = getMessaging(app);
   await navigator.serviceWorker.register('/mywebsite/firebase-messaging-sw.js', {
     scope: '/mywebsite/'
   });
-  console.log('✅ Service-worker registered');
-}
+  console.log('✅ SW registered');
 
-/* 3️⃣ Foreground listener */
-if (messaging) {
-  onMessage(messaging, (payload) => {
-    console.log('📬 Foreground message:', payload);
-    new Notification(payload.notification.title, {
-      body: payload.notification.body
-    });
-  });
-}
+  onMessage(messaging, ({ notification }) =>
+    new Notification(notification.title, { body: notification.body })
+  );
 
-/* 4️⃣ “Enable Notifications” button */
-const subBtn = document.getElementById('subscribeBtn');
-if (messaging && subBtn) {
+  const subBtn = document.getElementById('subscribeBtn');
+  if (!subBtn) return;
   subBtn.addEventListener('click', async () => {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
@@ -918,7 +895,6 @@ if (messaging && subBtn) {
         vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo',
         serviceWorkerRegistration: registration
       });
-
       console.log('✅ FCM token acquired:', fcmToken);
       // TODO: save `fcmToken` to Firestore or your backend
       alert('🎉 Notifications enabled!');
@@ -930,6 +906,8 @@ if (messaging && subBtn) {
     }
   });
 }
+
+initFCM();
 
 
 
