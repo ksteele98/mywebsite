@@ -928,7 +928,6 @@ if ('serviceWorker' in navigator) {
 }
 
 // 1B) Capture & store the FCM token
-import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js';
 const messaging = getMessaging(app);
 
 navigator.serviceWorker.ready.then(async reg => {
