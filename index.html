@@ -881,17 +881,6 @@ import { isSupported as messagingIsSupported } from
   'https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js';
 
 
-/* 2️⃣ Register the service-worker & init Messaging (once) */
-if (fcmSupported()) {
-  messaging = getMessaging(app);
-
-  // Adjust the paths if you deploy somewhere other than /mywebsite/
-  await navigator.serviceWorker.register('/mywebsite/firebase-messaging-sw.js', {
-    scope: '/mywebsite/'
-  });
-  console.log('✅ Service-worker registered');
-}
-
 /* 3️⃣ Foreground listener */
 if (messaging) {
   onMessage(messaging, (payload) => {
