@@ -916,30 +916,6 @@ async function initFCM() {
 
 initFCM();
 
-// 1A) Register your SW & ask for notification permission
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker
-    .register('/firebase-messaging-sw.js', { scope: '/' })
-    .then(() => console.log('SW registered'))
-    .catch(console.error);
-
-  Notification.requestPermission()
-    .then(p => console.log('Notification permission', p));
-}
-
-// 1B) Capture & store the FCM token
-const messaging = getMessaging(app);
-
-navigator.serviceWorker.ready.then(async reg => {
-  const fcmToken = await getToken(messaging, {
-    vapidKey: 'YOUR_VAPID_KEY',
-    serviceWorkerRegistration: reg
-  });
-  console.log('FCM token:', fcmToken);
-  // now save it in Firestore under the current user:
-  await setDoc(doc(db, 'users', userId), { fcmToken }, { merge: true });
-});
-
 
 
 
