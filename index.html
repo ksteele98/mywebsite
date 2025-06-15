@@ -923,8 +923,7 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log('SW registered'))
     .catch(console.error);
 
-  Notification.requestPermission()
-    .then(p => console.log('Notification permission', p));
+  // Request permission when the user explicitly subscribes to notifications.
 }
 
 // 1B) Capture & store the FCM token
