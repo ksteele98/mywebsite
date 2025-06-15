@@ -1693,6 +1693,8 @@ function deleteCurrentList() {
 }
 
   function addTask() {
+    const taskInput = document.getElementById('taskInput');
+    const taskDailyCheckbox = document.getElementById('taskDailyCheckbox');
     const text = taskInput.value.trim();
     if (!text) return alert("Please enter a task");
     const daily = taskDailyCheckbox.checked;
