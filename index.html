@@ -928,15 +928,6 @@ async function initFCM() {
 
 initFCM();
 
-// 1A) Register your SW & ask for notification permission
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker
-    .register('/firebase-messaging-sw.js', { scope: '/' })
-    .then(() => console.log('SW registered'))
-    .catch(console.error);
-
-  // Request permission when the user explicitly subscribes to notifications.
-}
 
 
 
