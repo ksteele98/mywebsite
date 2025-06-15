@@ -903,7 +903,8 @@ async function initFCM() {
         serviceWorkerRegistration: registration
       });
       console.log('✅ FCM token acquired:', fcmToken);
-      // TODO: save `fcmToken` to Firestore or your backend
+      const uid = auth.currentUser?.uid;
+      if (uid) await setDoc(doc(db, 'users', uid), { fcmToken }, { merge: true });
       alert('🎉 Notifications enabled!');
       subBtn.disabled = true;
       subBtn.textContent = 'Notifications On';
