@@ -877,30 +877,23 @@ async function fcmSupported() {
 async function initFCM() {
   if (!await fcmSupported()) return;
 
-  const messaging = getMessaging(app);
   await navigator.serviceWorker.register('./firebase-messaging-sw.js', {
     scope: './'
   });
   console.log('✅ SW registered');
 
-  onMessage(messaging, ({ notification }) =>
-    new Notification(notification.title, { body: notification.body })
-  );
-
   const subBtn = document.getElementById('subscribeBtn');
   if (!subBtn) return;
   subBtn.addEventListener('click', async () => {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      alert('Please enable notifications to stay up-to-date!');
-      return;
-    }
+    if (await Notification.requestPermission() !== 'granted') return;
+
+    const messaging = getMessaging(app);                 // modular in main thread
+    const swReg     = await navigator.serviceWorker.ready;
 
     try {
-      const registration = await navigator.serviceWorker.ready;
       const fcmToken = await getToken(messaging, {
         vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo',
-        serviceWorkerRegistration: registration
+        serviceWorkerRegistration: swReg
       });
       console.log('✅ FCM token acquired:', fcmToken);
       const uid = auth.currentUser?.uid;
@@ -913,6 +906,11 @@ async function initFCM() {
       alert('Could not subscribe for push. Check console.');
     }
   });
+
+  const messaging = getMessaging(app);
+  onMessage(messaging, ({ notification }) =>
+    new Notification(notification.title, { body: notification.body })
+  );
 }
 
 initFCM();
