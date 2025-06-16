@@ -19,5 +19,13 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage(({ notification, data }) => {
   const title = notification?.title ?? data?.title ?? 'Notification';
   const body  = notification?.body  ?? data?.body  ?? '';
-  self.registration.showNotification(title, { body });
+  self.registration.showNotification(title, {
+    body,
+    icon: '/icon-192.png'
+  });
+});
+
+self.addEventListener('notificationclick', evt => {
+  evt.notification.close();
+  evt.waitUntil(clients.openWindow('/'));
 });
