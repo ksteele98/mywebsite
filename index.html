@@ -908,9 +908,12 @@ async function initFCM() {
   });
 
   const messaging = getMessaging(app);
-  onMessage(messaging, ({ notification }) =>
-    new Notification(notification.title, { body: notification.body })
-  );
+  // Foreground messages use a data-only payload so we manually
+  // display the toast using the `data` object.
+  onMessage(messaging, ({ data }) => {
+    if (!data) return;
+    new Notification(data.title, { body: data.body });
+  });
 }
 
 initFCM();
