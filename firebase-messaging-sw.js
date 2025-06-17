@@ -16,8 +16,8 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Handle background messages
-messaging.onBackgroundMessage(({ notification, data }) => {
-  const title = notification?.title ?? data?.title ?? 'Notification';
-  const body  = notification?.body  ?? data?.body  ?? '';
+messaging.onBackgroundMessage(({ data }) => {
+  const title = data?.title ?? 'Notification';
+  const body  = data?.body  ?? '';
   self.registration.showNotification(title, { body });
 });

@@ -1,19 +1,20 @@
 # mywebsite
 
-This project uses Firebase Cloud Messaging (FCM) for push notifications. To ensure background notifications are handled correctly, send **data-only** messages to the FCM API. Avoid a top-level `notification` block in the payload so that your `onBackgroundMessage` handler in `firebase-messaging-sw.js` runs.
+This project uses Firebase Cloud Messaging (FCM) for push notifications. Use **data-only** payloads so that your service worker's `onBackgroundMessage` handler runs. Avoid including a top-level `notification` object.
 
 Example `curl` request:
 
 ```bash
-curl -X POST https://fcm.googleapis.com/fcm/send \
-  -H "Authorization: key=YOUR_SERVER_KEY" \
+curl -X POST https://fcm.googleapis.com/v1/projects/YOUR_PROJECT_ID/messages:send \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "YOUR_FCM_TOKEN",
-    "priority": "high",
-    "data": {
-      "title": "Background Alert",
-      "body": "This came through the service worker 🎉"
+    "message": {
+      "token": "YOUR_FCM_TOKEN",
+      "data": {
+        "title": "Background Alert",
+        "body": "This came through the service worker 🎉"
+      }
     }
   }'
 ```
