@@ -1034,16 +1034,17 @@ initFCM();
         habitTracker    = data.habitTracker    || {};
         globalHabits    = data.globalHabits    || [];
         document.getElementById('goalsText').value = data.userGoals || '';
-        
-       renderTasks();                    
 
-     initializeTaskControls();
+        renderTaskListButtons();
+        renderTasks();
+        initializeTaskControls();
       } else {
         console.log("No existing Firestore doc for this user; starting fresh.");
         taskLists = { personal: [], work: [] };
-        
-      renderTasks();                   
-     initializeTaskControls();
+
+        renderTaskListButtons();
+        renderTasks();
+        initializeTaskControls();
       }
     } catch (err) {
       console.error("Error loading user data:", err);
@@ -1655,21 +1656,38 @@ window.saveJournal = saveJournal;
     renderTasks();
   }
 
+  function renderTaskListButtons() {
+    const container = document.querySelector('.task-toggle');
+    if (!container) return;
+
+    // Remove existing custom buttons
+    container.querySelectorAll('button').forEach(btn => {
+      if (btn.id !== 'personalTasksBtn' && btn.id !== 'workTasksBtn') {
+        btn.remove();
+      }
+    });
+
+    // Add buttons for saved lists
+    Object.keys(taskLists).forEach(key => {
+      if (key === 'personal' || key === 'work') return;
+      const btn = document.createElement('button');
+      btn.textContent = key.replace(/-/g, ' ');
+      btn.setAttribute('onclick', `switchTaskList('${key}')`);
+      container.appendChild(btn);
+    });
+  }
+
   function createNewList() {
-  const name = prompt("Name for new list:");
-  if (!name) return;
-  const key = name.toLowerCase().replace(/\s+/g, "-");
-  if (taskLists[key]) return alert("That list already exists!");
+    const name = prompt("Name for new list:");
+    if (!name) return;
+    const key = name.toLowerCase().replace(/\s+/g, "-");
+    if (taskLists[key]) return alert("That list already exists!");
 
-  taskLists[key] = [];
-  const btn = document.createElement("button");
-  btn.textContent = name;
-  btn.onclick = () => switchTaskList(key);
-  document.querySelector(".task-toggle").appendChild(btn);
-
-  saveUserData();
-  switchTaskList(key);
-}
+    taskLists[key] = [];
+    renderTaskListButtons();
+    saveUserData();
+    switchTaskList(key);
+  }
 
 function deleteCurrentList() {
   if (["personal", "work"].includes(currentTaskList)) {
@@ -1679,14 +1697,8 @@ function deleteCurrentList() {
   if (!confirm("Delete this list?")) return;
 
   delete taskLists[currentTaskList];
-  document
-    .querySelectorAll(".task-toggle button")
-    .forEach(b => {
-      if (b.textContent.toLowerCase().replace(/\s+/g, "-") === currentTaskList)
-        b.remove();
-    });
-
   currentTaskList = "personal";
+  renderTaskListButtons();
   document.getElementById("personalTasksBtn").classList.add("active");
   saveUserData();
   renderTasks();
