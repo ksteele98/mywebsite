@@ -2188,7 +2188,7 @@ function renderHabits(date) {
     habitList.innerHTML = '<p>No habits created yet. Click "Add Habit" to get started.</p>';
     return;
   }
-  
+
   globalHabits
     .filter(habit => !habit.startDate || habit.startDate <= date)
     .forEach(habit => {
@@ -2197,43 +2197,57 @@ function renderHabits(date) {
       div.style.padding = '10px';
       div.style.border = '1px solid #ddd';
       div.style.borderRadius = '4px';
-    
-    const label = document.createElement('label');
-    label.style.display = 'flex';
-    label.style.alignItems = 'center';
-    
-    if (habit.type === 'check') {
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.style.marginRight = '10px';
-      checkbox.checked = habitTracker[date]?.[habit.id]?.completed || false;
-      checkbox.onchange = () => {
-        habitTracker[date] = habitTracker[date] || {};
-        habitTracker[date][habit.id] = habitTracker[date][habit.id] || {};
-        habitTracker[date][habit.id].completed = checkbox.checked;
-      };
-      
-      label.appendChild(checkbox);
-    } else { // count type
-      const count = document.createElement('input');
-      count.type = 'number';
-      count.min = '0';
-      count.style.width = '60px';
-      count.style.marginRight = '10px';
-      count.value = habitTracker[date]?.[habit.id]?.count || 0;
-      count.onchange = () => {
-        habitTracker[date] = habitTracker[date] || {};
-        habitTracker[date][habit.id] = habitTracker[date][habit.id] || {};
-        habitTracker[date][habit.id].count = parseInt(count.value) || 0;
-      };
-      
-      label.appendChild(count);
-    }
-    
-    const name = document.createElement('span');
-    name.textContent = habit.name;
-    label.appendChild(name);
 
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+
+      if (habit.type === 'check') {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.style.marginRight = '10px';
+        checkbox.checked = habitTracker[date]?.[habit.id]?.completed || false;
+        checkbox.onchange = () => {
+          habitTracker[date] = habitTracker[date] || {};
+          habitTracker[date][habit.id] = habitTracker[date][habit.id] || {};
+          habitTracker[date][habit.id].completed = checkbox.checked;
+        };
+        label.appendChild(checkbox);
+      } else {
+        const count = document.createElement('input');
+        count.type = 'number';
+        count.min = '0';
+        count.style.width = '60px';
+        count.style.marginRight = '10px';
+        count.value = habitTracker[date]?.[habit.id]?.count || 0;
+        count.onchange = () => {
+          habitTracker[date] = habitTracker[date] || {};
+          habitTracker[date][habit.id] = habitTracker[date][habit.id] || {};
+          habitTracker[date][habit.id].count = parseInt(count.value) || 0;
+        };
+        label.appendChild(count);
+      }
+
+      const name = document.createElement('span');
+      name.textContent = habit.name;
+      label.appendChild(name);
+
+      div.appendChild(label);
+
+      const del = document.createElement('button');
+      del.textContent = 'Delete';
+      del.style.marginLeft = '10px';
+      del.style.background = '#dc3545';
+      del.style.color = 'white';
+      del.style.border = 'none';
+      del.style.padding = '4px 8px';
+      del.style.borderRadius = '4px';
+      del.style.cursor = 'pointer';
+      del.onclick = () => _deleteHabit(habit.id);
+
+      div.appendChild(del);
+      habitList.appendChild(div);
+    });
 }
 
 
