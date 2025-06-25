@@ -1520,12 +1520,6 @@ function initializeColorPicker(preSelected = selectedColor) {
     events.forEach(scheduleReminder);
   }
 
-  function getReminderMinutes(ev) {
-    if (!ev.reminderDate || !ev.reminderTime) return null;
-    const start = new Date(`${ev.date}T${ev.startTime}`);
-    const remind = new Date(`${ev.reminderDate}T${ev.reminderTime}`);
-    return Math.round((start - remind) / 60000);
-  }
   function addEvent(date) {
     const eventForm = document.getElementById('eventForm');
     document.getElementById('eventDate').value = date;
@@ -1583,7 +1577,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     return diffMinutes > 0 ? diffMinutes : null;   // ignore negative / zero
   }
 
-  function saveEvent() {
+  async function saveEvent() {
     const date = document.getElementById('eventDate').value;
     const startTime = document.getElementById('eventStartTime').value;
     const endTime = document.getElementById('eventEndTime').value;
