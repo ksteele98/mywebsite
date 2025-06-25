@@ -26,3 +26,5 @@ https://ksteele98.github.io/mywebsite/firebase-messaging-sw.js
 ```
 
 When the app receives a push while closed, this service worker's `onBackgroundMessage` callback displays the notification.
+
+On mobile devices install the PWA ("Add to Home Screen") and tap the **Enable Notifications** button once signed in. Notifications will then appear even when the app isn't open.
