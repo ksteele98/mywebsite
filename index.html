@@ -140,6 +140,29 @@
       border-radius: 4px;
       font-size: 14px;
     }
+    .reminder-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .reminder-inputs div {
+      flex: 1;
+      min-width: 120px;
+    }
+    .reminder-inputs label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    .reminder-inputs input[type="time"],
+    .reminder-inputs input[type="date"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
     .time-picker {
       display: none;
     }
@@ -510,7 +533,13 @@
   </button>
 </div>
 
+<!-- Add logout button that shows when logged in -->
+<div id="logoutSection" style="display: none; text-align:right; margin-bottom: 20px;">
+  <button onclick="openJournalMode()" id="journalModeBtn" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 10px;">
     Journal Mode
+  </button>
+   <button id="subscribeBtn"          style="background:#FFB400;color:#000;padding:8px 16px;
+               border:none;border-radius:4px;cursor:pointer;margin-right:10px">   🔔 Enable Notifications
   </button>
   <button onclick="logoutFromGoogle()" id="logoutButton" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
     Sign Out
@@ -550,6 +579,16 @@
       <input type="time" id="eventEndTime" required>
     </div>
   </div>
+  <div class="reminder-inputs">
+    <div>
+      <label for="reminderDate">Reminder Date (optional):</label>
+      <input type="date" id="reminderDate">
+    </div>
+    <div>
+      <label for="reminderTime">Reminder Time (optional):</label>
+      <input type="time" id="reminderTime">
+    </div>
+  </div>
   <h4>Select Color:</h4>
   <div class="color-picker" id="colorPicker"></div>
   <input type="hidden" id="eventDate">
@@ -569,6 +608,16 @@
   <div id="journalDate" style="margin-bottom: 10px;"></div>
 
   <div class="daily-events">
+    <h4>Events</h4>
+    <div id="dailyEventsList"></div>
+    <button class="add-event-btn" onclick="addEvent(document.getElementById('journalForm').dataset.date)">Add Event</button>
+  </div>
+
+  <h4>Journal Entry</h4>
+  <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
+
+  <div class="audio-section">
+    <div style="position:relative;">
       <audio id="audioPlayer" controls style="display:none; width:100%; margin:10px 0;"></audio>
       <button id="removeAudioBtn" class="remove-btn" onclick="removeAudio()" style="display:none;">&#215;</button>
     </div>
@@ -795,6 +844,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       document.getElementById('logoutSection').style.display = 'block';
       // Load data from Firestore
       await loadUserData();
+      scheduleAllReminders();
       // Generate calendar, tasks, etc.
       generateCalendar();
       renderTasks();
@@ -834,6 +884,86 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
 
 
+//******************************************************************
+// 🔔 PUSH NOTIFICATION SETUP
+//******************************************************************
+
+import {
+  isSupported as messagingIsSupported,
+  getMessaging,
+  getToken,
+  onMessage
+} from 'https://www.gstatic.com/firebasejs/10.7.2/firebase-messaging.js';
+
+// Endpoint of the Cloud Function that sends reminder emails
+const REMINDER_EMAIL_FUNCTION_URL = 'https://us-central1-my-website-5dfa1.cloudfunctions.net/sendEmailReminder';
+
+let userFcmToken = null;
+
+async function fcmSupported() {
+  try {
+    return await messagingIsSupported();
+  } catch {
+    return false;
+  }
+}
+
+async function initFCM() {
+  if (!await fcmSupported()) return;
+
+  await navigator.serviceWorker.register('./firebase-messaging-sw.js', {
+    scope: './'
+  });
+  console.log('✅ SW registered');
+
+  async function subscribeForPush() {
+    const messaging = getMessaging(app);
+    const swReg = await navigator.serviceWorker.ready;
+    const fcmToken = await getToken(messaging, {
+      vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo',
+      serviceWorkerRegistration: swReg
+    });
+    console.log('✅ FCM token acquired:', fcmToken);
+    userFcmToken = fcmToken;
+    window.userFcmToken = fcmToken;
+    const uid = auth.currentUser?.uid;
+    if (uid) await setDoc(doc(db, 'users', uid), { fcmToken }, { merge: true });
+    const subBtn = document.getElementById('subscribeBtn');
+    if (subBtn) {
+      subBtn.disabled = true;
+      subBtn.textContent = 'Notifications On';
+    }
+  }
+
+  const subBtn = document.getElementById('subscribeBtn');
+  if (!subBtn) return;
+  subBtn.addEventListener('click', async () => {
+    if (await Notification.requestPermission() !== 'granted') return;
+    try {
+      await subscribeForPush();
+      alert('🎉 Notifications enabled!');
+    } catch (err) {
+      console.error('FCM token error', err);
+      alert('Could not subscribe for push. Check console.');
+    }
+  });
+
+  if (Notification.permission === 'granted') {
+    try { await subscribeForPush(); } catch (err) {
+      console.error('FCM auto-subscribe error', err);
+    }
+  }
+
+  const messaging = getMessaging(app);
+  // Foreground messages use a data-only payload so we manually
+  // display the toast using the `data` object.
+  onMessage(messaging, ({ data }) => {
+    if (!data) return;
+    new Notification(data.title, { body: data.body });
+  });
+}
+
+initFCM();
 
 
 
@@ -857,6 +987,7 @@ let pendingAudioFile = null;
 let pendingImageFile = null;
 let mediaRecorder = null;
 let recordedChunks = [];
+let reminderTimeouts = {};
 let taskControlsInitialized = false;
 
   // ─── Simple desktop time picker using dropdowns ───
@@ -1345,6 +1476,49 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('removeImageBtn').style.display = 'none';
   }
 
+  /*******************************************************
+   10) Events
+  *******************************************************/
+  async function sendReminderEmail(ev) {
+    if (!userEmail || !REMINDER_EMAIL_FUNCTION_URL) return;
+    try {
+      await fetch(REMINDER_EMAIL_FUNCTION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail,
+          name: userName || '',
+          event_name: ev.description,
+          event_time: formatTime(ev.startTime)
+        })
+      });
+    } catch (err) {
+      console.error('email reminder error', err);
+    }
+  }
+
+  function scheduleReminder(ev) {
+    if (!ev.reminderDate || !ev.reminderTime) return;
+    const reminderMoment = new Date(ev.reminderDate + 'T' + ev.reminderTime);
+    const timeout = reminderMoment.getTime() - Date.now();
+    if (timeout <= 0) return;
+    const idx = events.indexOf(ev);
+    if (reminderTimeouts[idx]) clearTimeout(reminderTimeouts[idx]);
+    reminderTimeouts[idx] = setTimeout(() => {
+      const timeRange = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}`;
+      const body = `${timeRange}: ${ev.description}`;
+      if (Notification.permission === 'granted') {
+        new Notification('Event Reminder', { body });
+      }
+      sendReminderEmail(ev);
+    }, timeout);
+  }
+
+  function scheduleAllReminders() {
+    Object.values(reminderTimeouts).forEach(clearTimeout);
+    reminderTimeouts = {};
+    events.forEach(scheduleReminder);
+  }
 
   function addEvent(date) {
     const eventForm = document.getElementById('eventForm');
@@ -1353,6 +1527,8 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('eventDescription').value = '';
     document.getElementById('eventStartTime').value = '';
     document.getElementById('eventEndTime').value = '';
+    document.getElementById('reminderDate').value = '';
+    document.getElementById('reminderTime').value = '';
     eventForm.style.display = 'block';
     initializeColorPicker();
     document.querySelector('.delete-event-btn').style.display = 'none';
@@ -1366,6 +1542,8 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('eventEndTime').value = event.endTime;
     document.getElementById('eventDescription').value = event.description;
     document.getElementById('eventId').value = index;
+    document.getElementById('reminderDate').value = event.reminderDate || '';
+    document.getElementById('reminderTime').value = event.reminderTime || '';
     selectedColor = event.color;
 
     eventForm.style.display = 'block';
@@ -1387,6 +1565,17 @@ function initializeColorPicker(preSelected = selectedColor) {
     selectedColor = '#4285f4';
   }
 
+  // Returns how many minutes BEFORE the event start we should send the email.
+  // If the user skipped the reminder fields, returns null.
+  function getReminderMinutes({ date, startTime, reminderDate, reminderTime }) {
+    if (!reminderDate || !reminderTime) return null;
+
+    const startISO    = `${date}T${startTime}`;
+    const remindISO   = `${reminderDate}T${reminderTime}`;
+    const diffMs      = new Date(startISO) - new Date(remindISO);
+    const diffMinutes = Math.round(diffMs / 60000);
+    return diffMinutes > 0 ? diffMinutes : null;   // ignore negative / zero
+  }
 
   async function saveEvent() {
     const date = document.getElementById('eventDate').value;
@@ -1394,6 +1583,8 @@ function initializeColorPicker(preSelected = selectedColor) {
     const endTime = document.getElementById('eventEndTime').value;
     const description = document.getElementById('eventDescription').value;
     const eventId = document.getElementById('eventId').value;
+    const reminderDate = document.getElementById('reminderDate').value;
+    const reminderTime = document.getElementById('reminderTime').value;
 
     if (!description || !startTime || !endTime) {
       alert('Please fill in all fields');
@@ -1404,7 +1595,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       return;
     }
 
-    const eventData = { date, startTime, endTime, description, color: selectedColor };
+    const eventData = { date, startTime, endTime, description, color: selectedColor, reminderDate, reminderTime };
     if (eventId !== '') {
       // Editing existing
       events[parseInt(eventId)] = eventData;
@@ -1413,8 +1604,25 @@ function initializeColorPicker(preSelected = selectedColor) {
       events.push(eventData);
     }
 
+    // -----------------------------------------
+    // NEW: mirror this event into Firestore ➜ “events” collection
+    // -----------------------------------------
+    try {
+      const reminderMinutes = getReminderMinutes(eventData);
+      await addDoc(collection(db, "events"), {
+        title:     eventData.description,
+        startTime: Timestamp.fromDate(new Date(`${eventData.date}T${eventData.startTime}`)),
+        reminderMinutes,
+        email:     userEmail,
+        name:      userName || '',
+        emailSent: false
+      });
+    } catch (err) {
+      console.error("❌ Failed to save event to Firestore:", err);
+    }
 
     saveUserData();
+    scheduleAllReminders();
 
     closeEventForm();
     generateCalendar();
@@ -1426,6 +1634,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     if (eventId !== '') {
       events.splice(parseInt(eventId), 1);
       saveUserData();
+      scheduleAllReminders();
       closeEventForm();
       generateCalendar();
 
@@ -1976,6 +2185,7 @@ Object.assign(window, {
   confirmAddHabit, cancelAddHabit, deleteHabit, saveHabitTracker, cancelHabitTracker
 });
 generateCalendar();   // render current month on first load
+scheduleAllReminders();
 
 // Add an event listener to the button directly
 document.getElementById('logoutButton').addEventListener('click', async () => {
