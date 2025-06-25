@@ -1715,13 +1715,15 @@ function deleteCurrentList() {
   renderTasks();
 }
 
-  function addTask() {
-    const taskInput = document.getElementById('taskInput');
-    const taskDailyCheckbox = document.getElementById('taskDailyCheckbox');
-    const text = taskInput.value.trim();
-    if (!text) return alert("Please enter a task");
-    const daily = taskDailyCheckbox.checked;
-    if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
+function addTask() {
+  const taskInput = document.getElementById('taskInput');
+  const taskDailyCheckbox = document.getElementById('taskDailyCheckbox');
+  const text = taskInput.value.trim();
+  if (!text) return alert("Please enter a task");
+  const daily = taskDailyCheckbox.checked;
+  const dateKey = document.getElementById('journalForm').dataset.date ||
+                  new Date().toISOString().split('T')[0];
+  if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
 
     const tokens = [...text.matchAll(/([^,;:]+)([;:,]?)/g)].map(m => ({
       part: m[1].trim(),
@@ -1739,6 +1741,7 @@ function deleteCurrentList() {
           text: part,
           id: parentId,
           repeat: daily ? "daily" : "once",
+          startDate: dateKey,
           completed: false,
           completions: {},
           subtasks: [],
@@ -1780,12 +1783,13 @@ function renderTasks() {
   const journalForm = document.getElementById('journalForm');
   const dateKey     = journalForm.dataset.date || new Date().toISOString().split('T')[0];
 
-  // ─── filter out completed tasks ───
-  const visibleTasks = tasks.filter(t =>
-    t.repeat === 'once'
+  // ─── filter out completed tasks and tasks scheduled for the future ───
+  const visibleTasks = tasks.filter(t => {
+    if (t.startDate && new Date(t.startDate) > new Date(dateKey)) return false;
+    return t.repeat === 'once'
       ? !t.completed
-      : !(t.completions && t.completions[dateKey])
-  );
+      : !(t.completions && t.completions[dateKey]);
+  });
 
   // show "all done" message
   if (visibleTasks.length === 0) {
