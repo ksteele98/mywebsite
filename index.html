@@ -1556,6 +1556,18 @@ function initializeColorPicker(preSelected = selectedColor) {
     selectedColor = '#4285f4';
   }
 
+  // Returns how many minutes BEFORE the event start we should send the email.
+  // If the user skipped the reminder fields, returns null.
+  function getReminderMinutes({ date, startTime, reminderDate, reminderTime }) {
+    if (!reminderDate || !reminderTime) return null;
+
+    const startISO    = `${date}T${startTime}`;
+    const remindISO   = `${reminderDate}T${reminderTime}`;
+    const diffMs      = new Date(startISO) - new Date(remindISO);
+    const diffMinutes = Math.round(diffMs / 60000);
+    return diffMinutes > 0 ? diffMinutes : null;   // ignore negative / zero
+  }
+
   function saveEvent() {
     const date = document.getElementById('eventDate').value;
     const startTime = document.getElementById('eventStartTime').value;
