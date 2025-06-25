@@ -883,6 +883,8 @@ import {
 // Endpoint of the Cloud Function that dispatches FCM pushes
 const REMINDER_FUNCTION_URL = 'https://us-central1-my-website-5dfa1.cloudfunctions.net/sendReminder';
 
+let userFcmToken = null;
+
 async function fcmSupported() {
   try {
     return await messagingIsSupported();
@@ -971,7 +973,6 @@ let pendingImageFile = null;
 let mediaRecorder = null;
 let recordedChunks = [];
 let reminderTimeouts = {};
-let userFcmToken = null;
 let taskControlsInitialized = false;
 
   // ─── Simple desktop time picker using dropdowns ───
