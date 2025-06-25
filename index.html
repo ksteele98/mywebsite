@@ -2126,13 +2126,16 @@ function _showNewHabitForm() {
 function _confirmAddHabit() {
   const habitName = document.getElementById('newHabitName').value.trim();
   if (!habitName) return alert('Please enter a habit name');
-  
+
   const habitType = document.querySelector('input[name="habitType"]:checked').value;
-  
+
+  const startDate = document.getElementById('habitForm').dataset.date || new Date().toISOString().split('T')[0];
+
   globalHabits.push({
     id: Date.now(),
     name: habitName,
-    type: habitType
+    type: habitType,
+    startDate
   });
   
   saveUserData();
@@ -2158,18 +2161,20 @@ function _cancelHabitTracker() {
 function renderHabits(date) {
   const habitList = document.getElementById('habitList');
   habitList.innerHTML = '';
-  
+
   if (globalHabits.length === 0) {
     habitList.innerHTML = '<p>No habits created yet. Click "Add Habit" to get started.</p>';
     return;
   }
   
-  globalHabits.forEach(habit => {
-    const div = document.createElement('div');
-    div.style.margin = '10px 0';
-    div.style.padding = '10px';
-    div.style.border = '1px solid #ddd';
-    div.style.borderRadius = '4px';
+  globalHabits
+    .filter(habit => !habit.startDate || habit.startDate <= date)
+    .forEach(habit => {
+      const div = document.createElement('div');
+      div.style.margin = '10px 0';
+      div.style.padding = '10px';
+      div.style.border = '1px solid #ddd';
+      div.style.borderRadius = '4px';
     
     const label = document.createElement('label');
     label.style.display = 'flex';
@@ -2207,9 +2212,9 @@ function renderHabits(date) {
     name.textContent = habit.name;
     label.appendChild(name);
     
-    div.appendChild(label);
-    habitList.appendChild(div);
-  });
+      div.appendChild(label);
+      habitList.appendChild(div);
+    });
 }
 
 
