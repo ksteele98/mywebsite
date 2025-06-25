@@ -28,3 +28,22 @@ https://ksteele98.github.io/mywebsite/firebase-messaging-sw.js
 When the app receives a push while closed, this service worker's `onBackgroundMessage` callback displays the notification.
 
 On mobile devices install the PWA ("Add to Home Screen") and tap the **Enable Notifications** button once signed in. Notifications will then appear even when the app isn't open.
+
+## Event reminder pushes
+
+Event reminders now use a Cloud Function to deliver data-only FCM payloads. Set `REMINDER_FUNCTION_URL` in `index.html` to your deployed function's HTTPS endpoint. The included `functions/index.js` exports a `sendReminder` function for Firebase Functions:
+
+```javascript
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+admin.initializeApp();
+
+exports.sendReminder = functions.https.onRequest(async (req, res) => {
+  const { token, title, body } = req.body || {};
+  if (!token || !title || !body) return res.status(400).send('Missing fields');
+  await admin.messaging().send({ token, data: { title, body } });
+  res.send('ok');
+});
+```
+
+Deploy this function and set the URL so scheduled reminders trigger background notifications.

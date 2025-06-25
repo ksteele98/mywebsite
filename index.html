@@ -880,6 +880,9 @@ import {
   onMessage
 } from 'https://www.gstatic.com/firebasejs/10.7.2/firebase-messaging.js';
 
+// Endpoint of the Cloud Function that dispatches FCM pushes
+const REMINDER_FUNCTION_URL = 'YOUR_SEND_REMINDER_URL';
+
 async function fcmSupported() {
   try {
     return await messagingIsSupported();
@@ -904,6 +907,8 @@ async function initFCM() {
       serviceWorkerRegistration: swReg
     });
     console.log('✅ FCM token acquired:', fcmToken);
+    userFcmToken = fcmToken;
+    window.userFcmToken = fcmToken;
     const uid = auth.currentUser?.uid;
     if (uid) await setDoc(doc(db, 'users', uid), { fcmToken }, { merge: true });
     const subBtn = document.getElementById('subscribeBtn');
@@ -960,13 +965,14 @@ initFCM();
   let habitTracker = {};
   let globalHabits = [];
   let journalAudios = {};
-  let journalImages = {};
-  let pendingAudioFile = null;
-  let pendingImageFile = null;
-  let mediaRecorder = null;
-  let recordedChunks = [];
-  let reminderTimeouts = {};
-  let taskControlsInitialized = false;
+let journalImages = {};
+let pendingAudioFile = null;
+let pendingImageFile = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let reminderTimeouts = {};
+let userFcmToken = null;
+let taskControlsInitialized = false;
 
   // ─── Simple desktop time picker using dropdowns ───
   function isMobileDevice() {
@@ -1457,6 +1463,23 @@ function initializeColorPicker(preSelected = selectedColor) {
   /*******************************************************
    10) Events
   *******************************************************/
+  async function sendReminderPush(title, body) {
+    if (!userFcmToken || !REMINDER_FUNCTION_URL) {
+      new Notification(title, { body });
+      return;
+    }
+    try {
+      await fetch(REMINDER_FUNCTION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: userFcmToken, title, body })
+      });
+    } catch (err) {
+      console.error('push error', err);
+      new Notification(title, { body });
+    }
+  }
+
   function scheduleReminder(ev) {
     if (!ev.reminderDate || !ev.reminderTime) return;
     const reminderMoment = new Date(ev.reminderDate + 'T' + ev.reminderTime);
@@ -1468,7 +1491,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       if (Notification.permission === 'granted') {
         const timeRange = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}`;
         const body = `${timeRange}: ${ev.description}`;
-        new Notification('Event Reminder', { body });
+        sendReminderPush('Event Reminder', body);
       }
     }, timeout);
   }
