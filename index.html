@@ -809,6 +809,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
 
   let userId = null;  // will store current Google user's uid here
+  let userEmail = null;
+  let userName = null;
   const provider = new GoogleAuthProvider();
 
   // This function triggers the Google popup
@@ -827,6 +829,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       userId = user.uid;
+      userEmail = user.email;
+      userName = user.displayName || '';
       // Hide sign in button, show logout button
       document.getElementById('authSection').style.display = 'none';
       document.getElementById('logoutSection').style.display = 'block';
@@ -837,6 +841,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       generateCalendar();
       renderTasks();
     } else {
+      userId = null;
+      userEmail = null;
+      userName = null;
       // Show sign in button, hide logout button
       document.getElementById('authSection').style.display = 'block';
       document.getElementById('logoutSection').style.display = 'none';
@@ -880,8 +887,8 @@ import {
   onMessage
 } from 'https://www.gstatic.com/firebasejs/10.7.2/firebase-messaging.js';
 
-// Endpoint of the Cloud Function that dispatches FCM pushes
-const REMINDER_FUNCTION_URL = 'https://us-central1-my-website-5dfa1.cloudfunctions.net/sendReminder';
+// Endpoint of the Cloud Function that sends reminder emails
+const REMINDER_EMAIL_FUNCTION_URL = 'https://us-central1-my-website-5dfa1.cloudfunctions.net/sendEmailReminder';
 
 let userFcmToken = null;
 
@@ -1464,20 +1471,21 @@ function initializeColorPicker(preSelected = selectedColor) {
   /*******************************************************
    10) Events
   *******************************************************/
-  async function sendReminderPush(title, body) {
-    if (!userFcmToken || !REMINDER_FUNCTION_URL) {
-      new Notification(title, { body });
-      return;
-    }
+  async function sendReminderEmail(ev) {
+    if (!userEmail || !REMINDER_EMAIL_FUNCTION_URL) return;
     try {
-      await fetch(REMINDER_FUNCTION_URL, {
+      await fetch(REMINDER_EMAIL_FUNCTION_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: userFcmToken, title, body })
+        body: JSON.stringify({
+          email: userEmail,
+          name: userName || '',
+          event_name: ev.description,
+          event_time: formatTime(ev.startTime)
+        })
       });
     } catch (err) {
-      console.error('push error', err);
-      new Notification(title, { body });
+      console.error('email reminder error', err);
     }
   }
 
@@ -1489,11 +1497,12 @@ function initializeColorPicker(preSelected = selectedColor) {
     const idx = events.indexOf(ev);
     if (reminderTimeouts[idx]) clearTimeout(reminderTimeouts[idx]);
     reminderTimeouts[idx] = setTimeout(() => {
+      const timeRange = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}`;
+      const body = `${timeRange}: ${ev.description}`;
       if (Notification.permission === 'granted') {
-        const timeRange = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}`;
-        const body = `${timeRange}: ${ev.description}`;
-        sendReminderPush('Event Reminder', body);
+        new Notification('Event Reminder', { body });
       }
+      sendReminderEmail(ev);
     }, timeout);
   }
 
