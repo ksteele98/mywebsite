@@ -738,6 +738,10 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   function cancelAddHabit() {
     window._cancelAddHabit && window._cancelAddHabit();
   }
+
+  function deleteHabit(id) {
+    window._deleteHabit && window._deleteHabit(id);
+  }
   
   function saveHabitTracker() {
     window._saveHabitTracker && window._saveHabitTracker();
@@ -2052,6 +2056,7 @@ function toggleTask(taskId, dateKey) {
   window.showNewHabitForm = showNewHabitForm;
   window.confirmAddHabit = confirmAddHabit;
   window.cancelAddHabit = cancelAddHabit;
+  window.deleteHabit = deleteHabit;
   window.saveHabitTracker = saveHabitTracker;
   window.cancelHabitTracker = cancelHabitTracker;
   window.logoutFromGoogle = logoutFromGoogle;
@@ -2084,7 +2089,7 @@ Object.assign(window, {
   createNewList, deleteCurrentList,
   // habits
   changeToHabit, changeToJournal, showNewHabitForm,
-  confirmAddHabit, cancelAddHabit, saveHabitTracker, cancelHabitTracker
+  confirmAddHabit, cancelAddHabit, deleteHabit, saveHabitTracker, cancelHabitTracker
 });
 generateCalendar();   // render current month on first load
 scheduleAllReminders();
@@ -2143,9 +2148,26 @@ function _confirmAddHabit() {
   renderHabits(document.getElementById('habitForm').dataset.date);
 }
 
-function _cancelAddHabit() {
-  document.getElementById('newHabitForm').style.display = 'none';
-}
+  function _cancelAddHabit() {
+    document.getElementById('newHabitForm').style.display = 'none';
+  }
+
+  function _deleteHabit(habitId) {
+    if (!confirm('Delete this habit?')) return;
+
+    globalHabits = globalHabits.filter(h => h.id !== habitId);
+    for (const date in habitTracker) {
+      if (habitTracker[date] && habitTracker[date][habitId]) {
+        delete habitTracker[date][habitId];
+        if (Object.keys(habitTracker[date]).length === 0) {
+          delete habitTracker[date];
+        }
+      }
+    }
+
+    saveUserData();
+    renderHabits(document.getElementById('habitForm').dataset.date);
+  }
 
 function _saveHabitTracker() {
   saveUserData();
@@ -2211,10 +2233,7 @@ function renderHabits(date) {
     const name = document.createElement('span');
     name.textContent = habit.name;
     label.appendChild(name);
-    
-      div.appendChild(label);
-      habitList.appendChild(div);
-    });
+
 }
 
 
@@ -2224,6 +2243,7 @@ window._changeToJournal = _changeToJournal;
 window._showNewHabitForm = _showNewHabitForm;
 window._confirmAddHabit = _confirmAddHabit;
 window._cancelAddHabit = _cancelAddHabit;
+window._deleteHabit = _deleteHabit;
 window._saveHabitTracker = _saveHabitTracker;
 window._cancelHabitTracker = _cancelHabitTracker;
 </script>
