@@ -424,8 +424,16 @@
       padding: 6px 12px;
       margin-right: 10px;
     }
-    .audio-section input[type="file"] {
-      display: inline-block;
+    .file-upload-input {
+      display: none;
+    }
+    .file-upload-label {
+      padding: 6px 12px;
+      background: #007bff;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 10px;
     }
 
     .image-section img {
@@ -615,14 +623,16 @@
     </div>
     <div style="margin-bottom:10px;">
       <button id="recordAudioBtn" onclick="toggleRecording()">Start Recording</button>
-      <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioUpload(event)" style="margin-left:10px;">
+      <label for="audioFileInput" class="file-upload-label">Upload Audio</label>
+      <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioUpload(event)" class="file-upload-input">
     </div>
   </div>
 
   <div class="image-section" style="position:relative;">
     <img id="imagePreview" style="display:none; width:100%; margin:10px 0;" />
     <button id="removeImageBtn" class="remove-btn" onclick="removeImage()" style="display:none;">&#215;</button>
-    <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)">
+    <label for="imageFileInput" class="file-upload-label">Upload Image</label>
+    <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)" class="file-upload-input">
   </div>
   
 
