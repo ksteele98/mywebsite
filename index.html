@@ -896,30 +896,41 @@ async function initFCM() {
   });
   console.log('✅ SW registered');
 
+  async function subscribeForPush() {
+    const messaging = getMessaging(app);
+    const swReg = await navigator.serviceWorker.ready;
+    const fcmToken = await getToken(messaging, {
+      vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo',
+      serviceWorkerRegistration: swReg
+    });
+    console.log('✅ FCM token acquired:', fcmToken);
+    const uid = auth.currentUser?.uid;
+    if (uid) await setDoc(doc(db, 'users', uid), { fcmToken }, { merge: true });
+    const subBtn = document.getElementById('subscribeBtn');
+    if (subBtn) {
+      subBtn.disabled = true;
+      subBtn.textContent = 'Notifications On';
+    }
+  }
+
   const subBtn = document.getElementById('subscribeBtn');
   if (!subBtn) return;
   subBtn.addEventListener('click', async () => {
     if (await Notification.requestPermission() !== 'granted') return;
-
-    const messaging = getMessaging(app);                 // modular in main thread
-    const swReg     = await navigator.serviceWorker.ready;
-
     try {
-      const fcmToken = await getToken(messaging, {
-        vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo',
-        serviceWorkerRegistration: swReg
-      });
-      console.log('✅ FCM token acquired:', fcmToken);
-      const uid = auth.currentUser?.uid;
-      if (uid) await setDoc(doc(db, 'users', uid), { fcmToken }, { merge: true });
+      await subscribeForPush();
       alert('🎉 Notifications enabled!');
-      subBtn.disabled = true;
-      subBtn.textContent = 'Notifications On';
     } catch (err) {
       console.error('FCM token error', err);
       alert('Could not subscribe for push. Check console.');
     }
   });
+
+  if (Notification.permission === 'granted') {
+    try { await subscribeForPush(); } catch (err) {
+      console.error('FCM auto-subscribe error', err);
+    }
+  }
 
   const messaging = getMessaging(app);
   // Foreground messages use a data-only payload so we manually

@@ -21,3 +21,21 @@ messaging.onBackgroundMessage(({ data }) => {
   const body  = data?.body  ?? '';
   self.registration.showNotification(title, { body });
 });
+
+// Focus/open the app when the user taps a notification
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(clientList => {
+        for (const client of clientList) {
+          if (client.url.includes('/mywebsite/') && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow('/mywebsite/');
+        }
+      })
+  );
+});
