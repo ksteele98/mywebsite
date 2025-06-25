@@ -33,4 +33,43 @@ exports.sendEmailReminder = functions.https.onRequest((req, res) => {
     }
   });
 });
+const admin = require('firebase-admin');
+admin.initializeApp();
+
+exports.scheduleEmailReminders = functions.pubsub.schedule('every 5 minutes').onRun(async () => {
+  const now = new Date();
+  const in5Min = new Date(now.getTime() + 5 * 60 * 1000);
+
+  const snapshot = await admin.firestore().collection('events')
+    .where('emailSent', '==', false)
+    .get();
+
+  for (const doc of snapshot.docs) {
+    const event = doc.data();
+    const eventTime = new Date(event.startTime);
+
+    if (eventTime >= now && eventTime <= in5Min) {
+      const emailPayload = {
+        email: event.email,
+        name: event.name || '',
+        event_name: event.title,
+        event_time: eventTime.toLocaleString()
+      };
+
+      try {
+        await sgMail.send({
+          to: emailPayload.email,
+          from: 'kyleasteele98@gmail.com',
+          subject: `Reminder: ${emailPayload.event_name}`,
+          html: `<h3>Hey ${emailPayload.name || 'there'},</h3><p>This is your reminder for <strong>${emailPayload.event_name}</strong>.</p><p>It starts at: <strong>${emailPayload.event_time}</strong></p>`
+        });
+
+        await doc.ref.update({ emailSent: true });
+        console.log('📨 Sent email for:', event.title);
+      } catch (err) {
+        console.error('❌ Failed to send:', err);
+      }
+    }
+  }
+});
 
