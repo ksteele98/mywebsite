@@ -2197,6 +2197,9 @@ function renderHabits(date) {
       div.style.padding = '10px';
       div.style.border = '1px solid #ddd';
       div.style.borderRadius = '4px';
+      div.style.display = 'flex';
+      div.style.alignItems = 'center';
+      div.style.justifyContent = 'space-between';
 
       const label = document.createElement('label');
       label.style.display = 'flex';
@@ -2235,13 +2238,11 @@ function renderHabits(date) {
       div.appendChild(label);
 
       const del = document.createElement('button');
-      del.textContent = 'Delete';
-      del.style.marginLeft = '10px';
-      del.style.background = '#dc3545';
-      del.style.color = 'white';
+      del.innerHTML = '&times;';
+      del.style.background = 'none';
+      del.style.color = '#dc3545';
       del.style.border = 'none';
-      del.style.padding = '4px 8px';
-      del.style.borderRadius = '4px';
+      del.style.fontSize = '24px';
       del.style.cursor = 'pointer';
       del.onclick = () => _deleteHabit(habit.id);
 
