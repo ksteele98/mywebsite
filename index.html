@@ -1719,13 +1719,15 @@ function deleteCurrentList() {
   renderTasks();
 }
 
-  function addTask() {
-    const taskInput = document.getElementById('taskInput');
-    const taskDailyCheckbox = document.getElementById('taskDailyCheckbox');
-    const text = taskInput.value.trim();
-    if (!text) return alert("Please enter a task");
-    const daily = taskDailyCheckbox.checked;
-    if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
+function addTask() {
+  const taskInput = document.getElementById('taskInput');
+  const taskDailyCheckbox = document.getElementById('taskDailyCheckbox');
+  const text = taskInput.value.trim();
+  if (!text) return alert("Please enter a task");
+  const daily = taskDailyCheckbox.checked;
+  const dateKey = document.getElementById('journalForm').dataset.date ||
+                  new Date().toISOString().split('T')[0];
+  if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
 
     const tokens = [...text.matchAll(/([^,;:]+)([;:,]?)/g)].map(m => ({
       part: m[1].trim(),
@@ -1743,6 +1745,7 @@ function deleteCurrentList() {
           text: part,
           id: parentId,
           repeat: daily ? "daily" : "once",
+          startDate: dateKey,
           completed: false,
           completions: {},
           subtasks: [],
@@ -1784,12 +1787,13 @@ function renderTasks() {
   const journalForm = document.getElementById('journalForm');
   const dateKey     = journalForm.dataset.date || new Date().toISOString().split('T')[0];
 
-  // ─── filter out completed tasks ───
-  const visibleTasks = tasks.filter(t =>
-    t.repeat === 'once'
+  // ─── filter out completed tasks and tasks scheduled for the future ───
+  const visibleTasks = tasks.filter(t => {
+    if (t.startDate && new Date(t.startDate) > new Date(dateKey)) return false;
+    return t.repeat === 'once'
       ? !t.completed
-      : !(t.completions && t.completions[dateKey])
-  );
+      : !(t.completions && t.completions[dateKey]);
+  });
 
   // show "all done" message
   if (visibleTasks.length === 0) {
@@ -2127,13 +2131,16 @@ function _showNewHabitForm() {
 function _confirmAddHabit() {
   const habitName = document.getElementById('newHabitName').value.trim();
   if (!habitName) return alert('Please enter a habit name');
-  
+
   const habitType = document.querySelector('input[name="habitType"]:checked').value;
-  
+
+  const startDate = document.getElementById('habitForm').dataset.date || new Date().toISOString().split('T')[0];
+
   globalHabits.push({
     id: Date.now(),
     name: habitName,
-    type: habitType
+    type: habitType,
+    startDate
   });
   
   saveUserData();
@@ -2176,18 +2183,20 @@ function _cancelHabitTracker() {
 function renderHabits(date) {
   const habitList = document.getElementById('habitList');
   habitList.innerHTML = '';
-  
+
   if (globalHabits.length === 0) {
     habitList.innerHTML = '<p>No habits created yet. Click "Add Habit" to get started.</p>';
     return;
   }
   
-  globalHabits.forEach(habit => {
-    const div = document.createElement('div');
-    div.style.margin = '10px 0';
-    div.style.padding = '10px';
-    div.style.border = '1px solid #ddd';
-    div.style.borderRadius = '4px';
+  globalHabits
+    .filter(habit => !habit.startDate || habit.startDate <= date)
+    .forEach(habit => {
+      const div = document.createElement('div');
+      div.style.margin = '10px 0';
+      div.style.padding = '10px';
+      div.style.border = '1px solid #ddd';
+      div.style.borderRadius = '4px';
     
     const label = document.createElement('label');
     label.style.display = 'flex';
@@ -2225,16 +2234,6 @@ function renderHabits(date) {
     name.textContent = habit.name;
     label.appendChild(name);
 
-    div.appendChild(label);
-
-    const del = document.createElement('button');
-    del.textContent = '×';
-    del.style.cssText = 'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#dc3545;';
-    del.onclick = () => _deleteHabit(habit.id);
-    div.appendChild(del);
-
-    habitList.appendChild(div);
-  });
 }
 
 
