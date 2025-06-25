@@ -1304,6 +1304,10 @@ function initializeColorPicker(preSelected = selectedColor) {
       if (journalEntryIndex >= journalEntryDates.length) journalEntryIndex = journalEntryDates.length - 1;
       const newDateStr = journalEntryDates[journalEntryIndex];
       openJournal(newDateStr);
+      const habitForm = document.getElementById('habitForm');
+      if (habitForm.style.display !== 'none') {
+        _changeToHabit();
+      }
       return;
     }
 
@@ -1317,6 +1321,10 @@ function initializeColorPicker(preSelected = selectedColor) {
 
     const newDateStr = currentDate.toISOString().split('T')[0];
     openJournal(newDateStr);
+    const habitForm = document.getElementById('habitForm');
+    if (habitForm.style.display !== 'none') {
+      _changeToHabit();
+    }
   }
 
   /*******************************************************
