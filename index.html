@@ -895,9 +895,6 @@ import {
   onMessage
 } from 'https://www.gstatic.com/firebasejs/10.7.2/firebase-messaging.js';
 
-// Endpoint of the Cloud Function that sends reminder emails
-const REMINDER_EMAIL_FUNCTION_URL = 'https://us-central1-my-website-5dfa1.cloudfunctions.net/sendEmailReminder';
-
 let userFcmToken = null;
 
 async function fcmSupported() {
@@ -1479,24 +1476,6 @@ function initializeColorPicker(preSelected = selectedColor) {
   /*******************************************************
    10) Events
   *******************************************************/
-  async function sendReminderEmail(ev) {
-    if (!userEmail || !REMINDER_EMAIL_FUNCTION_URL) return;
-    try {
-      await fetch(REMINDER_EMAIL_FUNCTION_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: userEmail,
-          name: userName || '',
-          event_name: ev.description,
-          event_time: formatTime(ev.startTime)
-        })
-      });
-    } catch (err) {
-      console.error('email reminder error', err);
-    }
-  }
-
   function scheduleReminder(ev) {
     if (!ev.reminderDate || !ev.reminderTime) return;
     const reminderMoment = new Date(ev.reminderDate + 'T' + ev.reminderTime);
@@ -1510,7 +1489,6 @@ function initializeColorPicker(preSelected = selectedColor) {
       if (Notification.permission === 'granted') {
         new Notification('Event Reminder', { body });
       }
-      sendReminderEmail(ev);
     }, timeout);
   }
 
