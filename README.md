@@ -37,3 +37,6 @@ On mobile devices install the PWA ("Add to Home Screen") and tap the **Enable No
 const functions = require('firebase-functions');
 const sgMail = require('@sendgrid/mail');
 
+
+## SendGrid Frontend Test
+The `sendgrid-test.html` file demonstrates using SendGrid's REST API directly from the browser. A placeholder API key `SG.YOUR_REAL_API_KEY_HERE` is provided. **Never commit your real SendGrid credentials.** Replace the placeholder key with your own when testing locally.
