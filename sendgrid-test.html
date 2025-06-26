@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SendGrid Test</title>
+</head>
+<body>
+
+  <h1>SendGrid Email Test</h1>
+  <button onclick="sendEmail()">Send Email</button>
+
+  <script>
+    const sendEmail = async () => {
+      const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer SG.YOUR_REAL_API_KEY_HERE", // ⚠️ Replace this
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          personalizations: [{
+            to: [{ email: "kyleasteele98@gmail.com" }],
+            subject: "Test Email from JS",
+          }],
+          from: { email: "your_verified_sender@example.com" }, // ⚠️ Must match verified sender
+          content: [{ type: "text/html", value: "This is a test email from JavaScript!" }],
+        }),
+      });
+
+      const result = await response.text();
+      console.log("SendGrid response:", result);
+    };
+  </script>
+
+</body>
+</html>
