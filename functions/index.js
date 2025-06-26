@@ -33,6 +33,31 @@ exports.sendEmailReminder = functions.https.onRequest((req, res) => {
     }
   });
 });
+
+exports.sendEmail = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    const { to, subject, html } = req.body || {};
+
+    if (!to || !subject || !html) {
+      return res.status(400).send('Missing fields');
+    }
+
+    const msg = {
+      to,
+      from: 'kyleasteele98@gmail.com', // 🔁 Must match verified sender identity in SendGrid
+      subject,
+      html,
+    };
+
+    try {
+      await sgMail.send(msg);
+      res.status(200).send('Email sent successfully!');
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.status(500).send('Failed to send email.');
+    }
+  });
+});
 const admin = require('firebase-admin');
 admin.initializeApp();
 

@@ -39,4 +39,4 @@ const sgMail = require('@sendgrid/mail');
 
 
 ## SendGrid Frontend Test
-The `sendgrid-test.html` file demonstrates using SendGrid's REST API directly from the browser. A placeholder API key `SG.YOUR_REAL_API_KEY_HERE` is provided. **Never commit your real SendGrid credentials.** Replace the placeholder key with your own when testing locally.
+The `sendgrid-test.html` page now posts to the `/sendEmail` Cloud Function rather than calling SendGrid directly. This keeps your SendGrid API key on the server. Configure the key with `firebase functions:config:set sendgrid.key=YOUR_KEY` before deploying.
