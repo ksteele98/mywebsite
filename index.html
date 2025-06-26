@@ -1644,6 +1644,22 @@ function initializeColorPicker(preSelected = selectedColor) {
       console.error("❌ Failed to save event to Firestore:", err);
     }
 
+    // -----------------------------------------
+    // NEW: send email if the user picked a reminder
+    // -----------------------------------------
+    if (reminderDate && reminderTime && userEmail) {
+      const sendAt = new Date(`${reminderDate}T${reminderTime}`);
+      if (sendAt > new Date()) {        // future-only
+        const niceTime = formatTime(startTime);
+        queueEmailReminder({
+          to:      userEmail,
+          subject: `⏰ Reminder: ${description}`,
+          html:    `<p><strong>${description}</strong> starts at ${niceTime}.</p>`,
+          sendAt
+        });
+      }
+    }
+
     saveUserData();
     scheduleAllReminders();
 
