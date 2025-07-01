@@ -2519,6 +2519,9 @@ async function sendTestEmail() {
     alert("Failed: " + result.data.error);
   }
 }
+
+// 👇 Add this line!
+window.sendTestEmail = sendTestEmail;
 </script>
 
 </body>
