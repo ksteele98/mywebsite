@@ -718,6 +718,15 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
+<!-- Test Email Form -->
+<div id="emailTestSection" style="margin: 30px 0;">
+  <h3>Test Send Email</h3>
+  <input type="email" id="testEmailTo" placeholder="Recipient Email" style="padding:8px; width:250px;">
+  <input type="text" id="testEmailSubject" placeholder="Subject" style="padding:8px; width:250px;">
+  <textarea id="testEmailBody" placeholder="Message" style="padding:8px; width:250px; height:60px;"></textarea>
+  <button onclick="sendTestEmail()" style="padding:8px 16px; margin-top:8px;">Send Email</button>
+</div>
+
 <!-- ====================== Firebase + App Script ====================== -->
 <script>
   // Create global function that will call the internal module function
@@ -1616,7 +1625,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     }
 
     // -----------------------------------------
-    // NEW: mirror this event into Firestore ➜ “events” collection
+    // NEW: mirror this event into Firestore ➜ "events" collection
     // -----------------------------------------
     try {
       const reminderMinutes = getReminderMinutes(eventData);
@@ -2490,6 +2499,26 @@ window._cancelAddHabit = _cancelAddHabit;
 window._deleteHabit = _deleteHabit;
 window._saveHabitTracker = _saveHabitTracker;
 window._cancelHabitTracker = _cancelHabitTracker;
+
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-functions.js";
+const functions = getFunctions();
+
+async function sendTestEmail() {
+  const to = document.getElementById('testEmailTo').value;
+  const subject = document.getElementById('testEmailSubject').value;
+  const text = document.getElementById('testEmailBody').value;
+  if (!to || !subject || !text) {
+    alert("Please fill in all fields.");
+    return;
+  }
+  const sendEmail = httpsCallable(functions, 'sendTestEmail');
+  const result = await sendEmail({ to, subject, text });
+  if (result.data.success) {
+    alert("Email sent!");
+  } else {
+    alert("Failed: " + result.data.error);
+  }
+}
 </script>
 
 </body>
