@@ -2500,28 +2500,6 @@ window._deleteHabit = _deleteHabit;
 window._saveHabitTracker = _saveHabitTracker;
 window._cancelHabitTracker = _cancelHabitTracker;
 
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-functions.js";
-const functions = getFunctions();
-
-async function sendTestEmail() {
-  const to = document.getElementById('testEmailTo').value;
-  const subject = document.getElementById('testEmailSubject').value;
-  const text = document.getElementById('testEmailBody').value;
-  if (!to || !subject || !text) {
-    alert("Please fill in all fields.");
-    return;
-  }
-  const sendEmail = httpsCallable(functions, 'sendTestEmail');
-  const result = await sendEmail({ to, subject, text });
-  if (result.data.success) {
-    alert("Email sent!");
-  } else {
-    alert("Failed: " + result.data.error);
-  }
-}
-
-// 👇 Add this line!
-window.sendTestEmail = sendTestEmail;
 
 import { getFunctions, httpsCallable }
   from 'https://www.gstatic.com/firebasejs/10.7.2/firebase-functions.js';
