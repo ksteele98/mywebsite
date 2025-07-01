@@ -640,6 +640,7 @@
     <div class="tasks-header">
       <h3>Tasks</h3>
       <div>
+        <button id="toggleCompletedBtn" class="new-list-btn" onclick="toggleCompletedView()">Show Completed</button>
         <button class="new-list-btn" onclick="createNewList()">+ New List</button>
         <button class="delete-list-btn" onclick="deleteCurrentList()">Delete List</button>
       </div>
@@ -998,6 +999,8 @@ initFCM();
   let journalEntries = {};
   let taskLists     = { personal: [], work: [] };
   let currentTaskList = 'personal';
+  let completedTasks = {};
+  let showingCompleted = false;
 
   let habitTracker = {};
   let globalHabits = [];
@@ -1101,6 +1104,7 @@ let taskControlsInitialized = false;
                     data.journalImages || {}, 'image');
 
         taskLists       = data.taskLists       || { personal: [], work: [] };
+        completedTasks  = data.completedTasks  || {};
         habitTracker    = data.habitTracker    || {};
         globalHabits    = data.globalHabits    || [];
         document.getElementById('goalsText').value = data.userGoals || '';
@@ -1111,6 +1115,7 @@ let taskControlsInitialized = false;
       } else {
         console.log("No existing Firestore doc for this user; starting fresh.");
         taskLists = { personal: [], work: [] };
+        completedTasks = {};
 
         renderTaskListButtons();
         renderTasks();
@@ -1131,6 +1136,7 @@ let taskControlsInitialized = false;
         journalAudios,
         journalImages,
         taskLists,
+        completedTasks,
         habitTracker,
         globalHabits,
         userGoals: document.getElementById('goalsText')?.value || ''
@@ -1335,7 +1341,11 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('nextDayButton').style.display = 'block';
 
     updateDailyEventsList(date);
-    renderTasks(); // re-render tasks for this date
+    if (showingCompleted) {
+      renderCompletedTasks();
+    } else {
+      renderTasks();
+    } // re-render tasks for this date
     initializeTaskControls(); // Initialize task controls each time the journal is opened
   }
 
@@ -1778,7 +1788,11 @@ window.saveJournal = saveJournal;
       activeButton.classList.add('active');
     }
     
-    renderTasks();
+    if (showingCompleted) {
+      renderCompletedTasks();
+    } else {
+      renderTasks();
+    }
   }
 
   function renderTaskListButtons() {
@@ -2013,8 +2027,73 @@ function renderTasks() {
     }
 
     li.appendChild(del);
+  taskList.appendChild(li);
+  });
+}
+
+function renderCompletedTasks() {
+  const taskList = document.getElementById('taskList');
+  taskList.innerHTML = '';
+
+  const journalForm = document.getElementById('journalForm');
+  const dateKey = journalForm.dataset.date || new Date().toISOString().split('T')[0];
+
+  const tasks = (completedTasks[dateKey] || []).filter(t => t.list === currentTaskList);
+
+  if (tasks.length === 0) {
+    const msg = document.createElement('p');
+    msg.textContent = 'No completed tasks for this day.';
+    msg.style.color = '#666';
+    msg.style.fontStyle = 'italic';
+    taskList.appendChild(msg);
+    return;
+  }
+
+  tasks.forEach(task => {
+    const li = document.createElement('li');
+    li.className = 'task-item';
+
+    const span = document.createElement('span');
+    span.textContent = task.text;
+    span.className = 'completed-task';
+
+    const restore = document.createElement('button');
+    restore.textContent = '↺';
+    restore.style.cssText = 'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#28a745;';
+    restore.onclick = () => restoreTask(task.id, dateKey);
+
+    li.append(span, restore);
     taskList.appendChild(li);
   });
+}
+
+function restoreTask(taskId, dateKey) {
+  const list = completedTasks[dateKey] || [];
+  const idx = list.findIndex(t => t.id == taskId);
+  if (idx === -1) return;
+  const [task] = list.splice(idx, 1);
+
+  if (!taskLists[task.list]) taskLists[task.list] = [];
+  if (task.repeat === 'once') {
+    task.completed = false;
+  } else if (task.completions) {
+    delete task.completions[dateKey];
+  }
+  taskLists[task.list].push(task);
+  saveUserData();
+  if (showingCompleted) renderCompletedTasks();
+  renderTasks();
+}
+
+function toggleCompletedView() {
+  showingCompleted = !showingCompleted;
+  const btn = document.getElementById('toggleCompletedBtn');
+  if (btn) btn.textContent = showingCompleted ? 'Show Active' : 'Show Completed';
+  if (showingCompleted) {
+    renderCompletedTasks();
+  } else {
+    renderTasks();
+  }
 }
 
 // Use these internal functions for event handling
@@ -2022,6 +2101,10 @@ function toggleTask(taskId, dateKey) {
   const tasks = taskLists[currentTaskList];
   const task  = tasks.find(t => t.id == taskId);
   if (!task) return;
+
+  const wasCompleted = task.repeat === 'once'
+    ? task.completed
+    : task.completions && task.completions[dateKey];
 
   // flip the flag
   if (task.repeat === 'once') {
@@ -2031,27 +2114,50 @@ function toggleTask(taskId, dateKey) {
     task.completions[dateKey] = !task.completions[dateKey];
   }
 
+  const isCompleted = task.repeat === 'once'
+    ? task.completed
+    : task.completions[dateKey];
+
+  if (isCompleted && !wasCompleted) {
+    if (!completedTasks[dateKey]) completedTasks[dateKey] = [];
+    if (!completedTasks[dateKey].some(t => t.id == taskId)) {
+      completedTasks[dateKey].push({ ...task, list: currentTaskList });
+    }
+  } else if (!isCompleted && wasCompleted) {
+    if (completedTasks[dateKey])
+      completedTasks[dateKey] = completedTasks[dateKey].filter(t => t.id != taskId);
+  }
+
   // if it's now completed, remove it immediately
   if ((task.repeat === 'once' && task.completed) ||
       (task.repeat === 'daily' && task.completions[dateKey])) {
     const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
     if (li) li.remove();
     saveUserData();
-    renderTasks();
+    if (showingCompleted) renderCompletedTasks();
+    else renderTasks();
     return;
   }
 
   saveUserData();
-  renderTasks();  // re-render the rest
+  if (showingCompleted) renderCompletedTasks();
+  else renderTasks();  // re-render the rest
 }
 
-  function deleteTask(taskId) {
-    const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-    if (li) li.remove();
-    taskLists[currentTaskList] = taskLists[currentTaskList].filter(t => t.id != taskId);
-    saveUserData();
-    renderTasks();
+function deleteTask(taskId) {
+  const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+  if (li) li.remove();
+  const idx = taskLists[currentTaskList].findIndex(t => t.id == taskId);
+  if (idx !== -1) {
+    const [task] = taskLists[currentTaskList].splice(idx, 1);
+    const dateKey = document.getElementById('journalForm').dataset.date || new Date().toISOString().split('T')[0];
+    if (!completedTasks[dateKey]) completedTasks[dateKey] = [];
+    completedTasks[dateKey].push({ ...task, list: currentTaskList, deleted: true });
   }
+  saveUserData();
+  if (showingCompleted) renderCompletedTasks();
+  else renderTasks();
+}
 
   // Replace the initializeTaskControls function with this improved version
   function initializeTaskControls() {
@@ -2103,6 +2209,14 @@ function toggleTask(taskId, dateKey) {
       deleteListBtn.parentNode.replaceChild(newDeleteListBtn, deleteListBtn);
       newDeleteListBtn.onclick = deleteCurrentList;
     }
+
+    const toggleBtn = document.getElementById('toggleCompletedBtn');
+    if (toggleBtn) {
+      const newToggleBtn = toggleBtn.cloneNode(true);
+      toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+      newToggleBtn.onclick = toggleCompletedView;
+      newToggleBtn.textContent = showingCompleted ? 'Show Active' : 'Show Completed';
+    }
     
     // Make sure current list exists
     if (!taskLists[currentTaskList]) {
@@ -2120,7 +2234,11 @@ function toggleTask(taskId, dateKey) {
     });
     
     // Render tasks for current list
-    renderTasks();
+    if (showingCompleted) {
+      renderCompletedTasks();
+    } else {
+      renderTasks();
+    }
     
     console.log("Task controls initialized for list:", currentTaskList);
   }
@@ -2178,6 +2296,7 @@ function toggleTask(taskId, dateKey) {
   window.switchTaskList = switchTaskList;
   window.createNewList = createNewList;
   window.deleteCurrentList = deleteCurrentList;
+  window.toggleCompletedView = toggleCompletedView;
 
   // Initialize the task functionality
   initializeTaskControls();
@@ -2196,7 +2315,7 @@ Object.assign(window, {
   addEvent, editEvent, saveEvent, deleteEvent, closeEventForm,
   // tasks
   addTask, toggleTask, deleteTask, switchTaskList,
-  createNewList, deleteCurrentList,
+  createNewList, deleteCurrentList, toggleCompletedView,
   // habits
   changeToHabit, changeToJournal, showNewHabitForm,
   confirmAddHabit, cancelAddHabit, deleteHabit, saveHabitTracker, cancelHabitTracker
