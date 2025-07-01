@@ -2522,6 +2522,35 @@ async function sendTestEmail() {
 
 // 👇 Add this line!
 window.sendTestEmail = sendTestEmail;
+
+import { getFunctions, httpsCallable }
+  from 'https://www.gstatic.com/firebasejs/10.7.2/firebase-functions.js';
+
+const functionsInstance = getFunctions(app, 'us-central1');   // ➊ same region
+const sendTestEmail     = httpsCallable(functionsInstance, 'sendTestEmail');
+
+async function sendTestEmailFromForm() {
+  const to      = document.getElementById('testEmailTo').value.trim();
+  const subject = document.getElementById('testEmailSubject').value.trim();
+  const text    = document.getElementById('testEmailBody').value.trim();
+
+  if (!to || !subject || !text) {
+    alert('Please fill in all fields');           // basic UX check
+    return;
+  }
+
+  try {
+    const { data } = await sendTestEmail({ to, subject, text });
+    if (data.success) {
+      alert('Email sent 🎉');
+    }
+  } catch (err) {
+    console.error(err);
+    alert(err.message);                           // surfaces HttpsError
+  }
+}
+
+window.sendTestEmail = sendTestEmailFromForm;
 </script>
 
 </body>
