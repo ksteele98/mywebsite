@@ -29,3 +29,11 @@ When the app receives a push while closed, this service worker's `onBackgroundMe
 
 On mobile devices install the PWA ("Add to Home Screen") and tap the **Enable Notifications** button once signed in. Notifications will then appear even when the app isn't open.
 
+## Reminders
+
+When creating an event you can optionally pick a **Reminder Date** and **Reminder Time**. The page will queue an email through the `mail` collection and schedule a local notification. After saving an event you'll see a browser alert confirming the reminder time.
+
+
+### Firebase Setup
+
+Deploy the Cloud Functions in `functions/` and install the [Trigger Email](https://firebase.google.com/products/extensions/firestore-send-email) extension. The `sendReminders` scheduled function checks the `events` collection every five minutes and sends push notifications (using each user's `fcmToken`) and queues an email in the `mail` collection.
