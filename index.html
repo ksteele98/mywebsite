@@ -1627,6 +1627,7 @@ function initializeColorPicker(preSelected = selectedColor) {
         reminderMinutes,
         email:     userEmail,
         name:      userName || '',
+        uid:       userId,
         emailSent: false
       });
     } catch (err) {
@@ -1646,6 +1647,7 @@ function initializeColorPicker(preSelected = selectedColor) {
           html:    `<p><strong>${description}</strong> starts at ${niceTime}.</p>`,
           sendAt
         });
+        alert(`Reminder scheduled for ${sendAt.toLocaleString()}`);
       }
     }
 
