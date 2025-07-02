@@ -718,14 +718,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
-<!-- Test Email Form -->
-<div id="emailTestSection" style="margin: 30px 0;">
-  <h3>Test Send Email</h3>
-  <input type="email" id="testEmailTo" placeholder="Recipient Email" style="padding:8px; width:250px;">
-  <input type="text" id="testEmailSubject" placeholder="Subject" style="padding:8px; width:250px;">
-  <textarea id="testEmailBody" placeholder="Message" style="padding:8px; width:250px; height:60px;"></textarea>
-  <button onclick="sendTestEmail()" style="padding:8px 16px; margin-top:8px;">Send Email</button>
-</div>
 
 <!-- ====================== Firebase + App Script ====================== -->
 <script>
@@ -2501,34 +2493,6 @@ window._saveHabitTracker = _saveHabitTracker;
 window._cancelHabitTracker = _cancelHabitTracker;
 
 
-import { getFunctions, httpsCallable }
-  from 'https://www.gstatic.com/firebasejs/10.7.2/firebase-functions.js';
-
-const functionsInstance = getFunctions(app, 'us-central1');   // ➊ same region
-const sendTestEmail     = httpsCallable(functionsInstance, 'sendTestEmail');
-
-async function sendTestEmailFromForm() {
-  const to      = document.getElementById('testEmailTo').value.trim();
-  const subject = document.getElementById('testEmailSubject').value.trim();
-  const text    = document.getElementById('testEmailBody').value.trim();
-
-  if (!to || !subject || !text) {
-    alert('Please fill in all fields');           // basic UX check
-    return;
-  }
-
-  try {
-    const { data } = await sendTestEmail({ to, subject, text });
-    if (data.success) {
-      alert('Email sent 🎉');
-    }
-  } catch (err) {
-    console.error(err);
-    alert(err.message);                           // surfaces HttpsError
-  }
-}
-
-window.sendTestEmail = sendTestEmailFromForm;
 </script>
 
 </body>

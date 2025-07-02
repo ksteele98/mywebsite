@@ -29,14 +29,3 @@ When the app receives a push while closed, this service worker's `onBackgroundMe
 
 On mobile devices install the PWA ("Add to Home Screen") and tap the **Enable Notifications** button once signed in. Notifications will then appear even when the app isn't open.
 
-## Event reminder emails
-
-
-
-```javascript
-const functions = require('firebase-functions');
-const sgMail = require('@sendgrid/mail');
-
-
-## SendGrid Frontend Test
-The `sendgrid-test.html` page now posts to the `/sendEmail` Cloud Function rather than calling SendGrid directly. This keeps your SendGrid API key on the server. Configure the key with `firebase functions:config:set sendgrid.key=YOUR_KEY` before deploying.
