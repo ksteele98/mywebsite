@@ -118,6 +118,28 @@
     .color-option.selected {
       border: 2px solid #000;
     }
+    .task-reminder-form {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: none;
+      width: 90%;
+      max-width: 300px;
+      z-index: 1000;
+    }
+    .task-reminder-form input {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
     .time-inputs {
       display: flex;
       flex-wrap: wrap;
@@ -597,6 +619,22 @@
     <button onclick="saveEvent()">Save Event</button>
     <button onclick="closeEventForm()">Cancel</button>
     <button onclick="deleteEvent()" class="delete-event-btn">Delete</button>
+  </div>
+</div>
+<div class="task-reminder-form" id="taskReminderForm">
+  <h3>Task Reminder</h3>
+  <div>
+    <label for="taskReminderDate">Reminder Date (optional):</label>
+    <input type="date" id="taskReminderDate">
+  </div>
+  <div>
+    <label for="taskReminderTime">Reminder Time (optional):</label>
+    <input type="time" id="taskReminderTime">
+  </div>
+  <input type="hidden" id="taskReminderId">
+  <div class="event-actions">
+    <button onclick="saveTaskReminder()">Save</button>
+    <button onclick="closeTaskReminderForm()">Cancel</button>
   </div>
 </div>
 
@@ -2193,10 +2231,20 @@ function deleteTask(taskId) {
 }
 
 function editTaskReminder(task) {
-  const date = prompt('Reminder Date (YYYY-MM-DD)', task.reminderDate || '');
-  if (date === null) return;
-  const time = prompt('Reminder Time (HH:MM)', task.reminderTime || '');
-  if (time === null) return;
+  document.getElementById("taskReminderDate").value = task.reminderDate || "";
+  document.getElementById("taskReminderTime").value = task.reminderTime || "";
+  document.getElementById("taskReminderId").value = task.id;
+  document.getElementById("taskReminderForm").style.display = "block";
+}
+function closeTaskReminderForm() {
+  document.getElementById("taskReminderForm").style.display = "none";
+}
+function saveTaskReminder() {
+  const id = document.getElementById("taskReminderId").value;
+  const date = document.getElementById("taskReminderDate").value;
+  const time = document.getElementById("taskReminderTime").value;
+  const task = Object.values(taskLists).flat().find(t => t.id == id);
+  if (!task) return;
   if (!date || !time) {
     delete task.reminderDate;
     delete task.reminderTime;
@@ -2205,7 +2253,9 @@ function editTaskReminder(task) {
     task.reminderTime = time;
   }
   saveUserData();
-  alert('Reminder updated');
+  scheduleAllTaskReminders();
+  closeTaskReminderForm();
+  alert("Reminder updated");
 }
 
   // Replace the initializeTaskControls function with this improved version
@@ -2346,6 +2396,9 @@ function editTaskReminder(task) {
   window.createNewList = createNewList;
   window.deleteCurrentList = deleteCurrentList;
   window.toggleCompletedView = toggleCompletedView;
+  window.editTaskReminder = editTaskReminder;
+  window.saveTaskReminder = saveTaskReminder;
+  window.closeTaskReminderForm = closeTaskReminderForm;
 
   // Initialize the task functionality
   initializeTaskControls();
@@ -2365,6 +2418,7 @@ Object.assign(window, {
   // tasks
   addTask, toggleTask, deleteTask, switchTaskList,
   createNewList, deleteCurrentList, toggleCompletedView,
+  editTaskReminder, saveTaskReminder, closeTaskReminderForm,
   // habits
   changeToHabit, changeToJournal, showNewHabitForm,
   confirmAddHabit, cancelAddHabit, deleteHabit, saveHabitTracker, cancelHabitTracker
