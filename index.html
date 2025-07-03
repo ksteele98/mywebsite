@@ -1457,15 +1457,26 @@ function initializeColorPicker(preSelected = selectedColor) {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
+      // Choose a supported mime type for MediaRecorder
+      let options = { mimeType: 'audio/webm;codecs=opus' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'audio/webm' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          options = {};
+        }
+      }
+      const mimeType = options.mimeType || 'audio/webm';
+      mediaRecorder = new MediaRecorder(stream, options);
       recordedChunks = [];
       mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        const blob = new Blob(recordedChunks, { type: mimeType });
         const url = URL.createObjectURL(blob);
-        document.getElementById('audioPlayer').src = url;
-        document.getElementById('audioPlayer').style.display = 'block';
-        pendingAudioFile = new File([blob], 'journal.webm', { type: 'audio/webm' });
+        const audioPlayer = document.getElementById('audioPlayer');
+        audioPlayer.src = url;
+        audioPlayer.style.display = 'block';
+        audioPlayer.load();
+        pendingAudioFile = new File([blob], 'journal.webm', { type: mimeType });
         document.getElementById('recordAudioBtn').textContent = 'Start Recording';
       };
       mediaRecorder.start();
@@ -1496,6 +1507,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     const audioPlayer = document.getElementById('audioPlayer');
     audioPlayer.src = url;
     audioPlayer.style.display = 'block';
+    audioPlayer.load();
     document.getElementById('removeAudioBtn').style.display = 'block';
   }
 
