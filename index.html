@@ -1478,6 +1478,7 @@ function initializeColorPicker(preSelected = selectedColor) {
         audioPlayer.load();
         pendingAudioFile = new File([blob], 'journal.webm', { type: mimeType });
         document.getElementById('recordAudioBtn').textContent = 'Start Recording';
+        document.getElementById('removeAudioBtn').style.display = 'block';
       };
       mediaRecorder.start();
       document.getElementById('recordAudioBtn').textContent = 'Stop Recording';
