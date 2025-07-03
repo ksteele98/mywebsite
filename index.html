@@ -1012,6 +1012,7 @@ let pendingImageFile = null;
 let mediaRecorder = null;
 let recordedChunks = [];
 let reminderTimeouts = {};
+let taskReminderTimeouts = {};
 let taskControlsInitialized = false;
 
   // ─── Simple desktop time picker using dropdowns ───
@@ -1113,6 +1114,7 @@ let taskControlsInitialized = false;
         renderTaskListButtons();
         renderTasks();
         initializeTaskControls();
+        scheduleAllTaskReminders();
       } else {
         console.log("No existing Firestore doc for this user; starting fresh.");
         taskLists = { personal: [], work: [] };
@@ -1121,6 +1123,7 @@ let taskControlsInitialized = false;
         renderTaskListButtons();
         renderTasks();
         initializeTaskControls();
+        scheduleAllTaskReminders();
       }
     } catch (err) {
       console.error("Error loading user data:", err);
@@ -1143,6 +1146,7 @@ let taskControlsInitialized = false;
         userGoals: document.getElementById('goalsText')?.value || ''
       });
       console.log("Data saved to Firestore!");
+      scheduleAllTaskReminders();
     } catch (err) {
       console.error("Error saving user data:", err);
     }
@@ -1530,6 +1534,26 @@ function initializeColorPicker(preSelected = selectedColor) {
     Object.values(reminderTimeouts).forEach(clearTimeout);
     reminderTimeouts = {};
     events.forEach(scheduleReminder);
+  }
+
+  // ===== Task Reminders =====
+  function scheduleTaskReminder(task) {
+    if (!task.reminderDate || !task.reminderTime) return;
+    const reminderMoment = new Date(task.reminderDate + 'T' + task.reminderTime);
+    const timeout = reminderMoment.getTime() - Date.now();
+    if (timeout <= 0) return;
+    if (taskReminderTimeouts[task.id]) clearTimeout(taskReminderTimeouts[task.id]);
+    taskReminderTimeouts[task.id] = setTimeout(() => {
+      if (Notification.permission === 'granted') {
+        new Notification('Task Reminder', { body: task.text });
+      }
+    }, timeout);
+  }
+
+  function scheduleAllTaskReminders() {
+    Object.values(taskReminderTimeouts).forEach(clearTimeout);
+    taskReminderTimeouts = {};
+    Object.values(taskLists).forEach(list => list.forEach(scheduleTaskReminder));
   }
 
   function addEvent(date) {
@@ -2029,7 +2053,13 @@ function renderTasks() {
       li.append(toggleBtn, subUl);
     }
 
+    const info = document.createElement('button');
+    info.textContent = 'i';
+    info.style.cssText = 'background:none;border:none;font-size:18px;cursor:pointer;color:#17a2b8;margin-left:4px;';
+    info.onclick = () => editTaskReminder(task);
+
     li.appendChild(del);
+    li.appendChild(info);
   taskList.appendChild(li);
   });
 }
@@ -2160,6 +2190,22 @@ function deleteTask(taskId) {
   saveUserData();
   if (showingCompleted) renderCompletedTasks();
   else renderTasks();
+}
+
+function editTaskReminder(task) {
+  const date = prompt('Reminder Date (YYYY-MM-DD)', task.reminderDate || '');
+  if (date === null) return;
+  const time = prompt('Reminder Time (HH:MM)', task.reminderTime || '');
+  if (time === null) return;
+  if (!date || !time) {
+    delete task.reminderDate;
+    delete task.reminderTime;
+  } else {
+    task.reminderDate = date;
+    task.reminderTime = time;
+  }
+  saveUserData();
+  alert('Reminder updated');
 }
 
   // Replace the initializeTaskControls function with this improved version
@@ -2325,6 +2371,7 @@ Object.assign(window, {
 });
 generateCalendar();   // render current month on first load
 scheduleAllReminders();
+scheduleAllTaskReminders();
 
 // Add an event listener to the button directly
 document.getElementById('logoutButton').addEventListener('click', async () => {
