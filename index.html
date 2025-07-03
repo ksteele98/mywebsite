@@ -2234,7 +2234,9 @@ function editTaskReminder(task) {
   document.getElementById("taskReminderDate").value = task.reminderDate || "";
   document.getElementById("taskReminderTime").value = task.reminderTime || "";
   document.getElementById("taskReminderId").value = task.id;
-  document.getElementById("taskReminderForm").style.display = "block";
+  const form = document.getElementById("taskReminderForm");
+  form.style.display = "block";
+  form.style.zIndex = "1002"; // ensure it appears above the journal
 }
 function closeTaskReminderForm() {
   document.getElementById("taskReminderForm").style.display = "none";
