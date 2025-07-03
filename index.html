@@ -446,6 +446,13 @@
       padding: 6px 12px;
       margin-right: 10px;
     }
+    .media-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
     .file-upload-input {
       display: none;
     }
@@ -462,6 +469,12 @@
       max-width: 100%;
       margin: 10px 0;
       display: block;
+    }
+
+    .task-buttons {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 10px;
     }
 
     .remove-btn {
@@ -659,25 +672,26 @@
       <audio id="audioPlayer" controls style="display:none; width:100%; margin:10px 0;"></audio>
       <button id="removeAudioBtn" class="remove-btn" onclick="removeAudio()" style="display:none;">&#215;</button>
     </div>
-    <div style="margin-bottom:10px;">
-      <button id="recordAudioBtn" onclick="toggleRecording()">Start Recording</button>
-      <label for="audioFileInput" class="file-upload-label">Upload Audio</label>
-      <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioUpload(event)" class="file-upload-input">
-    </div>
+  </div>
+
+  <div class="media-controls">
+    <button id="recordAudioBtn" onclick="toggleRecording()">Start Recording</button>
+    <label for="audioFileInput" class="file-upload-label">Upload Audio</label>
+    <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioUpload(event)" class="file-upload-input">
+    <label for="imageFileInput" class="file-upload-label">Upload Image</label>
+    <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)" class="file-upload-input">
   </div>
 
   <div class="image-section" style="position:relative;">
     <img id="imagePreview" style="display:none; width:100%; margin:10px 0;" />
     <button id="removeImageBtn" class="remove-btn" onclick="removeImage()" style="display:none;">&#215;</button>
-    <label for="imageFileInput" class="file-upload-label">Upload Image</label>
-    <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)" class="file-upload-input">
   </div>
   
 
   <div class="task-container">
     <div class="tasks-header">
       <h3>Tasks</h3>
-      <div>
+      <div class="task-buttons">
         <button id="toggleCompletedBtn" class="new-list-btn" onclick="toggleCompletedView()">Show Completed</button>
         <button class="new-list-btn" onclick="createNewList()">+ New List</button>
         <button class="delete-list-btn" onclick="deleteCurrentList()">Delete List</button>
