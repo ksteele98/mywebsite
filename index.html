@@ -878,7 +878,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     if (!to || !sendAt) return;        // nothing to do
     try {
       await addDoc(collection(db, "mail"), {
-        to,
+        to: [to],
         message: { subject, html },
         delivery: {
           startTime: Timestamp.fromDate(sendAt)   // <-- key field!
