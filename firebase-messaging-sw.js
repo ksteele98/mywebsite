@@ -16,26 +16,37 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Handle background messages
-messaging.onBackgroundMessage(({ data }) => {
-  const title = data?.title ?? 'Notification';
-  const body  = data?.body  ?? '';
-  self.registration.showNotification(title, { body });
+messaging.onBackgroundMessage((payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+
+  // =========================================================
+  // THE FIX: Read from payload.notification, not payload.data
+  // =========================================================
+  const notificationTitle = payload.notification.title;
+  const notificationOptions = {
+    body: payload.notification.body,
+    icon: '/mywebsite/firebase-logo.png' // Optional: You can add an icon
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Focus/open the app when the user taps a notification
+// (Your existing code for this was perfect, so we keep it)
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(clientList => {
-        for (const client of clientList) {
-          if (client.url.includes('/mywebsite/') && 'focus' in client) {
-            return client.focus();
-          }
+    .then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes('/mywebsite/') && 'focus' in client) {
+          return client.focus();
         }
-        if (clients.openWindow) {
-          return clients.openWindow('/mywebsite/');
-        }
-      })
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('/mywebsite/');
+      }
+    })
   );
 });
