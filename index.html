@@ -492,6 +492,28 @@
       cursor: pointer;
     }
 
+    /* Popup for missed reminders */
+    .reminder-popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    .reminder-popup .popup-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 300px;
+      width: 90%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
     @media screen and (max-width: 768px) {
       .calendar-grid {
         font-size: 14px;
@@ -771,6 +793,15 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
+
+<!-- Missed Reminders Popup -->
+<div id="missedRemindersPopup" class="reminder-popup" style="display:none;">
+  <div class="popup-content">
+    <h3>Missed Reminders</h3>
+    <ul id="missedRemindersList" style="padding-left:20px;"></ul>
+    <button onclick="closeMissedRemindersPopup()">Close</button>
+  </div>
+</div>
 
 <!-- ====================== Firebase + App Script ====================== -->
 <script>
@@ -1634,15 +1665,20 @@ function initializeColorPicker(preSelected = selectedColor) {
     const lastOpen = parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
     const now = Date.now();
 
+    const messages = [];
+
     // Check events
     events.forEach(ev => {
       if (!ev.reminderDate || !ev.reminderTime) return;
       const reminderMoment = new Date(ev.reminderDate + 'T' + ev.reminderTime);
       const t = reminderMoment.getTime();
-      if (t > lastOpen && t <= now && Notification.permission === 'granted') {
+      if (t > lastOpen && t <= now) {
         const timeRange = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}`;
         const body = `${timeRange}: ${ev.description}`;
-        new Notification('Event Reminder', { body });
+        if (Notification.permission === 'granted') {
+          new Notification('Event Reminder', { body });
+        }
+        messages.push(body);
       }
     });
 
@@ -1651,12 +1687,32 @@ function initializeColorPicker(preSelected = selectedColor) {
       if (!task.reminderDate || !task.reminderTime) return;
       const reminderMoment = new Date(task.reminderDate + 'T' + task.reminderTime);
       const t = reminderMoment.getTime();
-      if (t > lastOpen && t <= now && Notification.permission === 'granted') {
-        new Notification('Task Reminder', { body: task.text });
+      if (t > lastOpen && t <= now) {
+        if (Notification.permission === 'granted') {
+          new Notification('Task Reminder', { body: task.text });
+        }
+        messages.push(task.text);
       }
     }));
 
     localStorage.setItem('lastOpenTime', String(now));
+    showMissedRemindersPopup(messages);
+  }
+
+  function showMissedRemindersPopup(messages) {
+    if (!messages || messages.length === 0) return;
+    const list = document.getElementById('missedRemindersList');
+    list.innerHTML = '';
+    messages.forEach(m => {
+      const li = document.createElement('li');
+      li.textContent = m;
+      list.appendChild(li);
+    });
+    document.getElementById('missedRemindersPopup').style.display = 'flex';
+  }
+
+  function closeMissedRemindersPopup() {
+    document.getElementById('missedRemindersPopup').style.display = 'none';
   }
 
   function showPendingNotifications() {
@@ -2694,6 +2750,7 @@ window._cancelAddHabit = _cancelAddHabit;
 window._deleteHabit = _deleteHabit;
 window._saveHabitTracker = _saveHabitTracker;
 window._cancelHabitTracker = _cancelHabitTracker;
+window.closeMissedRemindersPopup = closeMissedRemindersPopup;
 
 
 
