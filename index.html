@@ -1382,12 +1382,18 @@ function initializeColorPicker(preSelected = selectedColor) {
       }
     });
 
-
-    } else {
-      imagePreview.src = '';
-      imagePreview.style.display = 'none';
-      removeImageBtn.style.display = 'none';
-    }
+    // Load image from IndexedDB
+    getFromDB('images', date).then(blob => {
+      if (blob) {
+        imagePreview.src = URL.createObjectURL(blob);
+        imagePreview.style.display = 'block';
+        removeImageBtn.style.display = 'block';
+      } else {
+        imagePreview.src = '';
+        imagePreview.style.display = 'none';
+        removeImageBtn.style.display = 'none';
+      }
+    });
 
     document.getElementById('prevDayButton').style.display = 'block';
     document.getElementById('nextDayButton').style.display = 'block';
