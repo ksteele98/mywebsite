@@ -576,6 +576,11 @@
    <button id="subscribeBtn"          style="background:#FFB400;color:#000;padding:8px 16px;
                border:none;border-radius:4px;cursor:pointer;margin-right:10px">   🔔 Enable Notifications
   </button>
+  <!-- ================== NEW PUSHOVER BUTTON ================== -->
+  <button id="pushoverBtn" style="background: #2E8B57; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+    Send Pushover Alert
+  </button>
+  <!-- ========================================================= -->
   <button onclick="logoutFromGoogle()" id="logoutButton" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
     Sign Out
   </button>
@@ -877,7 +882,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   async function queueEmailReminder ({ to, subject, html, sendAt }) {
     if (!to || !sendAt) return;        // nothing to do
     try {
-      await addDoc(collection(db, "email_queue"), {
+      await addDoc(collection(db, "mail"), {
         to: [to],
         message: { subject, html },
         delivery: {
@@ -2624,6 +2629,58 @@ window._deleteHabit = _deleteHabit;
 window._saveHabitTracker = _saveHabitTracker;
 window._cancelHabitTracker = _cancelHabitTracker;
 
+
+// ================== NEW FIREBASE FUNCTIONS IMPORT ==================
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-functions.js";
+// ===================================================================
+
+// ================== INITIALIZE FIREBASE FUNCTIONS ==================
+const functions = getFunctions(app);
+// ===================================================================
+
+// ================== NEW PUSHOVER FUNCTIONALITY ==================
+// Create a reference to the Cloud Function we will create in Step 2.
+// The name 'sendPushoverNotification' must match the function name exactly.
+const sendPushoverNotification = httpsCallable(functions, 'sendPushoverNotification');
+
+async function sendPushoverAlert() {
+  const title = prompt("Enter notification title:", "Alert from My App");
+  if (!title) return; // User cancelled
+  
+  const message = prompt("Enter notification message:", "This is a test notification from the website!");
+  if (!message) return; // User cancelled
+
+  const pushoverBtn = document.getElementById('pushoverBtn');
+  
+  try {
+    // Disable the button to prevent multiple clicks
+    pushoverBtn.disabled = true;
+    pushoverBtn.textContent = 'Sending...';
+
+    console.log("Calling cloud function with:", { title, message });
+    
+    // Call the cloud function and pass the data
+    const result = await sendPushoverNotification({ title: title, message: message });
+    
+    console.log('Cloud function result:', result.data);
+    alert('Pushover notification sent successfully!');
+    
+  } catch (error) {
+    console.error("Error sending Pushover notification:", error);
+    alert('Failed to send notification. Check the console for details.');
+  } finally {
+    // Re-enable the button
+    pushoverBtn.disabled = false;
+    pushoverBtn.textContent = 'Send Pushover Alert';
+  }
+}
+
+// Attach the function to the button's click event
+const pushoverBtn = document.getElementById('pushoverBtn');
+if (pushoverBtn) {
+  pushoverBtn.addEventListener('click', sendPushoverAlert);
+}
+// ===================================================================
 
 </script>
 
