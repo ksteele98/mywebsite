@@ -31,27 +31,10 @@ On mobile devices install the PWA ("Add to Home Screen") and tap the **Enable No
 
 ## Reminders
 
-When creating an event you can optionally pick a **Reminder Date** and **Reminder Time**. The page will queue an email through the `mail` collection and schedule a local notification. After saving an event you'll see a browser alert confirming the reminder time.
+When creating an event you can optionally pick a **Reminder Date** and **Reminder Time**. The page schedules a local notification and stores the reminder in Firestore. After saving an event you'll see a browser alert confirming the reminder time.
 
 
 ### Firebase Setup
 
-Deploy the Cloud Functions in `functions/` and install the [Trigger Email](https://firebase.google.com/products/extensions/firestore-send-email) extension. The `sendReminders` scheduled function checks the `events` collection every five minutes and sends push notifications (using each user's `fcmToken`) and queues an email in the `mail` collection.
+Deploy the Cloud Functions in `functions/`. The `sendReminders` scheduled function checks the `events` collection every five minutes and sends push notifications using each user's `fcmToken`.
 
-### Pushover Support
-
-You can also receive reminders through the [Pushover](https://pushover.net/) service. Set your app's token using Firebase config:
-
-```bash
-firebase functions:config:set pushover.token="YOUR_APP_TOKEN"
-```
-
-Store each user's Pushover user key under `pushoverKey` in their `users/{uid}` document. When `sendReminders` runs it will send a message via Pushover in addition to FCM/email.
-
-### Pushover Queue
-
-For one-off Pushover messages write documents to a `pushoverQueue` collection
-with the fields `userKey`, `apiToken`, `message`, `sendAt` (a Firestore
-`Timestamp`) and a `fired` boolean. The `pushoverDispatcher` Cloud Function runs
-every minute and sends any entries whose `sendAt` time has passed, then marks
-them as fired.
