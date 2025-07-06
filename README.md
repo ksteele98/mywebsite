@@ -47,3 +47,11 @@ firebase functions:config:set pushover.token="YOUR_APP_TOKEN"
 ```
 
 Store each user's Pushover user key under `pushoverKey` in their `users/{uid}` document. When `sendReminders` runs it will send a message via Pushover in addition to FCM/email.
+
+### Pushover Queue
+
+For one-off Pushover messages write documents to a `pushoverQueue` collection
+with the fields `userKey`, `apiToken`, `message`, `sendAt` (a Firestore
+`Timestamp`) and a `fired` boolean. The `pushoverDispatcher` Cloud Function runs
+every minute and sends any entries whose `sendAt` time has passed, then marks
+them as fired.
