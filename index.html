@@ -576,6 +576,7 @@
    <button id="subscribeBtn"          style="background:#FFB400;color:#000;padding:8px 16px;
                border:none;border-radius:4px;cursor:pointer;margin-right:10px">   🔔 Enable Notifications
   </button>
+  <button id="pendingBtn" style="background:#6c757d;color:white;padding:8px 16px;border:none;border-radius:4px;cursor:pointer;margin-right:10px">View Pending</button>
   <button onclick="logoutFromGoogle()" id="logoutButton" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
     Sign Out
   </button>
@@ -1658,6 +1659,32 @@ function initializeColorPicker(preSelected = selectedColor) {
     localStorage.setItem('lastOpenTime', String(now));
   }
 
+  function showPendingNotifications() {
+    const upcoming = [];
+    const now = Date.now();
+    events.forEach(ev => {
+      if (!ev.reminderDate || !ev.reminderTime) return;
+      const time = new Date(ev.reminderDate + 'T' + ev.reminderTime);
+      if (time.getTime() > now) {
+        upcoming.push({ type: 'Event', desc: ev.description, time });
+      }
+    });
+    Object.values(taskLists).forEach(list => list.forEach(task => {
+      if (!task.reminderDate || !task.reminderTime) return;
+      const time = new Date(task.reminderDate + 'T' + task.reminderTime);
+      if (time.getTime() > now) {
+        upcoming.push({ type: 'Task', desc: task.text, time });
+      }
+    }));
+    upcoming.sort((a, b) => a.time - b.time);
+    if (upcoming.length === 0) {
+      alert('No pending notifications');
+    } else {
+      const lines = upcoming.map(u => `${u.type}: ${u.desc} @ ${u.time.toLocaleString()}`);
+      alert('Pending Notifications:\n' + lines.join('\n'));
+    }
+  }
+
   function addEvent(date) {
     const eventForm = document.getElementById('eventForm');
     document.getElementById('eventDate').value = date;
@@ -2489,12 +2516,16 @@ Object.assign(window, {
   editTaskReminder, saveTaskReminder, closeTaskReminderForm,
   // habits
   changeToHabit, changeToJournal, showNewHabitForm,
-  confirmAddHabit, cancelAddHabit, deleteHabit, saveHabitTracker, cancelHabitTracker
+  confirmAddHabit, cancelAddHabit, deleteHabit, saveHabitTracker, cancelHabitTracker,
+  // notifications
+  showPendingNotifications
 });
 generateCalendar();   // render current month on first load
 scheduleAllReminders();
 scheduleAllTaskReminders();
 showMissedReminders();
+
+document.getElementById('pendingBtn').addEventListener('click', showPendingNotifications);
 
 // Add an event listener to the button directly
 document.getElementById('logoutButton').addEventListener('click', async () => {
