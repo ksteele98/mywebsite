@@ -870,7 +870,10 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     getFirestore,
     doc,
     getDoc,
-    setDoc
+    setDoc,
+    addDoc,
+    collection,
+    Timestamp
   } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
   import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-storage.js";
   // NEW: push-subscription flow -------------------------------
@@ -897,37 +900,10 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  /*******************************************************
-    🔔  EMAIL-REMINDER HELPER
-  *******************************************************/
-  import { collection, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
-
-  /**
-   * Creates a doc in the `mail` collection that the Firebase
-   * Trigger-Email extension will send at `delivery.startTime`.
-   */
-  async function queueEmailReminder ({ to, subject, html, sendAt }) {
-    if (!to || !sendAt) return;        // nothing to do
-    try {
-      await addDoc(collection(db, "mail"), {
-        to: ["kyleblazer13@gmail.com"],
-        message: { subject, html },
-        delivery: {
-          startTime: Timestamp.fromDate(sendAt)   // <-- key field!
-        }
-      });
-      console.log("📧 Email reminder queued:", subject, sendAt);
-    } catch (err) {
-      console.error("⚠️  Could not queue email reminder:", err);
-    }
-  }
-
   const storage = getStorage(app);
 
 
   let userId = null;  // will store current Google user's uid here
-  let userEmail = null;
-  let userName = null;
   const provider = new GoogleAuthProvider();
 
   // This function triggers the Google popup
@@ -946,8 +922,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       userId = user.uid;
-      userEmail = user.email;
-      userName = user.displayName || '';
       // Hide sign in button, show logout button
       document.getElementById('authSection').style.display = 'none';
       document.getElementById('logoutSection').style.display = 'block';
@@ -960,8 +934,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       renderTasks();
     } else {
       userId = null;
-      userEmail = null;
-      userName = null;
       // Show sign in button, hide logout button
       document.getElementById('authSection').style.display = 'block';
       document.getElementById('logoutSection').style.display = 'none';
@@ -1835,8 +1807,6 @@ function initializeColorPicker(preSelected = selectedColor) {
         title:     eventData.description,
         startTime: Timestamp.fromDate(new Date(`${eventData.date}T${eventData.startTime}`)),
         reminderMinutes,
-        email:     userEmail,
-        name:      userName || '',
         uid:       userId,
         emailSent: false
       });
@@ -1844,22 +1814,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       console.error("❌ Failed to save event to Firestore:", err);
     }
 
-    // -----------------------------------------
-    // NEW: send email if the user picked a reminder
-    // -----------------------------------------
-    if (reminderDate && reminderTime && userEmail) {
-      const sendAt = new Date(`${reminderDate}T${reminderTime}`);
-      if (sendAt > new Date()) {        // future-only
-        const niceTime = formatTime(startTime);
-        queueEmailReminder({
-          to:      userEmail,
-          subject: `⏰ Reminder: ${description}`,
-          html:    `<p><strong>${description}</strong> starts at ${niceTime}.</p>`,
-          sendAt
-        });
-        alert(`Reminder scheduled for ${sendAt.toLocaleString()}`);
-      }
-    }
+
 
     saveUserData();
     scheduleAllReminders();
