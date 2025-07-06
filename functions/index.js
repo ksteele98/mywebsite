@@ -84,3 +84,35 @@ exports.sendReminders = functions.pubsub
     await Promise.all(promises);
     return null;
   });
+
+// Dispatches queued Pushover messages once their send time arrives.
+exports.pushoverDispatcher = functions.pubsub
+  .schedule('every 1 minutes')
+  .onRun(async () => {
+    const now = admin.firestore.Timestamp.now();
+    const snap = await db.collection('pushoverQueue')
+      .where('fired', '==', false)
+      .where('sendAt', '<=', now)
+      .get();
+
+    const tasks = [];
+    snap.forEach(doc => {
+      const { userKey, apiToken, message } = doc.data();
+      const p = fetch('https://api.pushover.net/1/messages.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          token: apiToken,
+          user: userKey,
+          message
+        })
+      }).then(res => {
+        if (!res.ok) throw new Error(`Pushover failed: ${res.status}`);
+        return doc.ref.update({ fired: true });
+      });
+      tasks.push(p);
+    });
+
+    await Promise.all(tasks);
+    return null;
+  });
