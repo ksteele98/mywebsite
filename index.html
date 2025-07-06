@@ -803,6 +803,14 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
+<!-- General Reminder Popup -->
+<div id="reminderPopup" class="reminder-popup" style="display:none;">
+  <div class="popup-content">
+    <p id="reminderPopupMsg"></p>
+    <button onclick="closeReminderPopup()">Close</button>
+  </div>
+</div>
+
 <!-- ====================== Firebase + App Script ====================== -->
 <script>
   // Create global function that will call the internal module function
@@ -1604,6 +1612,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       if (Notification.permission === 'granted') {
         new Notification('Event Reminder', { body });
       }
+      showReminderPopup(body);
     }, timeout);
   }
 
@@ -1624,6 +1633,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       if (Notification.permission === 'granted') {
         new Notification('Task Reminder', { body: task.text });
       }
+      showReminderPopup(task.text);
     }, timeout);
   }
 
@@ -1669,6 +1679,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     }));
 
     localStorage.setItem('lastOpenTime', String(now));
+    messages.forEach(showReminderPopup);
     showMissedRemindersPopup(messages);
   }
 
@@ -1686,6 +1697,16 @@ function initializeColorPicker(preSelected = selectedColor) {
 
   function closeMissedRemindersPopup() {
     document.getElementById('missedRemindersPopup').style.display = 'none';
+  }
+
+  function showReminderPopup(message) {
+    const el = document.getElementById('reminderPopupMsg');
+    if (el) el.textContent = message;
+    document.getElementById('reminderPopup').style.display = 'flex';
+  }
+
+  function closeReminderPopup() {
+    document.getElementById('reminderPopup').style.display = 'none';
   }
 
   function showPendingNotifications() {
@@ -2706,6 +2727,7 @@ window._deleteHabit = _deleteHabit;
 window._saveHabitTracker = _saveHabitTracker;
 window._cancelHabitTracker = _cancelHabitTracker;
 window.closeMissedRemindersPopup = closeMissedRemindersPopup;
+window.closeReminderPopup = closeReminderPopup;
 
 
 
