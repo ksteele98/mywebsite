@@ -927,6 +927,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       // Load data from Firestore
       await loadUserData();
       scheduleAllReminders();
+      showMissedReminders();
       // Generate calendar, tasks, etc.
       generateCalendar();
       renderTasks();
@@ -1624,6 +1625,36 @@ function initializeColorPicker(preSelected = selectedColor) {
     Object.values(taskReminderTimeouts).forEach(clearTimeout);
     taskReminderTimeouts = {};
     Object.values(taskLists).forEach(list => list.forEach(scheduleTaskReminder));
+  }
+
+  // Show notifications that were missed while the app was closed
+  function showMissedReminders() {
+    const lastOpen = parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
+    const now = Date.now();
+
+    // Check events
+    events.forEach(ev => {
+      if (!ev.reminderDate || !ev.reminderTime) return;
+      const reminderMoment = new Date(ev.reminderDate + 'T' + ev.reminderTime);
+      const t = reminderMoment.getTime();
+      if (t > lastOpen && t <= now && Notification.permission === 'granted') {
+        const timeRange = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}`;
+        const body = `${timeRange}: ${ev.description}`;
+        new Notification('Event Reminder', { body });
+      }
+    });
+
+    // Check tasks
+    Object.values(taskLists).forEach(list => list.forEach(task => {
+      if (!task.reminderDate || !task.reminderTime) return;
+      const reminderMoment = new Date(task.reminderDate + 'T' + task.reminderTime);
+      const t = reminderMoment.getTime();
+      if (t > lastOpen && t <= now && Notification.permission === 'granted') {
+        new Notification('Task Reminder', { body: task.text });
+      }
+    }));
+
+    localStorage.setItem('lastOpenTime', String(now));
   }
 
   function addEvent(date) {
@@ -2460,6 +2491,7 @@ Object.assign(window, {
 generateCalendar();   // render current month on first load
 scheduleAllReminders();
 scheduleAllTaskReminders();
+showMissedReminders();
 
 // Add an event listener to the button directly
 document.getElementById('logoutButton').addEventListener('click', async () => {
