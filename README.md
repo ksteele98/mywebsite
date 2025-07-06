@@ -37,3 +37,13 @@ When creating an event you can optionally pick a **Reminder Date** and **Reminde
 ### Firebase Setup
 
 Deploy the Cloud Functions in `functions/` and install the [Trigger Email](https://firebase.google.com/products/extensions/firestore-send-email) extension. The `sendReminders` scheduled function checks the `events` collection every five minutes and sends push notifications (using each user's `fcmToken`) and queues an email in the `mail` collection.
+
+### Pushover Support
+
+You can also receive reminders through the [Pushover](https://pushover.net/) service. Set your app's token using Firebase config:
+
+```bash
+firebase functions:config:set pushover.token="YOUR_APP_TOKEN"
+```
+
+Store each user's Pushover user key under `pushoverKey` in their `users/{uid}` document. When `sendReminders` runs it will send a message via Pushover in addition to FCM/email.
