@@ -803,6 +803,23 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
+<!-- Single Reminder Popup -->
+<div id="reminderPopup" class="reminder-popup" style="display:none;">
+  <div class="popup-content">
+    <p id="reminderPopupMsg"></p>
+    <button onclick="closeReminderPopup()">Close</button>
+  </div>
+</div>
+
+<!-- Pending Reminders Popup -->
+<div id="pendingRemindersPopup" class="reminder-popup" style="display:none;">
+  <div class="popup-content">
+    <h3>Upcoming Reminders</h3>
+    <ul id="pendingRemindersList" style="padding-left:20px;"></ul>
+    <button onclick="closePendingRemindersPopup()">Close</button>
+  </div>
+</div>
+
 
   </div>
 </div>
