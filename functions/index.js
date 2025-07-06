@@ -2,6 +2,28 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 const db = admin.firestore();
+const pushoverToken = functions.config().pushover?.token || process.env.PUSHOVER_TOKEN;
+
+async function sendPushover(userKey, message) {
+  if (!pushoverToken || !userKey) return;
+  try {
+    const res = await fetch('https://api.pushover.net/1/messages.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        token: pushoverToken,
+        user: userKey,
+        title: 'Event Reminder',
+        message
+      })
+    });
+    if (!res.ok) {
+      console.error('Pushover error:', await res.text());
+    }
+  } catch (err) {
+    console.error('Pushover request failed:', err);
+  }
+}
 
 // Sends email and push reminders for upcoming events.
 exports.sendReminders = functions.pubsub
@@ -22,19 +44,25 @@ exports.sendReminders = functions.pubsub
       const title = data.title;
       const startTime = data.startTime.toDate();
 
-      // Send push notification if uid has fcmToken
+      // Send push notification if uid has token(s)
       if (uid) {
         promises.push(db.collection('users').doc(uid).get().then(uDoc => {
-          const token = uDoc.exists ? uDoc.data().fcmToken : null;
-          if (token) {
-            return admin.messaging().send({
-              token,
+          if (!uDoc.exists) return null;
+          const { fcmToken, pushoverKey } = uDoc.data();
+          const tasks = [];
+          if (fcmToken) {
+            tasks.push(admin.messaging().send({
+              token: fcmToken,
               notification: {
                 title: 'Event Reminder',
                 body: `${title} starts soon`
               }
-            });
+            }));
           }
+          if (pushoverKey) {
+            tasks.push(sendPushover(pushoverKey, `${title} starts soon`));
+          }
+          return Promise.all(tasks);
         }));
       }
 
