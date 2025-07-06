@@ -803,6 +803,15 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
+<!-- Pending Reminders Popup -->
+<div id="pendingRemindersPopup" class="reminder-popup" style="display:none;">
+  <div class="popup-content">
+    <h3>Pending Reminders</h3>
+    <ul id="pendingRemindersList" style="padding-left:20px;"></ul>
+    <button onclick="closePendingRemindersPopup()">Close</button>
+  </div>
+</div>
+
 <!-- ====================== Firebase + App Script ====================== -->
 <script>
   // Create global function that will call the internal module function
@@ -1706,12 +1715,24 @@ function initializeColorPicker(preSelected = selectedColor) {
       }
     }));
     upcoming.sort((a, b) => a.time - b.time);
+    const list = document.getElementById('pendingRemindersList');
+    list.innerHTML = '';
     if (upcoming.length === 0) {
-      alert('No pending notifications');
+      const li = document.createElement('li');
+      li.textContent = 'No pending notifications';
+      list.appendChild(li);
     } else {
-      const lines = upcoming.map(u => `${u.type}: ${u.desc} @ ${u.time.toLocaleString()}`);
-      alert('Pending Notifications:\n' + lines.join('\n'));
+      upcoming.forEach(u => {
+        const li = document.createElement('li');
+        li.textContent = `${u.type}: ${u.desc} @ ${u.time.toLocaleString()}`;
+        list.appendChild(li);
+      });
     }
+    document.getElementById('pendingRemindersPopup').style.display = 'flex';
+  }
+
+  function closePendingRemindersPopup() {
+    document.getElementById('pendingRemindersPopup').style.display = 'none';
   }
 
   function addEvent(date) {
@@ -2707,6 +2728,7 @@ window._deleteHabit = _deleteHabit;
 window._saveHabitTracker = _saveHabitTracker;
 window._cancelHabitTracker = _cancelHabitTracker;
 window.closeMissedRemindersPopup = closeMissedRemindersPopup;
+window.closePendingRemindersPopup = closePendingRemindersPopup;
 
 
 
