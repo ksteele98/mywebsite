@@ -1343,7 +1343,7 @@ function initializeColorPicker(preSelected = selectedColor) {
   /******************************************************* 
    9) Open/Close Journal
   *******************************************************/
-  function openJournal(date) {
+  async function openJournal(date) {
     const journalForm = document.getElementById('journalForm');
     const journalDate = document.getElementById('journalDate');
     const journalText = document.getElementById('journalText');
@@ -1382,12 +1382,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       }
     });
 
-    // Load image from Firebase Storage
-    const imageUrl = journalImages[date];
-    if (imageUrl) {
-      imagePreview.src = imageUrl;
-      imagePreview.style.display = 'block';
-      removeImageBtn.style.display = 'block';
+
     } else {
       imagePreview.src = '';
       imagePreview.style.display = 'none';
@@ -1573,7 +1568,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     imageInput.value = '';
     pendingImageFile = null;
     try {
-      await deleteObject(ref(storage, `journalImages/${userId}/${date}`));
+
     } catch (err) {
       console.error('Error deleting image:', err);
     }
@@ -1842,9 +1837,7 @@ async function saveJournal() {
     // IMAGE Save to Firebase Storage
     if (pendingImageFile) {
       const imgRef = ref(storage, `journalImages/${userId}/${date}`);
-      await uploadBytes(imgRef, pendingImageFile);
-      const url = await getDownloadURL(imgRef);
-      journalImages[date] = url;
+
       console.log("Image uploaded for date:", date);
     }
     // AUDIO Save to IndexedDB
