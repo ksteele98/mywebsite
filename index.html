@@ -845,7 +845,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     getDoc,
     setDoc
   } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-storage.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-storage.js";
   // NEW: push-subscription flow -------------------------------
 
   /********************** 
@@ -1348,7 +1348,7 @@ function initializeColorPicker(preSelected = selectedColor) {
   /******************************************************* 
    9) Open/Close Journal
   *******************************************************/
-  function openJournal(date) {
+  async function openJournal(date) {
     const journalForm = document.getElementById('journalForm');
     const journalDate = document.getElementById('journalDate');
     const journalText = document.getElementById('journalText');
@@ -1387,18 +1387,25 @@ function initializeColorPicker(preSelected = selectedColor) {
       }
     });
 
-    // Load image from IndexedDB
-    getFromDB('images', date).then(blob => {
-      if (blob) {
-        imagePreview.src = URL.createObjectURL(blob);
+    // Load image from Firebase Storage using stored path
+    const imagePath = journalImages[date];
+    if (imagePath) {
+      try {
+        const url = await getDownloadURL(ref(storage, imagePath));
+        imagePreview.src = url;
         imagePreview.style.display = 'block';
         removeImageBtn.style.display = 'block';
-      } else {
+      } catch (err) {
+        console.error('Error loading image:', err);
         imagePreview.src = '';
         imagePreview.style.display = 'none';
         removeImageBtn.style.display = 'none';
       }
-    });
+    } else {
+      imagePreview.src = '';
+      imagePreview.style.display = 'none';
+      removeImageBtn.style.display = 'none';
+    }
 
     document.getElementById('prevDayButton').style.display = 'block';
     document.getElementById('nextDayButton').style.display = 'block';
@@ -1570,7 +1577,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     recordBtn.textContent = 'Start Recording';
   }
 
-  function removeImage() {
+  async function removeImage() {
     const preview = document.getElementById('imagePreview');
     const imageInput = document.getElementById('imageFileInput');
     const date = document.getElementById('journalForm').dataset.date;
@@ -1578,7 +1585,16 @@ function initializeColorPicker(preSelected = selectedColor) {
     preview.style.display = 'none';
     imageInput.value = '';
     pendingImageFile = null;
-    deleteFromDB('images', date);
+    try {
+      const path = journalImages[date];
+      if (path) {
+        await deleteObject(ref(storage, path));
+      }
+    } catch (err) {
+      console.error('Error deleting image:', err);
+    }
+    delete journalImages[date];
+    await saveUserData();
     document.getElementById('removeImageBtn').style.display = 'none';
   }
 
@@ -1839,10 +1855,14 @@ async function saveJournal() {
   }
 
   try {
-    // IMAGE Save to IndexedDB
+    // IMAGE Save to Firebase Storage
     if (pendingImageFile) {
-      await saveToDB('images', date, pendingImageFile);
-      console.log("Image saved locally for date:", date);
+      const imgRef = ref(storage, `journalImages/${userId}/${date}`);
+      await uploadBytes(imgRef, pendingImageFile, {
+        contentType: pendingImageFile.type
+      });
+      journalImages[date] = imgRef.fullPath;
+      console.log("Image uploaded for date:", date);
     }
     // AUDIO Save to IndexedDB
     if (pendingAudioFile) {
@@ -1859,10 +1879,11 @@ async function saveJournal() {
     // Clear pending files
     pendingAudioFile = null;
     pendingImageFile = null;
+    await saveUserData();
     generateCalendar();
     updateDailyEventsList(date);
     closeJournalForm();
-    console.log('✅ Journal saved locally');
+    console.log('✅ Journal saved');
   } catch (err) {
     console.error("Error in saveJournal:", err);
     alert("Error saving journal: " + err.message);
