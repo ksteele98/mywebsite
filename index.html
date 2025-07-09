@@ -814,7 +814,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 <!-- Pending Reminders Popup -->
 <div id="pendingRemindersPopup" class="reminder-popup" style="display:none;">
   <div class="popup-content">
-    <h3>Pending Reminders</h3>
+    <h3 id="pendingRemindersTitle">Pending Reminders</h3>
+    <button id="toggleReminderViewBtn" onclick="toggleReminderView()" style="margin-bottom:10px;">Show Past</button>
     <ul id="pendingRemindersList" style="padding-left:20px;"></ul>
     <button onclick="closePendingRemindersPopup()">Close</button>
   </div>
@@ -1094,6 +1095,7 @@ let recordedChunks = [];
 let reminderTimeouts = {};
 let taskReminderTimeouts = {};
 let taskControlsInitialized = false;
+let showPastReminders = false;
 
   // ─── Simple desktop time picker using dropdowns ───
   function isMobileDevice() {
@@ -1736,37 +1738,69 @@ function initializeColorPicker(preSelected = selectedColor) {
   }
 
   function showPendingNotifications() {
-    const upcoming = [];
+    showPastReminders = false;
+    updatePendingRemindersList();
+    document.getElementById('pendingRemindersPopup').style.display = 'flex';
+  }
+
+  function toggleReminderView() {
+    showPastReminders = !showPastReminders;
+    updatePendingRemindersList();
+  }
+
+  function updatePendingRemindersList() {
+    const list = document.getElementById('pendingRemindersList');
+    const title = document.getElementById('pendingRemindersTitle');
+    const toggleBtn = document.getElementById('toggleReminderViewBtn');
+    list.innerHTML = '';
+
     const now = Date.now();
+    const reminders = [];
     events.forEach(ev => {
       if (!ev.reminderDate || !ev.reminderTime) return;
       const time = new Date(ev.reminderDate + 'T' + ev.reminderTime);
-      if (time.getTime() > now) {
-        upcoming.push({ type: 'Event', desc: ev.description, time });
-      }
+      reminders.push({ type: 'Event', desc: ev.description, time });
     });
     Object.values(taskLists).forEach(list => list.forEach(task => {
       if (!task.reminderDate || !task.reminderTime) return;
       const time = new Date(task.reminderDate + 'T' + task.reminderTime);
-      if (time.getTime() > now) {
-        upcoming.push({ type: 'Task', desc: task.text, time });
-      }
+      reminders.push({ type: 'Task', desc: task.text, time });
     }));
-    upcoming.sort((a, b) => a.time - b.time);
-    const list = document.getElementById('pendingRemindersList');
-    list.innerHTML = '';
-    if (upcoming.length === 0) {
-      const li = document.createElement('li');
-      li.textContent = 'No pending notifications';
-      list.appendChild(li);
-    } else {
-      upcoming.forEach(u => {
+
+    if (showPastReminders) {
+      title.textContent = 'Past Reminders';
+      toggleBtn.textContent = 'Show Upcoming';
+      const past = reminders.filter(r => r.time.getTime() <= now)
+                            .sort((a,b) => b.time - a.time)
+                            .slice(0,10);
+      if (past.length === 0) {
         const li = document.createElement('li');
-        li.textContent = `${u.type}: ${u.desc} @ ${u.time.toLocaleString()}`;
+        li.textContent = 'No past reminders';
         list.appendChild(li);
-      });
+      } else {
+        past.forEach(r => {
+          const li = document.createElement('li');
+          li.textContent = `${r.type}: ${r.desc} @ ${r.time.toLocaleString()}`;
+          list.appendChild(li);
+        });
+      }
+    } else {
+      title.textContent = 'Pending Reminders';
+      toggleBtn.textContent = 'Show Past';
+      const upcoming = reminders.filter(r => r.time.getTime() > now)
+                               .sort((a,b) => a.time - b.time);
+      if (upcoming.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No pending notifications';
+        list.appendChild(li);
+      } else {
+        upcoming.forEach(u => {
+          const li = document.createElement('li');
+          li.textContent = `${u.type}: ${u.desc} @ ${u.time.toLocaleString()}`;
+          list.appendChild(li);
+        });
+      }
     }
-    document.getElementById('pendingRemindersPopup').style.display = 'flex';
   }
 
   function closePendingRemindersPopup() {
@@ -2767,6 +2801,7 @@ window._cancelHabitTracker = _cancelHabitTracker;
 window.closeMissedRemindersPopup = closeMissedRemindersPopup;
 window.closeReminderPopup = closeReminderPopup;
 window.closePendingRemindersPopup = closePendingRemindersPopup;
+window.toggleReminderView = toggleReminderView;
 
 
 
