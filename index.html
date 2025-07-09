@@ -925,6 +925,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
 
   let userId = null;  // will store current Google user's uid here
+  let userLastOpenTime = 0; // track last time user opened app across devices
   const provider = new GoogleAuthProvider();
 
   // This function triggers the Google popup
@@ -949,7 +950,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       // Load data from Firestore
       await loadUserData();
       scheduleAllReminders();
-      showMissedReminders();
+      await showMissedReminders();
       // Generate calendar, tasks, etc.
       generateCalendar();
       renderTasks();
@@ -1188,6 +1189,7 @@ let taskControlsInitialized = false;
         completedTasks  = data.completedTasks  || {};
         habitTracker    = data.habitTracker    || {};
         globalHabits    = data.globalHabits    || [];
+        userLastOpenTime = data.lastOpenTime || parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
         document.getElementById('goalsText').value = data.userGoals || '';
 
         renderTaskListButtons();
@@ -1198,6 +1200,7 @@ let taskControlsInitialized = false;
         console.log("No existing Firestore doc for this user; starting fresh.");
         taskLists = { personal: [], work: [] };
         completedTasks = {};
+        userLastOpenTime = parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
 
         renderTaskListButtons();
         renderTasks();
@@ -1222,6 +1225,7 @@ let taskControlsInitialized = false;
         completedTasks,
         habitTracker,
         globalHabits,
+        lastOpenTime: userLastOpenTime,
         userGoals: document.getElementById('goalsText')?.value || ''
       });
       console.log("Data saved to Firestore!");
@@ -1657,8 +1661,8 @@ function initializeColorPicker(preSelected = selectedColor) {
   }
 
   // Show notifications that were missed while the app was closed
-  function showMissedReminders() {
-    const lastOpen = parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
+  async function showMissedReminders() {
+    const lastOpen = userId ? userLastOpenTime : parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
     const now = Date.now();
 
     const messages = [];
@@ -1691,7 +1695,16 @@ function initializeColorPicker(preSelected = selectedColor) {
       }
     }));
 
-    localStorage.setItem('lastOpenTime', String(now));
+    if (userId) {
+      userLastOpenTime = now;
+      try {
+        await setDoc(doc(db, 'users', userId), { lastOpenTime: now }, { merge: true });
+      } catch (err) {
+        console.error('Error updating lastOpenTime:', err);
+      }
+    } else {
+      localStorage.setItem('lastOpenTime', String(now));
+    }
     messages.forEach(showReminderPopup);
     showMissedRemindersPopup(messages);
   }
