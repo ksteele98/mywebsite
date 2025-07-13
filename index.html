@@ -2757,13 +2757,14 @@ function renderHabits(date) {
         const count = document.createElement('input');
         count.type = 'number';
         count.min = '0';
+        count.step = 'any';
         count.style.width = '60px';
         count.style.marginRight = '10px';
         count.value = habitTracker[date]?.[habit.id]?.count || 0;
         count.onchange = () => {
           habitTracker[date] = habitTracker[date] || {};
           habitTracker[date][habit.id] = habitTracker[date][habit.id] || {};
-          habitTracker[date][habit.id].count = parseInt(count.value) || 0;
+          habitTracker[date][habit.id].count = parseFloat(count.value) || 0;
         };
         label.appendChild(count);
       }
