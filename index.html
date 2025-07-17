@@ -703,7 +703,7 @@
   <div class="media-controls">
     <button id="recordAudioBtn" onclick="toggleRecording()">Start Recording</button>
     <label for="audioFileInput" class="file-upload-label">Upload Audio</label>
-    <input type="file" id="audioFileInput" accept="audio/*" onchange="handleAudioUpload(event)" class="file-upload-input">
+    <input type="file" id="audioFileInput" accept="audio/*,video/mpeg" onchange="handleAudioUpload(event)" class="file-upload-input">
     <label for="imageFileInput" class="file-upload-label">Upload Image</label>
     <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)" class="file-upload-input">
   </div>
@@ -1545,7 +1545,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('audio/')) {
+    if (!file.type.startsWith('audio/') && file.type !== 'video/mpeg') {
       alert('Please select an audio file');
       return;
     }
