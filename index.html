@@ -40,6 +40,9 @@
       user-select: none;
       overflow: hidden;
     }
+    .calendar-cell.today {
+      border: 2px solid lightblue;
+    }
     .day-header {
       background-color: #f8f9fa;
       padding: 10px;
@@ -1335,12 +1338,15 @@ function initializeColorPicker(preSelected = selectedColor) {
   function createCalendarCell(date, isOtherMonth) {
     const cell = document.createElement('div');
     cell.className = `calendar-cell${isOtherMonth ? ' other-month' : ''}`;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dateStr = date.toISOString().split('T')[0];
+    if (!isOtherMonth && dateStr === todayStr) {
+      cell.classList.add('today');
+    }
     const dateNumber = document.createElement('div');
     dateNumber.className = 'date-number';
     dateNumber.textContent = date.getDate();
     cell.appendChild(dateNumber);
-
-    const dateStr = date.toISOString().split('T')[0];
     cell.addEventListener('click', () => {
       openJournal(dateStr);
     });
