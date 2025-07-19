@@ -1612,6 +1612,11 @@ function initializeColorPicker(preSelected = selectedColor) {
     imageInput.value = '';
     pendingImageFile = null;
     try {
+      if (journalImages[date]) {
+        const imgPath = journalImages[date];            // full URL we saved earlier
+        const objRef = ref(storage, imgPath.replace(/^https?:\/\/[^/]+\/o\//, '').split('?')[0]);
+        await deleteObject(objRef);
+      }
 
     } catch (err) {
       console.error('Error deleting image:', err);
