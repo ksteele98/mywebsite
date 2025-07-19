@@ -927,6 +927,11 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
   const storage = getStorage(app);
 
+   // 🔓 make them globally visible for debugging
+  window.app     = app;
+  window.auth    = auth;
+  window.storage = storage;
+
 
   let userId = null;  // will store current Google user's uid here
   let userLastOpenTime = 0; // track last time user opened app across devices
