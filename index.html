@@ -1980,7 +1980,19 @@ async function saveJournal() {
   try {
     // IMAGE Save to Firebase Storage
     if (pendingImageFile) {
-      const imgRef = ref(storage, `journalImages/${userId}/${date}`);
+      const imgRef = ref(storage, `journalImages/${userId}/${date}/${pendingImageFile.name}`);
+
+      // 1️⃣  push the bytes
+      await uploadBytes(imgRef, pendingImageFile);
+
+      // 2️⃣  grab a public (authenticated) download URL
+      const url = await getDownloadURL(imgRef);
+
+      // 3️⃣  remember it in our per-date map
+      journalImages[date] = url;
+
+      // 4️⃣  clear the local flag
+      pendingImageFile = null;
 
       console.log("Image uploaded for date:", date);
     }
