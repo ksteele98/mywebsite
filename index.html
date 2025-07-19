@@ -1420,13 +1420,20 @@ function initializeColorPicker(preSelected = selectedColor) {
       }
     });
 
+    // Show cloud-hosted image immediately if available
+    if (journalImages[date]) {
+      imagePreview.src = journalImages[date];
+      imagePreview.style.display = 'block';
+      removeImageBtn.style.display = 'block';
+    }
+
     // Load image from IndexedDB
     getFromDB('images', date).then(blob => {
       if (blob) {
         imagePreview.src = URL.createObjectURL(blob);
         imagePreview.style.display = 'block';
         removeImageBtn.style.display = 'block';
-      } else {
+      } else if (!journalImages[date]) {
         imagePreview.src = '';
         imagePreview.style.display = 'none';
         removeImageBtn.style.display = 'none';
