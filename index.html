@@ -1259,13 +1259,21 @@ let showPastReminders = false;
   ];
 
   // ─── converts "13:05" ➜ "1:05 PM" ───
-    function formatTime(timeStr) {
+function formatTime(timeStr) {
   const [hStr, m] = timeStr.split(":");
   let h = parseInt(hStr, 10);
   const ampm = h >= 12 ? "PM" : "AM";
   h = h % 12;
   if (h === 0) h = 12;
   return `${h}:${m} ${ampm}`;
+}
+
+// format a Date as YYYY-MM-DD using local time
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 
@@ -1343,8 +1351,8 @@ function initializeColorPicker(preSelected = selectedColor) {
   function createCalendarCell(date, isOtherMonth) {
     const cell = document.createElement('div');
     cell.className = `calendar-cell${isOtherMonth ? ' other-month' : ''}`;
-    const todayStr = new Date().toISOString().split('T')[0];
-    const dateStr = date.toISOString().split('T')[0];
+    const todayStr = formatLocalDate(new Date());
+    const dateStr = formatLocalDate(date);
     if (!isOtherMonth && dateStr === todayStr) {
       cell.classList.add('today');
     }
