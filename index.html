@@ -307,6 +307,14 @@
       border-radius: 4px;
       box-sizing: border-box;
     }
+    .task-severity-select {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
     .add-task-btn {
       background: #4285f4;
       color: white;
@@ -670,6 +678,16 @@
     <label for="taskReminderTime">Reminder Time (optional):</label>
     <input type="time" id="taskReminderTime">
   </div>
+    <div>
+      <label for="taskReminderSeverity">Severity:</label>
+      <select id="taskReminderSeverity" class="task-severity-select">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </div>
   <input type="hidden" id="taskReminderId">
   <div class="event-actions">
     <button onclick="saveTaskReminder()">Save</button>
@@ -731,6 +749,16 @@
     <label style="display: block; margin: 8px 0; font-size: 14px;">
       <input type="checkbox" id="taskDailyCheckbox" style="margin-right: 6px;">
       Repeat Daily?
+    </label>
+    <label style="display: block; margin: 8px 0; font-size: 14px;">
+      Severity:
+      <select id="taskSeverity" class="task-severity-select">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
     </label>
 
     <input type="text" id="taskInput" class="task-input" placeholder="Add a new task">
@@ -2152,9 +2180,11 @@ function deleteCurrentList() {
 function addTask() {
   const taskInput = document.getElementById('taskInput');
   const taskDailyCheckbox = document.getElementById('taskDailyCheckbox');
+  const severitySelect = document.getElementById('taskSeverity');
   const text = taskInput.value.trim();
   if (!text) return alert("Please enter a task");
   const daily = taskDailyCheckbox.checked;
+  const severity = parseInt(severitySelect.value, 10) || 3;
   const dateKey = document.getElementById('journalForm').dataset.date ||
                   new Date().toISOString().split('T')[0];
   if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
@@ -2179,7 +2209,8 @@ function addTask() {
           completed: false,
           completions: {},
           subtasks: [],
-          collapsed: false
+          collapsed: false,
+          severity
         };
         taskLists[currentTaskList].push(currentTask);
         if (delim === ';' || delim === ':') {
@@ -2203,6 +2234,7 @@ function addTask() {
 
   taskInput.value = "";
   taskDailyCheckbox.checked = false;
+  severitySelect.value = '3';
   saveUserData();
   renderTasks();
 }
@@ -2289,7 +2321,10 @@ function renderTasks() {
       renderTasks();
     };
 
-    li.append(checkbox, span, addSub);
+    const severityLabel = document.createElement('span');
+    severityLabel.textContent = `S:${task.severity || 3}`;
+    severityLabel.style.cssText = 'margin-left:4px;font-size:0.85rem;color:#f39c12;';
+    li.append(checkbox, span, severityLabel, addSub);
 
     if (task.subtasks && task.subtasks.length) {
       const toggleBtn = document.createElement('button');
@@ -2369,12 +2404,16 @@ function renderCompletedTasks() {
     span.textContent = task.text;
     span.className = 'completed-task';
 
+    const severityLabel = document.createElement('span');
+    severityLabel.textContent = ` S:${task.severity || 3}`;
+    severityLabel.style.cssText = 'margin-left:4px;font-size:0.85rem;color:#f39c12;';
+
     const restore = document.createElement('button');
     restore.textContent = '↺';
     restore.style.cssText = 'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#28a745;';
     restore.onclick = () => restoreTask(task.id, dateKey);
 
-    li.append(span, restore);
+    li.append(span, severityLabel, restore);
     taskList.appendChild(li);
   });
 }
@@ -2475,6 +2514,8 @@ function editTaskReminder(task) {
   document.getElementById("taskReminderDate").value = task.reminderDate || "";
   document.getElementById("taskReminderTime").value = task.reminderTime || "";
   document.getElementById("taskReminderId").value = task.id;
+  const severitySelect = document.getElementById("taskReminderSeverity");
+  if (severitySelect) severitySelect.value = task.severity || 3;
   const form = document.getElementById("taskReminderForm");
   form.style.display = "block";
   form.style.zIndex = "1002"; // ensure it appears above the journal
@@ -2486,6 +2527,7 @@ function saveTaskReminder() {
   const id = document.getElementById("taskReminderId").value;
   const date = document.getElementById("taskReminderDate").value;
   const time = document.getElementById("taskReminderTime").value;
+  const severityVal = parseInt(document.getElementById("taskReminderSeverity").value, 10);
   const task = Object.values(taskLists).flat().find(t => t.id == id);
   if (!task) return;
   if (!date || !time) {
@@ -2495,6 +2537,7 @@ function saveTaskReminder() {
     task.reminderDate = date;
     task.reminderTime = time;
   }
+  if (!isNaN(severityVal)) task.severity = severityVal;
   saveUserData();
   scheduleAllTaskReminders();
   closeTaskReminderForm();
