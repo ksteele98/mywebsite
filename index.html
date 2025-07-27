@@ -2515,7 +2515,20 @@ function editTaskReminder(task) {
   document.getElementById("taskReminderTime").value = task.reminderTime || "";
   document.getElementById("taskReminderId").value = task.id;
   const severitySelect = document.getElementById("taskReminderSeverity");
-  if (severitySelect) severitySelect.value = task.severity || 3;
+  if (severitySelect) {
+    severitySelect.value = task.severity || 3;
+    // Update severity immediately when changed
+    severitySelect.onchange = () => {
+      const id = document.getElementById("taskReminderId").value;
+      const val = parseInt(severitySelect.value, 10);
+      const t = Object.values(taskLists).flat().find(tt => tt.id == id);
+      if (t && !isNaN(val)) {
+        t.severity = val;
+        saveUserData();
+        renderTasks();
+      }
+    };
+  }
   const form = document.getElementById("taskReminderForm");
   form.style.display = "block";
   form.style.zIndex = "1002"; // ensure it appears above the journal
@@ -2541,7 +2554,7 @@ function saveTaskReminder() {
   saveUserData();
   scheduleAllTaskReminders();
   closeTaskReminderForm();
-  alert("Reminder updated");
+  renderTasks();
 }
 
   // Replace the initializeTaskControls function with this improved version
