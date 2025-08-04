@@ -80,14 +80,14 @@
       height: 40px;
       min-width: 40px;
       border-radius: 50%;
-      position: absolute;
+      position: fixed;
       top: 50%;
       transform: translateY(-50%);
       z-index: 1001;
       display: none;
     }
-    #prevDayButton { left: -45px; }
-    #nextDayButton { right: -45px; }
+    #prevDayButton { left: 10px; }
+    #nextDayButton { right: 10px; }
     .current-month {
       font-size: 20px;
       font-weight: bold;
@@ -591,7 +591,7 @@
         padding: 15px;
       }
       .journal-form {
-        width: 95%;
+        width: 80%;
         padding: 15px;
       }
       .time-inputs div {
@@ -787,11 +787,11 @@
 
   <button onclick="saveJournal()">Save</button>
   <button onclick="closeJournalForm()">Cancel</button>
-
-  <!-- Prev / Next Journal Buttons -->
-  <button id="prevDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(-1)">&lt;</button>
-  <button id="nextDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(1)">&gt;</button>
 </div>
+
+<!-- Prev / Next Journal Buttons -->
+<button id="prevDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(-1)">&lt;</button>
+<button id="nextDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(1)">&gt;</button>
 
 <!-- Habit Form -->
 <div class="habit-form" id="habitForm" style="display: none;" data-date="">
