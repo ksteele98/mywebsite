@@ -613,6 +613,64 @@
         font-size: 16px;
       }
     }
+
+    /* ========== 1. Kill the sideways scroll ========== */
+    html,body {
+      overflow-x:hidden;           /* hard stop */
+    }
+    .calendar-container,
+    .journal-form,
+    .event-form,
+    .habit-form,
+    .task-reminder-form,
+    .goals-form {
+      max-width:100vw;             /* never exceed the viewport */
+      box-sizing:border-box;       /* include padding/border in that width */
+    }
+
+    /* ========== 2. Make pop-ups fit phones ========== */
+    @media screen and (max-width:480px){
+      .journal-form,
+      .event-form,
+      .habit-form,
+      .task-reminder-form,
+      .goals-form {
+        width:95vw;                /* shrink a hair inside the gutters */
+        padding:15px;              /* lighter padding = more room */
+      }
+    }
+
+    /* ========== 3. Give buttons breathing space ========== */
+    .media-controls,
+    .task-buttons,
+    .event-actions,
+    .reminder-inputs,
+    .time-inputs {
+      gap:12px;                    /* modern browsers respect flex-gap */
+      flex-wrap:wrap;              /* let them drop to a new row */
+    }
+    .media-controls button,
+    .media-controls label,
+    .event-actions button,
+    .task-buttons button {
+      flex:1 1 48%;                /* two per row on tiny screens */
+      min-width:120px;             /* avoid micro-buttons */
+    }
+
+    /* ========== 4. Keep nav-arrows off the canvas ========== */
+    .day-nav-button{
+      left:auto;
+      right:auto;
+      translate:0 -50%;
+      transform:translateY(-50%);
+      box-shadow:0 0 6px rgba(0,0,0,.25);
+    }
+
+    /* ========== 5. Highlight “today” everywhere ========== */
+    /* calendar cell already had a blue border; match it in journal modal */
+    .journal-form.today{
+      border:2px solid #79bfff;    /* soft light-blue outline */
+    }
   </style>
 </head>
 <body>
