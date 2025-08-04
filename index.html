@@ -587,10 +587,22 @@
       .event {
         margin-bottom: 1px;
       }
-      .event-form, .journal-form {
+      .event-form {
         width: 95%;
         padding: 15px;
       }
+      .journal-form {
+        width: 80%;
+        padding: 15px;
+      }
+      .day-nav-button {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        bottom: auto;
+      }
+      #prevDayButton { left: -50px; }
+      #nextDayButton { right: -50px; }
       .time-inputs div {
         flex: 100%;
       }
@@ -784,12 +796,11 @@
 
   <button onclick="saveJournal()">Save</button>
   <button onclick="closeJournalForm()">Cancel</button>
+
+  <!-- Prev / Next Journal Buttons -->
+  <button id="prevDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(-1)">&lt;</button>
+  <button id="nextDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(1)">&gt;</button>
 </div>
-
-<!-- Prev / Next Journal Buttons -->
-<button id="prevDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(-1)">&lt;</button>
-
-<button id="nextDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(1)">&gt;</button>
 
 <!-- Habit Form -->
 <div class="habit-form" id="habitForm" style="display: none;" data-date="">
