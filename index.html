@@ -590,14 +590,6 @@
       .event {
         margin-bottom: 1px;
       }
-      .event-form {
-        width: 95%;
-        padding: 15px;
-      }
-      .journal-form {
-        width: 70%;
-        padding: 15px;
-      }
       .time-inputs div {
         flex: 100%;
       }
@@ -606,11 +598,6 @@
       }
       .task-toggle button {
         flex: 100%;
-      }
-      .journal-form button {
-        margin-bottom: 20px;
-        padding: 12px;
-        font-size: 16px;
       }
     }
 
@@ -628,21 +615,8 @@
       box-sizing:border-box;       /* include padding/border in that width */
     }
 
-    /* ========== 2. Make pop-ups fit phones ========== */
-    @media screen and (max-width:480px){
-      .journal-form,
-      .event-form,
-      .habit-form,
-      .task-reminder-form,
-      .goals-form {
-        width:95vw;                /* shrink a hair inside the gutters */
-        padding:15px;              /* lighter padding = more room */
-      }
-    }
-
     /* ========== 3. Give buttons breathing space ========== */
     .media-controls,
-    .task-buttons,
     .event-actions,
     .reminder-inputs,
     .time-inputs {
@@ -651,25 +625,68 @@
     }
     .media-controls button,
     .media-controls label,
-    .event-actions button,
-    .task-buttons button {
+    .event-actions button {
       flex:1 1 48%;                /* two per row on tiny screens */
       min-width:120px;             /* avoid micro-buttons */
     }
 
-    /* ========== 4. Keep nav-arrows off the canvas ========== */
-    .day-nav-button{
-      left:auto;
-      right:auto;
-      translate:0 -50%;
-      transform:translateY(-50%);
-      box-shadow:0 0 6px rgba(0,0,0,.25);
-    }
-
-    /* ========== 5. Highlight “today” everywhere ========== */
+    /* ========== 4. Highlight “today” everywhere ========== */
     /* calendar cell already had a blue border; match it in journal modal */
     .journal-form.today{
       border:2px solid #79bfff;    /* soft light-blue outline */
+    }
+
+    /* ========== PHONE POLISH (≤480 px) ========== */
+    @media (max-width:480px){
+
+      /* 1. Shrink the journal popup to ~70 % of the screen */
+      .journal-form,
+      .habit-form,
+      .event-form,
+      .task-reminder-form,
+      .goals-form{
+        width:70vw;            /* ~70 % of viewport */
+        max-width:420px;       /* don’t let big phones stretch it */
+        margin:0 auto;         /* center horizontally */
+        padding:12px;          /* lighter padding */
+      }
+
+      /* 2. Stack “Tasks / +New / Delete” buttons vertically */
+      .task-buttons{
+        flex-direction:column;
+        align-items:stretch;
+        gap:8px;
+      }
+
+      /* 3. Slim every main button so thumbs still hit, but UI breathes */
+      .journal-form button,
+      .event-form  button,
+      .habit-form  button,
+      .task-reminder-form button,
+      .task-buttons button,
+      .task-toggle  button,
+      .media-controls button,
+      .media-controls label{
+        padding:6px 10px;
+        font-size:13px;
+      }
+
+      /* 4. Keep list-toggle buttons from pinching each other */
+      .task-toggle{
+        gap:8px;
+      }
+
+      /* 5. Nudge the nav-arrows clear of the panel border */
+      .day-nav-button{
+        width:36px;
+        height:36px;
+        box-shadow:0 0 5px rgba(0,0,0,.25);
+      }
+
+      /* 6. Today’s journal outline—so it matches the calendar cell */
+      .journal-form.today{
+        border:2px solid #7ac3ff;
+      }
     }
   </style>
 </head>
