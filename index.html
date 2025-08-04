@@ -74,6 +74,19 @@
       width: auto;
       min-width: 100px;
     }
+    .day-nav-button {
+      padding: 0;
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-radius: 50%;
+      position: fixed;
+      bottom: 20px;
+      z-index: 1001;
+      display: none;
+    }
+    #prevDayButton { left: 10px; }
+    #nextDayButton { right: 10px; }
     .current-month {
       font-size: 20px;
       font-weight: bold;
@@ -231,6 +244,9 @@
       max-height: 90vh;
       overflow-y: auto;
       z-index: 1000;
+    }
+    .journal-form.today {
+      outline: 2px solid #4285F4;
     }
     .close-btn {
       position: absolute;
@@ -771,15 +787,9 @@
 </div>
 
 <!-- Prev / Next Journal Buttons -->
-<button id="prevDayButton" 
-  class="nav-button" 
-  style="position:fixed; left:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
-  onclick="changeJournalDay(-1)">&lt;</button>
+<button id="prevDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(-1)">&lt;</button>
 
-<button id="nextDayButton" 
-  class="nav-button" 
-  style="position:fixed; right:20px; top:50%; transform:translateY(-50%); z-index:1001; display:none;" 
-  onclick="changeJournalDay(1)">&gt;</button>
+<button id="nextDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(1)">&gt;</button>
 
 <!-- Habit Form -->
 <div class="habit-form" id="habitForm" style="display: none;" data-date="">
@@ -1447,6 +1457,13 @@ function initializeColorPicker(preSelected = selectedColor) {
     journalText.value = journalEntries[date] || '';
     journalForm.dataset.date = date;
     journalForm.style.display = 'block';
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (date === todayStr) {
+      journalForm.classList.add('today');
+    } else {
+      journalForm.classList.remove('today');
+    }
 
     // Load audio from IndexedDB
     getFromDB('audios', date).then(blob => {
