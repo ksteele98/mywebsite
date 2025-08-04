@@ -651,14 +651,20 @@
         padding:12px;          /* lighter padding */
       }
 
-      /* 2. Stack “Tasks / +New / Delete” buttons vertically */
+      /* 2. Journal pop-up: a hair shorter so it doesn’t run to the chin-bar */
+      .journal-form{
+        max-height:85vh;      /* cap vertical size */
+        overflow-y:auto;      /* scroll inside if content is taller */
+      }
+
+      /* 3. “Show Completed / +New List / Delete List” all on one line */
       .task-buttons{
-        flex-direction:column;
-        align-items:stretch;
+        display:grid;
+        grid-template-columns:repeat(3,1fr);  /* three equal columns */
         gap:8px;
       }
 
-      /* 3. Slim every main button so thumbs still hit, but UI breathes */
+      /* 4. Slim every main button so thumbs still hit, but UI breathes */
       .journal-form button,
       .event-form  button,
       .habit-form  button,
@@ -671,19 +677,26 @@
         font-size:13px;
       }
 
-      /* 4. Keep list-toggle buttons from pinching each other */
+      /* 5. Task buttons get slimmer and allow shrink */
+      .task-buttons button{
+        padding:6px 0;        /* slimmer */
+        font-size:13px;
+        min-width:0;          /* let them shrink */
+      }
+
+      /* 6. Keep list-toggle buttons from pinching each other */
       .task-toggle{
         gap:8px;
       }
 
-      /* 5. Nudge the nav-arrows clear of the panel border */
+      /* 7. Nudge the nav-arrows clear of the panel border */
       .day-nav-button{
         width:36px;
         height:36px;
         box-shadow:0 0 5px rgba(0,0,0,.25);
       }
 
-      /* 6. Today’s journal outline—so it matches the calendar cell */
+      /* 8. Today’s journal outline—so it matches the calendar cell */
       .journal-form.today{
         border:2px solid #7ac3ff;
       }
