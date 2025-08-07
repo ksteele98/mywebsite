@@ -792,9 +792,10 @@
     <div>
       <label for="taskReminderSeverity">Severity:</label>
       <select id="taskReminderSeverity" class="task-severity-select">
+        <option value="0" selected></option>
         <option value="1">1</option>
         <option value="2">2</option>
-        <option value="3" selected>3</option>
+        <option value="3">3</option>
         <option value="4">4</option>
         <option value="5">5</option>
       </select>
@@ -875,9 +876,10 @@
     <label style="display: block; margin: 8px 0; font-size: 14px;">
       Severity:
       <select id="taskSeverity" class="task-severity-select">
+        <option value="0" selected></option>
         <option value="1">1</option>
         <option value="2">2</option>
-        <option value="3" selected>3</option>
+        <option value="3">3</option>
         <option value="4">4</option>
         <option value="5">5</option>
       </select>
@@ -2304,7 +2306,8 @@ function addTask() {
   const severitySelect = document.getElementById('taskSeverity');
   const text = taskInput.value.trim();
   if (!text) return alert("Please enter a task");
-  const severity = parseInt(severitySelect.value, 10) || 3;
+  const parsed = parseInt(severitySelect.value, 10);
+  const severity = isNaN(parsed) ? 0 : parsed;
   const dateKey = document.getElementById('journalForm').dataset.date ||
                   new Date().toISOString().split('T')[0];
   if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
@@ -2353,7 +2356,7 @@ function addTask() {
     });
 
     taskInput.value = "";
-    severitySelect.value = '3';
+    severitySelect.value = '0';
     saveUserData();
     renderTasks();
   }
@@ -2482,7 +2485,7 @@ function addTask() {
     };
 
     const severityLabel = document.createElement('span');
-    severityLabel.textContent = `S:${task.severity || 3}`;
+    severityLabel.textContent = `S:${task.severity ?? 0}`;
     severityLabel.style.cssText = 'margin-left:4px;font-size:0.85rem;color:#f39c12;';
     li.append(checkbox, span, severityLabel, addSub);
 
@@ -2565,7 +2568,7 @@ function renderCompletedTasks() {
     span.className = 'completed-task';
 
     const severityLabel = document.createElement('span');
-    severityLabel.textContent = ` S:${task.severity || 3}`;
+    severityLabel.textContent = ` S:${task.severity ?? 0}`;
     severityLabel.style.cssText = 'margin-left:4px;font-size:0.85rem;color:#f39c12;';
 
     const restore = document.createElement('button');
@@ -2675,20 +2678,20 @@ function editTaskReminder(task) {
   document.getElementById("taskReminderTime").value = task.reminderTime || "";
   document.getElementById("taskReminderId").value = task.id;
   const severitySelect = document.getElementById("taskReminderSeverity");
-  if (severitySelect) {
-    severitySelect.value = task.severity || 3;
-    // Update severity immediately when changed
-    severitySelect.onchange = () => {
-      const id = document.getElementById("taskReminderId").value;
-      const val = parseInt(severitySelect.value, 10);
-      const t = Object.values(taskLists).flat().find(tt => tt.id == id);
-      if (t && !isNaN(val)) {
-        t.severity = val;
-        saveUserData();
-        renderTasks();
-      }
-    };
-  }
+    if (severitySelect) {
+      severitySelect.value = task.severity ?? 0;
+      // Update severity immediately when changed
+      severitySelect.onchange = () => {
+        const id = document.getElementById("taskReminderId").value;
+        const val = parseInt(severitySelect.value, 10);
+        const t = Object.values(taskLists).flat().find(tt => tt.id == id);
+        if (t && !isNaN(val)) {
+          t.severity = val;
+          saveUserData();
+          renderTasks();
+        }
+      };
+    }
   document.getElementById("taskRepeat").value = task.repeat || "none";
   const form = document.getElementById("taskReminderForm");
   form.style.display = "block";
@@ -2717,7 +2720,6 @@ function saveTaskReminder() {
   saveUserData();
   scheduleAllTaskReminders();
   closeTaskReminderForm();
-  alert("Task updated");
   renderTasks();
 }
 
