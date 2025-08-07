@@ -799,6 +799,21 @@
         <option value="5">5</option>
       </select>
     </div>
+  <div>
+    <label for="taskRepeat">Repeat:</label>
+    <select id="taskRepeat">
+      <option value="none">Never</option>
+      <option value="daily">Daily</option>
+      <option value="weekdays">Weekdays</option>
+      <option value="weekends">Weekends</option>
+      <option value="weekly">Weekly</option>
+      <option value="biweekly">Bi-weekly</option>
+      <option value="monthly">Monthly</option>
+      <option value="quarterly">Every 3 Months</option>
+      <option value="semiannual">Every 6 Months</option>
+      <option value="yearly">Yearly</option>
+    </select>
+  </div>
   <input type="hidden" id="taskReminderId">
   <div class="event-actions">
     <button onclick="saveTaskReminder()">Save</button>
@@ -856,11 +871,7 @@
       <button onclick="switchTaskList('personal')" id="personalTasksBtn" class="active">Personal Tasks</button>
       <button onclick="switchTaskList('work')" id="workTasksBtn">Work Tasks</button>
     </div>
-            
-    <label style="display: block; margin: 8px 0; font-size: 14px;">
-      <input type="checkbox" id="taskDailyCheckbox" style="margin-right: 6px;">
-      Repeat Daily?
-    </label>
+    <!-- Repeat Daily checkbox removed -->
     <label style="display: block; margin: 8px 0; font-size: 14px;">
       Severity:
       <select id="taskSeverity" class="task-severity-select">
@@ -2290,11 +2301,9 @@ function deleteCurrentList() {
 
 function addTask() {
   const taskInput = document.getElementById('taskInput');
-  const taskDailyCheckbox = document.getElementById('taskDailyCheckbox');
   const severitySelect = document.getElementById('taskSeverity');
   const text = taskInput.value.trim();
   if (!text) return alert("Please enter a task");
-  const daily = taskDailyCheckbox.checked;
   const severity = parseInt(severitySelect.value, 10) || 3;
   const dateKey = document.getElementById('journalForm').dataset.date ||
                   new Date().toISOString().split('T')[0];
@@ -2315,7 +2324,7 @@ function addTask() {
         currentTask = {
           text: part,
           id: parentId,
-          repeat: daily ? "daily" : "once",
+          repeat: "none",
           startDate: dateKey,
           completed: false,
           completions: {},
@@ -2343,13 +2352,39 @@ function addTask() {
       }
     });
 
-  taskInput.value = "";
-  taskDailyCheckbox.checked = false;
-  severitySelect.value = '3';
-  saveUserData();
-  renderTasks();
-}
-function renderTasks() {
+    taskInput.value = "";
+    severitySelect.value = '3';
+    saveUserData();
+    renderTasks();
+  }
+
+  // --- Helper to decide if a repeating task occurs on a given date ---
+  function occursToday(task, dateKey) {
+    if (task.repeat === "none") return true;
+
+    const d      = new Date(dateKey + "T00:00:00");
+    const start  = new Date(task.startDate + "T00:00:00");
+    const day    = d.getDay();        // 0-6  (Sun-Sat)
+    const diffW  = Math.floor((d - start) / 604_800_000); // weeks
+
+    switch (task.repeat) {
+      case "daily":      return true;
+      case "weekdays":   return day >= 1 && day <= 5;
+      case "weekends":   return day === 0 || day === 6;
+      case "weekly":     return day === start.getDay();
+      case "biweekly":   return day === start.getDay() && diffW % 2 === 0;
+      case "monthly":    return d.getDate() === start.getDate();
+      case "quarterly":  return d.getDate() === start.getDate() &&
+                          (d.getMonth() - start.getMonth()) % 3 === 0;
+      case "semiannual": return d.getDate() === start.getDate() &&
+                          (d.getMonth() - start.getMonth()) % 6 === 0;
+      case "yearly":     return d.getDate() === start.getDate() &&
+                          d.getMonth() === start.getMonth();
+      default:            return true;
+    }
+  }
+
+  function renderTasks() {
   const taskList = document.getElementById('taskList');
   taskList.innerHTML = '';
 
@@ -2363,9 +2398,11 @@ function renderTasks() {
   // ─── filter out completed tasks and tasks scheduled for the future ───
   const visibleTasks = tasks.filter(t => {
     if (t.startDate && new Date(t.startDate) > new Date(dateKey)) return false;
-    return t.repeat === 'once'
-      ? !t.completed
-      : !(t.completions && t.completions[dateKey]);
+    if (!occursToday(t, dateKey)) return false;
+    if (t.repeat === 'none') {
+      return !t.completed;
+    }
+    return !(t.completions && t.completions[dateKey]);
   });
 
   // show "all done" message
@@ -2379,6 +2416,18 @@ function renderTasks() {
   }
 
   // ─── build the <li>s ───
+  const repeatLabels = {
+    daily:      "Daily",
+    weekdays:   "Weekdays",
+    weekends:   "Weekends",
+    weekly:     "Weekly",
+    biweekly:   "Bi-weekly",
+    monthly:    "Monthly",
+    quarterly:  "Every 3 mo",
+    semiannual: "Every 6 mo",
+    yearly:     "Yearly"
+  };
+
   visibleTasks.forEach(task => {
     if (typeof task.collapsed === 'undefined') task.collapsed = false;
     const li = document.createElement('li');
@@ -2389,18 +2438,18 @@ function renderTasks() {
     checkbox.type  = 'checkbox';
     checkbox.id    = `task-checkbox-${task.id}`;
     checkbox.checked =
-      task.repeat === 'daily'
-        ? task.completions && task.completions[dateKey]
-        : task.completed;
+      task.repeat === 'none'
+        ? task.completed
+        : task.completions && task.completions[dateKey];
     checkbox.onclick = () => toggleTask(task.id, dateKey);
 
     const span = document.createElement('span');
     span.textContent = task.text;
 
-    if (task.repeat === 'daily') {
+    if (task.repeat && task.repeat !== 'none') {
       const badge = document.createElement('span');
-      badge.textContent = 'Repeat Daily';
-      badge.style.cssText = 'margin-left:8px;font-size:0.85rem;color:#888;';
+      badge.textContent = repeatLabels[task.repeat] || task.repeat;
+      badge.style.cssText = 'margin-left:8px; font-size:0.8rem; color:#888;';
       li.appendChild(badge);
     }
 
@@ -2536,7 +2585,7 @@ function restoreTask(taskId, dateKey) {
   const [task] = list.splice(idx, 1);
 
   if (!taskLists[task.list]) taskLists[task.list] = [];
-  if (task.repeat === 'once') {
+  if (task.repeat === 'none') {
     task.completed = false;
   } else if (task.completions) {
     delete task.completions[dateKey];
@@ -2564,19 +2613,19 @@ function toggleTask(taskId, dateKey) {
   const task  = tasks.find(t => t.id == taskId);
   if (!task) return;
 
-  const wasCompleted = task.repeat === 'once'
+  const wasCompleted = task.repeat === 'none'
     ? task.completed
     : task.completions && task.completions[dateKey];
 
   // flip the flag
-  if (task.repeat === 'once') {
+  if (task.repeat === 'none') {
     task.completed = !task.completed;
   } else {
     task.completions = task.completions || {};
     task.completions[dateKey] = !task.completions[dateKey];
   }
 
-  const isCompleted = task.repeat === 'once'
+  const isCompleted = task.repeat === 'none'
     ? task.completed
     : task.completions[dateKey];
 
@@ -2591,8 +2640,8 @@ function toggleTask(taskId, dateKey) {
   }
 
   // if it's now completed, remove it immediately
-  if ((task.repeat === 'once' && task.completed) ||
-      (task.repeat === 'daily' && task.completions[dateKey])) {
+  if ((task.repeat === 'none' && task.completed) ||
+      (task.repeat !== 'none' && task.completions[dateKey])) {
     const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
     if (li) li.remove();
     saveUserData();
@@ -2640,6 +2689,7 @@ function editTaskReminder(task) {
       }
     };
   }
+  document.getElementById("taskRepeat").value = task.repeat || "none";
   const form = document.getElementById("taskReminderForm");
   form.style.display = "block";
   form.style.zIndex = "1002"; // ensure it appears above the journal
@@ -2648,9 +2698,10 @@ function closeTaskReminderForm() {
   document.getElementById("taskReminderForm").style.display = "none";
 }
 function saveTaskReminder() {
-  const id = document.getElementById("taskReminderId").value;
-  const date = document.getElementById("taskReminderDate").value;
-  const time = document.getElementById("taskReminderTime").value;
+  const id     = document.getElementById("taskReminderId").value;
+  const date   = document.getElementById("taskReminderDate").value;
+  const time   = document.getElementById("taskReminderTime").value;
+  const repeat = document.getElementById("taskRepeat").value;
   const severityVal = parseInt(document.getElementById("taskReminderSeverity").value, 10);
   const task = Object.values(taskLists).flat().find(t => t.id == id);
   if (!task) return;
@@ -2662,9 +2713,11 @@ function saveTaskReminder() {
     task.reminderTime = time;
   }
   if (!isNaN(severityVal)) task.severity = severityVal;
+  task.repeat = repeat;
   saveUserData();
   scheduleAllTaskReminders();
   closeTaskReminderForm();
+  alert("Task updated");
   renderTasks();
 }
 
