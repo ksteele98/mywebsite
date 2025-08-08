@@ -1339,6 +1339,35 @@ initFCM();
   window.migrateAndCleanCompletedTasks = migrateAndCleanCompletedTasks;
 
 
+  /*******************************************************
+   One-time clear of all incomplete tasks
+  *******************************************************/
+  async function oneTimeClearAllTasks() {
+      if (!userId) {
+          console.error("You must be logged in to clear tasks.");
+          alert("You must be logged in to clear tasks.");
+          return;
+      }
+
+      console.log("Clearing all incomplete tasks...");
+
+      // Remove all tasks from each list
+      for (const listName in taskLists) {
+          taskLists[listName] = [];
+      }
+
+      // Clear any existing reminder timers
+      Object.values(taskReminderTimeouts).forEach(clearTimeout);
+      taskReminderTimeouts = {};
+
+      await saveUserData();
+      renderTasks();
+
+      alert("All incomplete tasks have been cleared.");
+  }
+  window.oneTimeClearAllTasks = oneTimeClearAllTasks;
+
+
   /******************************************************* 6) Color Picker
   *******************************************************/
     const colors = [
