@@ -2228,21 +2228,24 @@ initFCM();
     const severity = parseInt(severitySelect.value, 10) || 0;
     const dateKey = document.getElementById('journalForm').dataset.date || formatLocalDate(new Date());
     if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
-    
-    const newTaskId = Date.now();
-    const newTask = {
-      text: text,
-      id: newTaskId,
-      repeat: "none",
-      startDate: dateKey,
-      completed: false,
-      completions: {},
-      subtasks: [],
-      collapsed: false,
-      severity
-    };
 
-    taskLists[currentTaskList].push(newTask);
+    const tasks = text.split(',').map(t => t.trim()).filter(t => t);
+    const baseId = Date.now();
+    tasks.forEach((t, idx) => {
+      const newTask = {
+        text: t,
+        id: baseId + idx,
+        repeat: "none",
+        startDate: dateKey,
+        completed: false,
+        completions: {},
+        subtasks: [],
+        collapsed: false,
+        severity
+      };
+      taskLists[currentTaskList].push(newTask);
+    });
+
     taskInput.value = "";
     severitySelect.value = '0';
     saveUserData();
