@@ -705,14 +705,12 @@
 </head>
 <body>
 
-<!-- A simple section to show/hide when not logged in -->
 <div id="authSection" style="display: none; text-align:center; margin-bottom: 20px;">
   <button onclick="loginWithGoogle()" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
     Sign in with Google
   </button>
 </div>
 
-<!-- Add logout button that shows when logged in -->
 <div id="logoutSection" style="display: none; text-align:right; margin-bottom: 20px;">
   <button onclick="openJournalMode()" id="journalModeBtn" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 10px;">
     Journal Mode
@@ -745,7 +743,6 @@
   </div>
 </div>
 
-<!-- Event Form -->
 <div class="event-form" id="eventForm">
   <h3>Add Event</h3>
   <input type="text" id="eventDescription" placeholder="Event Name" required>
@@ -822,7 +819,6 @@
   </div>
 </div>
 
-<!-- Journal Form -->
 <div class="journal-form" id="journalForm">
   <button class="goals-btn" onclick="goToGoalsPage()">Go To Goals</button>
   <button class="change-habit-btn" onclick="changeToHabit()">Change to Habit</button>
@@ -872,7 +868,6 @@
       <button onclick="switchTaskList('personal')" id="personalTasksBtn" class="active">Personal Tasks</button>
       <button onclick="switchTaskList('work')" id="workTasksBtn">Work Tasks</button>
     </div>
-    <!-- Repeat Daily checkbox removed -->
     <label style="display: block; margin: 8px 0; font-size: 14px;">
       Severity:
       <select id="taskSeverity" class="task-severity-select">
@@ -894,11 +889,9 @@
   <button onclick="closeJournalForm()">Cancel</button>
 </div>
 
-<!-- Prev / Next Journal Buttons -->
 <button id="prevDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(-1)">&lt;</button>
 <button id="nextDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(1)">&gt;</button>
 
-<!-- Habit Form -->
 <div class="habit-form" id="habitForm" style="display: none;" data-date="">
   <div id="habitDate" style="margin-bottom: 10px;"></div>
   <button class="change-habit-btn" onclick="changeToJournal()">Change to Journal</button>
@@ -920,7 +913,6 @@
   </div>
 </div>
 
-<!-- Goals Form -->
 <div class="goals-form" id="goalsForm" style="display: none; position: fixed; top: 50%; left: 50%;
 transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; 
 box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; z-index: 1000;">
@@ -942,7 +934,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 </div>
 
 
-<!-- Missed Reminders Popup -->
 <div id="missedRemindersPopup" class="reminder-popup" style="display:none;">
   <div class="popup-content">
     <h3>Missed Reminders</h3>
@@ -951,7 +942,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
-<!-- Reminder Popup -->
 <div id="reminderPopup" class="reminder-popup" style="display:none;">
   <div class="popup-content">
     <p id="reminderPopupMsg"></p>
@@ -959,7 +949,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
-<!-- Pending Reminders Popup -->
 <div id="pendingRemindersPopup" class="reminder-popup" style="display:none;">
   <div class="popup-content">
     <h3 id="pendingRemindersTitle">Pending Reminders</h3>
@@ -973,7 +962,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
-<!-- ====================== Firebase + App Script ====================== -->
 <script>
   // Create global function that will call the internal module function
   function logoutFromGoogle() {
@@ -1024,8 +1012,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
 
 
-  /********************** 
-    1) Firebase Imports
+  /********************** 1) Firebase Imports
   ***********************/
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-analytics.js";
@@ -1048,8 +1035,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-storage.js";
   // NEW: push-subscription flow -------------------------------
 
-  /********************** 
-    2) Firebase Config 
+  /********************** 2) Firebase Config 
        (from your snippet)
   ***********************/
   const firebaseConfig = {
@@ -1062,8 +1048,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     measurementId: "G-SSJEV8WQFT"
   };
 
-  /********************** 
-    3) Init Firebase
+  /********************** 3) Init Firebase
   ***********************/
   const app = initializeApp(firebaseConfig);
   const analytics = getAnalytics(app);
@@ -1225,8 +1210,7 @@ initFCM();
 
 
 
-  /******************************************************* 
-   4) In-Memory Data
+  /******************************************************* 4) In-Memory Data
   *******************************************************/
   let currentDate   = new Date();
   let events        = [];
@@ -1247,7 +1231,6 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let reminderTimeouts = {};
 let taskReminderTimeouts = {};
-let taskControlsInitialized = false;
 let showPastReminders = false;
 
   // ─── Simple desktop time picker using dropdowns ───
@@ -1321,8 +1304,7 @@ let showPastReminders = false;
     });
   }
 
-  /******************************************************* 
-   5) Firestore Load/Save 
+  /******************************************************* 5) Firestore Load/Save 
   *******************************************************/
   function hydrateDownloadURLs(map = {}, _type) { return map; }
   
@@ -1335,10 +1317,8 @@ let showPastReminders = false;
         const data = docSnap.data();
         events          = data.events          || [];
         journalEntries  = data.journalEntries  || {};
-        journalAudios   = await hydrateDownloadURLs(
-                    data.journalAudios || {}, 'audio');
-        journalImages   = await hydrateDownloadURLs(
-                    data.journalImages || {}, 'image');
+        journalAudios   = data.journalAudios || {}; // Load audio URLs
+        journalImages   = data.journalImages || {}; // Load image URLs
 
         taskLists       = data.taskLists       || { personal: [], work: [] };
         completedTasks  = data.completedTasks  || {};
@@ -1390,8 +1370,7 @@ let showPastReminders = false;
     }
   }
 
-  /******************************************************* 
-   6) Color Picker
+  /******************************************************* 6) Color Picker
   *******************************************************/
     const colors = [
     '#FF0000','#F76C6C','#FF6B6B','#D4A5A5',
@@ -1405,6 +1384,7 @@ let showPastReminders = false;
 
   // ─── converts "13:05" ➜ "1:05 PM" ───
 function formatTime(timeStr) {
+  if (!timeStr) return '';
   const [hStr, m] = timeStr.split(":");
   let h = parseInt(hStr, 10);
   const ampm = h >= 12 ? "PM" : "AM";
@@ -1440,8 +1420,7 @@ function initializeColorPicker(preSelected = selectedColor) {
   });
 }
 
-  /******************************************************* 
-   7) Calendar Navigation 
+  /******************************************************* 7) Calendar Navigation 
   *******************************************************/
   function previousMonth() {
     currentDate.setMonth(currentDate.getMonth() - 1);
@@ -1453,8 +1432,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     generateCalendar();
   }
 
-  /******************************************************* 
-   8) Calendar Generation
+  /******************************************************* 8) Calendar Generation
   *******************************************************/
   function generateCalendar() {
     const monthYear = document.querySelector('.current-month');
@@ -1536,8 +1514,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     return cell;
   }
 
-  /******************************************************* 
-   9) Open/Close Journal
+  /******************************************************* 9) Open/Close Journal
   *******************************************************/
   async function openJournal(date) {
     const journalForm = document.getElementById('journalForm');
@@ -1572,38 +1549,27 @@ function initializeColorPicker(preSelected = selectedColor) {
       journalForm.classList.remove('today');
     }
 
-    // Load audio from IndexedDB
-    getFromDB('audios', date).then(blob => {
-      if (blob) {
-        audioPlayer.src = URL.createObjectURL(blob);
+    // UPDATED: Load audio from the synced URL
+    if (journalAudios[date]) {
+        audioPlayer.src = journalAudios[date];
         audioPlayer.style.display = 'block';
         removeAudioBtn.style.display = 'block';
-      } else {
+    } else {
         audioPlayer.src = '';
         audioPlayer.style.display = 'none';
         removeAudioBtn.style.display = 'none';
-      }
-    });
+    }
 
-    // Show cloud-hosted image immediately if available
+    // Load image from synced URL
     if (journalImages[date]) {
       imagePreview.src = journalImages[date];
       imagePreview.style.display = 'block';
       removeImageBtn.style.display = 'block';
+    } else {
+      imagePreview.src = '';
+      imagePreview.style.display = 'none';
+      removeImageBtn.style.display = 'none';
     }
-
-    // Load image from IndexedDB
-    getFromDB('images', date).then(blob => {
-      if (blob) {
-        imagePreview.src = URL.createObjectURL(blob);
-        imagePreview.style.display = 'block';
-        removeImageBtn.style.display = 'block';
-      } else if (!journalImages[date]) {
-        imagePreview.src = '';
-        imagePreview.style.display = 'none';
-        removeImageBtn.style.display = 'none';
-      }
-    });
 
     document.getElementById('prevDayButton').style.display = 'block';
     document.getElementById('nextDayButton').style.display = 'block';
@@ -1613,8 +1579,8 @@ function initializeColorPicker(preSelected = selectedColor) {
       renderCompletedTasks();
     } else {
       renderTasks();
-    } // re-render tasks for this date
-    initializeTaskControls(); // Initialize task controls each time the journal is opened
+    }
+    initializeTaskControls();
   }
 
   function openJournalMode() {
@@ -1770,7 +1736,9 @@ function initializeColorPicker(preSelected = selectedColor) {
     audioPlayer.style.display = 'none';
     audioInput.value = '';
     pendingAudioFile = null;
-    deleteFromDB('audios', date);
+    delete journalAudios[date]; // Remove from our map
+    // We can also delete from Firebase storage here if desired
+    saveUserData(); // Save the change
     document.getElementById('removeAudioBtn').style.display = 'none';
     recordBtn.textContent = 'Start Recording';
   }
@@ -1785,11 +1753,10 @@ function initializeColorPicker(preSelected = selectedColor) {
     pendingImageFile = null;
     try {
       if (journalImages[date]) {
-        const imgPath = journalImages[date];            // full URL we saved earlier
-        const objRef = ref(storage, imgPath.replace(/^https?:\/\/[^/]+\/o\//, '').split('?')[0]);
+        const imgPath = journalImages[date];
+        const objRef = ref(storage, imgPath); // Firebase SDK can parse its own URLs
         await deleteObject(objRef);
       }
-
     } catch (err) {
       console.error('Error deleting image:', err);
     }
@@ -2141,71 +2108,57 @@ function initializeColorPicker(preSelected = selectedColor) {
 }
 
 
-  /******************************************************* 
-   11) Journal
+  /******************************************************* 11) Journal
   *******************************************************/
-async function saveJournal() {
-  const date = document.getElementById('journalForm').dataset.date;
-  const text = document.getElementById('journalText').value.trim();
+  async function saveJournal() {
+      const date = document.getElementById('journalForm').dataset.date;
+      const text = document.getElementById('journalText').value.trim();
 
-  if (!userId) {
-    alert("You must be signed in");
-    console.error("No userId, not signed in!");
-    return;
+      if (!userId) {
+          alert("You must be signed in to save.");
+          return;
+      }
+
+      try {
+          // --- Image Upload (existing logic is great) ---
+          if (pendingImageFile) {
+              const imgRef = ref(storage, `journalImages/${userId}/${date}/${pendingImageFile.name}`);
+              await uploadBytes(imgRef, pendingImageFile);
+              const url = await getDownloadURL(imgRef);
+              journalImages[date] = url;
+              console.log("Image uploaded for date:", date);
+          }
+
+          // --- NEW: Audio Upload to Firebase Storage ---
+          if (pendingAudioFile) {
+              const audioRef = ref(storage, `journalAudios/${userId}/${date}/${pendingAudioFile.name}`);
+              await uploadBytes(audioRef, pendingAudioFile);
+              const url = await getDownloadURL(audioRef);
+              journalAudios[date] = url; // Store in the journalAudios map
+              console.log("Audio uploaded for date:", date);
+          }
+
+          // Save text entry and other data
+          journalEntries[date] = text;
+
+          // Clear pending files after successful upload
+          pendingAudioFile = null;
+          pendingImageFile = null;
+
+          await saveUserData(); // This will now save the new audio/image URL maps
+          generateCalendar();
+          updateDailyEventsList(date);
+          closeJournalForm();
+          console.log('✅ Journal saved with media synced');
+
+      } catch (err) {
+          console.error("Error in saveJournal:", err);
+          alert("Error saving journal. Please try again. " + err.message);
+      }
   }
 
-  try {
-    // IMAGE Save to Firebase Storage
-    if (pendingImageFile) {
-      const imgRef = ref(storage, `journalImages/${userId}/${date}/${pendingImageFile.name}`);
 
-      // 1️⃣  push the bytes
-      await uploadBytes(imgRef, pendingImageFile);
-
-      // 2️⃣  grab a public (authenticated) download URL
-      const url = await getDownloadURL(imgRef);
-
-      // 3️⃣  remember it in our per-date map
-      journalImages[date] = url;
-
-      // 4️⃣  clear the local flag
-      pendingImageFile = null;
-
-      console.log("Image uploaded for date:", date);
-    }
-    // AUDIO Save to IndexedDB
-    if (pendingAudioFile) {
-      await saveToDB('audios', date, pendingAudioFile);
-      console.log("Audio saved locally for date:", date);
-    }
-    // TEXT Save (still in Firestore if you want)
-    journalEntries[date] = text;
-    await setDoc(
-      doc(db, 'users', userId),
-      { journalEntries },
-      { merge: true }
-    );
-    // Clear pending files
-    pendingAudioFile = null;
-    pendingImageFile = null;
-    await saveUserData();
-    generateCalendar();
-    updateDailyEventsList(date);
-    closeJournalForm();
-    console.log('✅ Journal saved');
-  } catch (err) {
-    console.error("Error in saveJournal:", err);
-    alert("Error saving journal: " + err.message);
-  }
-}
-
-// 🔁 Make sure your button is using the latest version
-window.saveJournal = saveJournal;
-
-
-
-  /******************************************************* 
-   12) Goals
+  /******************************************************* 12) Goals
   *******************************************************/
   function goToGoalsPage() {
     closeJournalForm();
@@ -2230,21 +2183,68 @@ window.saveJournal = saveJournal;
     document.getElementById('nextDayButton').style.display = 'block';
   }
 
-  /******************************************************* 
-   13) Task Lists
+  /******************************************************* 13) Task Lists
   *******************************************************/
+  // A simplified and more reliable way to attach task-related event listeners
+  function initializeTaskControls() {
+      console.log("Attaching task control listeners...");
+
+      // Use event delegation for the list-switching buttons for better performance
+      const taskToggleContainer = document.querySelector('.task-toggle');
+      if (taskToggleContainer) {
+          // Replace the node to clear any old listeners, just in case
+          const freshContainer = taskToggleContainer.cloneNode(true);
+          taskToggleContainer.parentNode.replaceChild(freshContainer, taskToggleContainer);
+
+          freshContainer.addEventListener('click', (e) => {
+              const button = e.target.closest('button');
+              if (button) {
+                  // Figure out which list the button corresponds to
+                  const onclickAttr = button.getAttribute('onclick');
+                  if (onclickAttr) {
+                      const listNameMatch = onclickAttr.match(/'([^']+)'/);
+                      if (listNameMatch && listNameMatch[1]) {
+                          switchTaskList(listNameMatch[1]);
+                      }
+                  }
+              }
+          });
+      }
+
+      // Direct event listeners for the main action buttons
+      document.getElementById('toggleCompletedBtn')?.addEventListener('click', toggleCompletedView);
+      document.querySelector('.new-list-btn[onclick="createNewList()"]')?.addEventListener('click', createNewList);
+      document.querySelector('.delete-list-btn')?.addEventListener('click', deleteCurrentList);
+      document.querySelector('.add-task-btn')?.addEventListener('click', addTask);
+
+      // Ensure the UI reflects the current state
+      updateActiveTaskListButton();
+      if (showingCompleted) {
+        renderCompletedTasks();
+      } else {
+        renderTasks();
+      }
+  }
+
+  function updateActiveTaskListButton() {
+    document.querySelectorAll('.task-toggle button').forEach(btn => {
+        const onclickAttr = btn.getAttribute('onclick');
+        if (onclickAttr) {
+            const listNameMatch = onclickAttr.match(/'([^']+)'/);
+            if (listNameMatch && listNameMatch[1]) {
+                if (listNameMatch[1] === currentTaskList) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
+        }
+    });
+  }
+
   function switchTaskList(type) {
     currentTaskList = type;
-    
-    // Update active button styling
-    document.querySelectorAll('.task-toggle button').forEach(btn => {
-      btn.classList.remove('active');
-    });
-    
-    const activeButton = document.querySelector(`.task-toggle button[onclick*="${type}"]`);
-    if (activeButton) {
-      activeButton.classList.add('active');
-    }
+    updateActiveTaskListButton(); // Update active button styling
     
     if (showingCompleted) {
       renderCompletedTasks();
@@ -2252,6 +2252,7 @@ window.saveJournal = saveJournal;
       renderTasks();
     }
   }
+
 
   function renderTaskListButtons() {
     const container = document.querySelector('.task-toggle');
@@ -2363,28 +2364,32 @@ function addTask() {
 
   // --- Helper to decide if a repeating task occurs on a given date ---
   function occursToday(task, dateKey) {
-    if (task.repeat === "none") return true;
+      // Add these checks at the beginning of the function
+      if (task.exceptions && task.exceptions[dateKey]) return false; // Don't show if it's an exception date
+      if (task.endDate && dateKey > task.endDate) return false;      // Don't show if it's past its end date
 
-    const d      = new Date(dateKey + "T00:00:00");
-    const start  = new Date(task.startDate + "T00:00:00");
-    const day    = d.getDay();        // 0-6  (Sun-Sat)
-    const diffW  = Math.floor((d - start) / 604_800_000); // weeks
+      if (task.repeat === "none") return true;
 
-    switch (task.repeat) {
-      case "daily":      return true;
-      case "weekdays":   return day >= 1 && day <= 5;
-      case "weekends":   return day === 0 || day === 6;
-      case "weekly":     return day === start.getDay();
-      case "biweekly":   return day === start.getDay() && diffW % 2 === 0;
-      case "monthly":    return d.getDate() === start.getDate();
-      case "quarterly":  return d.getDate() === start.getDate() &&
-                          (d.getMonth() - start.getMonth()) % 3 === 0;
-      case "semiannual": return d.getDate() === start.getDate() &&
-                          (d.getMonth() - start.getMonth()) % 6 === 0;
-      case "yearly":     return d.getDate() === start.getDate() &&
-                          d.getMonth() === start.getMonth();
-      default:            return true;
-    }
+      const d      = new Date(dateKey + "T00:00:00");
+      const start  = new Date(task.startDate + "T00:00:00");
+      const day    = d.getDay();        // 0-6  (Sun-Sat)
+      const diffW  = Math.floor((d - start) / 604_800_000); // weeks
+
+      switch (task.repeat) {
+        case "daily":      return true;
+        case "weekdays":   return day >= 1 && day <= 5;
+        case "weekends":   return day === 0 || day === 6;
+        case "weekly":     return day === start.getDay();
+        case "biweekly":   return day === start.getDay() && diffW % 2 === 0;
+        case "monthly":    return d.getDate() === start.getDate();
+        case "quarterly":  return d.getDate() === start.getDate() &&
+                            (d.getMonth() - start.getMonth()) % 3 === 0;
+        case "semiannual": return d.getDate() === start.getDate() &&
+                            (d.getMonth() - start.getMonth()) % 6 === 0;
+        case "yearly":     return d.getDate() === start.getDate() &&
+                            d.getMonth() === start.getMonth();
+        default:            return true;
+      }
   }
 
   function renderTasks() {
@@ -2610,7 +2615,6 @@ function toggleCompletedView() {
   }
 }
 
-// Use these internal functions for event handling
 function toggleTask(taskId, dateKey) {
   const tasks = taskLists[currentTaskList];
   const task  = tasks.find(t => t.id == taskId);
@@ -2655,23 +2659,46 @@ function toggleTask(taskId, dateKey) {
 
   saveUserData();
   if (showingCompleted) renderCompletedTasks();
-  else renderTasks();  // re-render the rest
-}
-
-function deleteTask(taskId) {
-  const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-  if (li) li.remove();
-  const idx = taskLists[currentTaskList].findIndex(t => t.id == taskId);
-  if (idx !== -1) {
-    const [task] = taskLists[currentTaskList].splice(idx, 1);
-    const dateKey = document.getElementById('journalForm').dataset.date || new Date().toISOString().split('T')[0];
-    if (!completedTasks[dateKey]) completedTasks[dateKey] = [];
-    completedTasks[dateKey].push({ ...task, list: currentTaskList, deleted: true });
-  }
-  saveUserData();
-  if (showingCompleted) renderCompletedTasks();
   else renderTasks();
 }
+
+  function deleteTask(taskId) {
+      const tasks = taskLists[currentTaskList];
+      const taskIndex = tasks.findIndex(t => t.id == taskId);
+      if (taskIndex === -1) return;
+
+      const task = tasks[taskIndex];
+      const dateKey = document.getElementById('journalForm').dataset.date;
+
+      // If it's a repeating task, ask the user what to do
+      if (task.repeat && task.repeat !== 'none') {
+          const choice = prompt("This is a repeating task. Do you want to delete:\n1. Only this occurrence\n2. This and all future occurrences\n\nEnter 1 or 2. (Cancel to abort)");
+
+          if (choice === '1') {
+              // Option 1: Add an exception for today
+              task.exceptions = task.exceptions || {};
+              task.exceptions[dateKey] = true; // Mark this date as skipped
+              console.log(`Task ${taskId} skipped for ${dateKey}`);
+
+          } else if (choice === '2') {
+              // Option 2: Set an end date for the task
+              const yesterday = new Date(dateKey);
+              yesterday.setDate(yesterday.getDate() - 1);
+              task.endDate = yesterday.toISOString().split('T')[0];
+              console.log(`Task ${taskId} will end after ${task.endDate}`);
+
+          } else {
+              return; // User cancelled
+          }
+
+      } else {
+          // Original behavior for non-repeating tasks
+          tasks.splice(taskIndex, 1);
+      }
+
+      saveUserData();
+      renderTasks(); // Re-render the list to reflect the change
+  }
 
 function editTaskReminder(task) {
   document.getElementById("taskReminderDate").value = task.reminderDate || "";
@@ -2722,104 +2749,6 @@ function saveTaskReminder() {
   closeTaskReminderForm();
   renderTasks();
 }
-
-  // Replace the initializeTaskControls function with this improved version
-  function initializeTaskControls() {
-    if (taskControlsInitialized) return;
-    taskControlsInitialized = true;
-    console.log("Initializing task controls...");
-    
-    // Setup task toggle buttons
-    document.querySelectorAll('.task-toggle button').forEach(button => {
-      // Clean up existing listeners
-      const newButton = button.cloneNode(true);
-      button.parentNode.replaceChild(newButton, button);
-      
-      // Determine which list this button is for
-      let listType;
-      if (newButton.id === 'personalTasksBtn') {
-        listType = 'personal';
-      } else if (newButton.id === 'workTasksBtn') {
-        listType = 'work';
-      } else {
-        listType = newButton.textContent.toLowerCase().replace(/\s+/g, '-');
-      }
-      
-      // Add new click handler
-      newButton.onclick = function() {
-        switchTaskList(listType);
-      };
-    });
-    
-    // Setup add task button
-    const addTaskBtn = document.querySelector('.add-task-btn');
-    if (addTaskBtn) {
-      const newAddTaskBtn = addTaskBtn.cloneNode(true);
-      addTaskBtn.parentNode.replaceChild(newAddTaskBtn, addTaskBtn);
-      newAddTaskBtn.onclick = addTask;
-    }
-    
-    // Setup new list and delete list buttons
-    const newListBtn = document.querySelector('.new-list-btn');
-    if (newListBtn) {
-      const newNewListBtn = newListBtn.cloneNode(true);
-      newListBtn.parentNode.replaceChild(newNewListBtn, newListBtn);
-      newNewListBtn.onclick = createNewList;
-    }
-    
-    const deleteListBtn = document.querySelector('.delete-list-btn');
-    if (deleteListBtn) {
-      const newDeleteListBtn = deleteListBtn.cloneNode(true);
-      deleteListBtn.parentNode.replaceChild(newDeleteListBtn, deleteListBtn);
-      newDeleteListBtn.onclick = deleteCurrentList;
-    }
-
-    const toggleBtn = document.getElementById('toggleCompletedBtn');
-    if (toggleBtn) {
-      const newToggleBtn = toggleBtn.cloneNode(true);
-      toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
-      newToggleBtn.onclick = toggleCompletedView;
-      newToggleBtn.textContent = showingCompleted ? 'Show Active' : 'Show Completed';
-    }
-    
-    // Make sure current list exists
-    if (!taskLists[currentTaskList]) {
-      currentTaskList = 'personal';
-    }
-    
-    // Update UI to show current list as active
-    document.querySelectorAll('.task-toggle button').forEach(btn => {
-      btn.classList.remove('active');
-      if ((btn.id === 'personalTasksBtn' && currentTaskList === 'personal') ||
-          (btn.id === 'workTasksBtn' && currentTaskList === 'work') ||
-          (btn.textContent.toLowerCase().replace(/\s+/g, '-') === currentTaskList)) {
-        btn.classList.add('active');
-      }
-    });
-    
-    // Render tasks for current list
-    if (showingCompleted) {
-      renderCompletedTasks();
-    } else {
-      renderTasks();
-    }
-    
-    console.log("Task controls initialized for list:", currentTaskList);
-  }
-
-  // Remove direct action functions (we don't need them anymore)
-  function initializeTaskFunctions() {
-    // Ensure our key task functions are available to the HTML
-    window.addTask = addTask;
-    window.toggleTask = toggleTask;
-    window.deleteTask = deleteTask;
-    window.switchTaskList = switchTaskList;
-    window.createNewList = createNewList;
-    window.deleteCurrentList = deleteCurrentList;
-    
-    // Initialize the controls
-    setTimeout(initializeTaskControls, 100);
-  }
 
   // Make functions available globally to be called from HTML
   window.loginWithGoogle = loginWithGoogle;
@@ -3068,9 +2997,6 @@ window.closeMissedRemindersPopup = closeMissedRemindersPopup;
 window.closeReminderPopup = closeReminderPopup;
 window.closePendingRemindersPopup = closePendingRemindersPopup;
 window.toggleReminderView = toggleReminderView;
-
-
-
 
 </script>
 
