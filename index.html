@@ -2615,52 +2615,60 @@ function toggleCompletedView() {
   }
 }
 
-function toggleTask(taskId, dateKey) {
-  const tasks = taskLists[currentTaskList];
-  const task  = tasks.find(t => t.id == taskId);
-  if (!task) return;
+  function toggleTask(taskId, dateKey) {
+      const tasks = taskLists[currentTaskList];
+      const taskIndex = tasks.findIndex(t => t.id == taskId); // Use findIndex to get the task's position
+      if (taskIndex === -1) return;
 
-  const wasCompleted = task.repeat === 'none'
-    ? task.completed
-    : task.completions && task.completions[dateKey];
+      const task = tasks[taskIndex];
 
-  // flip the flag
-  if (task.repeat === 'none') {
-    task.completed = !task.completed;
-  } else {
-    task.completions = task.completions || {};
-    task.completions[dateKey] = !task.completions[dateKey];
+      const wasCompleted = task.repeat === 'none' ?
+          task.completed :
+          task.completions && task.completions[dateKey];
+
+      // Flip the completion flag
+      if (task.repeat === 'none') {
+          task.completed = !task.completed;
+      } else {
+          task.completions = task.completions || {};
+          task.completions[dateKey] = !task.completions[dateKey];
+      }
+
+      const isCompleted = task.repeat === 'none' ?
+          task.completed :
+          task.completions[dateKey];
+
+      // If the task is now marked as complete...
+      if (isCompleted && !wasCompleted) {
+          // Add to the completed list for this day
+          if (!completedTasks[dateKey]) completedTasks[dateKey] = [];
+          if (!completedTasks[dateKey].some(t => t.id == taskId)) {
+              completedTasks[dateKey].push({ ...task, list: currentTaskList });
+          }
+          
+          // *** THE FIX: Explicitly REMOVE the task from the active list ***
+          tasks.splice(taskIndex, 1);
+
+      } else if (!isCompleted && wasCompleted) {
+          // This part handles un-checking a task from a completed view (restoreTask does this better)
+          // For now, we ensure it's not in the completed list for the day
+          if (completedTasks[dateKey]) {
+              completedTasks[dateKey] = completedTasks[dateKey].filter(t => t.id != taskId);
+          }
+      }
+
+      // Re-render the UI to show the change
+      const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (li) {
+          li.classList.add('fade-out');
+          setTimeout(() => li.remove(), 500); // Fade out and remove from UI
+      }
+
+      saveUserData(); // Save the updated lists to Firestore
+      
+      // We don't need to re-render the whole list here since we are just removing one item with an animation
   }
 
-  const isCompleted = task.repeat === 'none'
-    ? task.completed
-    : task.completions[dateKey];
-
-  if (isCompleted && !wasCompleted) {
-    if (!completedTasks[dateKey]) completedTasks[dateKey] = [];
-    if (!completedTasks[dateKey].some(t => t.id == taskId)) {
-      completedTasks[dateKey].push({ ...task, list: currentTaskList });
-    }
-  } else if (!isCompleted && wasCompleted) {
-    if (completedTasks[dateKey])
-      completedTasks[dateKey] = completedTasks[dateKey].filter(t => t.id != taskId);
-  }
-
-  // if it's now completed, remove it immediately
-  if ((task.repeat === 'none' && task.completed) ||
-      (task.repeat !== 'none' && task.completions[dateKey])) {
-    const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-    if (li) li.remove();
-    saveUserData();
-    if (showingCompleted) renderCompletedTasks();
-    else renderTasks();
-    return;
-  }
-
-  saveUserData();
-  if (showingCompleted) renderCompletedTasks();
-  else renderTasks();
-}
 
   function deleteTask(taskId) {
       const tasks = taskLists[currentTaskList];
