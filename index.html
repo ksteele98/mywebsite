@@ -415,6 +415,16 @@
       min-width: auto;
       flex: 0;
     }
+    .clear-tasks-btn {
+      background: #ffc107;
+      color: #212529;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      min-width: auto;
+      flex: 0;
+    }
     .tasks-header {
       display: flex;
       justify-content: space-between;
@@ -862,6 +872,7 @@
         <button id="toggleCompletedBtn" class="new-list-btn" onclick="toggleCompletedView()">Show Completed</button>
         <button class="new-list-btn" onclick="createNewList()">+ New List</button>
         <button class="delete-list-btn" onclick="deleteCurrentList()">Delete List</button>
+        <button class="clear-tasks-btn" onclick="clearAllTasks()">Clear All Tasks</button>
       </div>
     </div>
     <div class="task-toggle">
@@ -1339,15 +1350,17 @@ initFCM();
   window.migrateAndCleanCompletedTasks = migrateAndCleanCompletedTasks;
 
 
-  /*******************************************************
-   One-time clear of all incomplete tasks
+ /*******************************************************
+   Clear all incomplete tasks
   *******************************************************/
-  async function oneTimeClearAllTasks() {
+  async function clearAllTasks() {
       if (!userId) {
           console.error("You must be logged in to clear tasks.");
           alert("You must be logged in to clear tasks.");
           return;
       }
+
+      if (!confirm("Clear all incomplete tasks?")) return;
 
       console.log("Clearing all incomplete tasks...");
 
@@ -1365,7 +1378,7 @@ initFCM();
 
       alert("All incomplete tasks have been cleared.");
   }
-  window.oneTimeClearAllTasks = oneTimeClearAllTasks;
+  window.clearAllTasks = clearAllTasks;
 
 
   /******************************************************* 6) Color Picker
@@ -2142,6 +2155,7 @@ initFCM();
       document.getElementById('toggleCompletedBtn')?.addEventListener('click', toggleCompletedView);
       document.querySelector('.new-list-btn[onclick="createNewList()"]')?.addEventListener('click', createNewList);
       document.querySelector('.delete-list-btn')?.addEventListener('click', deleteCurrentList);
+      document.querySelector('.clear-tasks-btn')?.addEventListener('click', clearAllTasks);
       document.querySelector('.add-task-btn')?.addEventListener('click', addTask);
       updateActiveTaskListButton();
       renderTasks();
