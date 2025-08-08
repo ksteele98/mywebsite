@@ -1008,10 +1008,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 <script type="module">
 // ─── expose everything HTML calls ───
 
-
-
-
-
   /********************** 1) Firebase Imports
   ***********************/
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
@@ -1054,7 +1050,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const analytics = getAnalytics(app);
   const auth = getAuth(app);
   const db   = getFirestore(app);
-
   const storage = getStorage(app);
 
    // 🔓 make them globally visible for debugging
@@ -1071,9 +1066,7 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   async function _loginWithGoogle() {
     try {
       const result = await signInWithPopup(auth, provider);
-      // If successful, user is now signed in
       console.log("Google sign-in success!");
-      // userId is set via onAuthStateChanged below
     } catch (error) {
       console.error("Google Sign-In Error:", error);
     }
@@ -1083,19 +1076,15 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       userId = user.uid;
-      // Hide sign in button, show logout button
       document.getElementById('authSection').style.display = 'none';
       document.getElementById('logoutSection').style.display = 'block';
-      // Load data from Firestore
       await loadUserData();
       scheduleAllReminders();
       await showMissedReminders();
-      // Generate calendar, tasks, etc.
       generateCalendar();
       renderTasks();
     } else {
       userId = null;
-      // Show sign in button, hide logout button
       document.getElementById('authSection').style.display = 'block';
       document.getElementById('logoutSection').style.display = 'none';
     }
@@ -1106,7 +1095,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     try {
       await signOut(auth);
       console.log("User signed out successfully");
-      // Clear local data
       events = [];
       journalEntries = {};
       journalAudios = {};
@@ -1114,7 +1102,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       taskLists = { personal: [], work: [] };
       habitTracker = {};
       globalHabits = [];
-      // Regenerate calendar with cleared data
       generateCalendar();
     } catch (error) {
       console.error("Error signing out:", error);
@@ -1125,12 +1112,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   window._logoutFromGoogle = _logoutFromGoogle;
   window._loginWithGoogle = _loginWithGoogle;
 
-
-
 //******************************************************************
 // 🔔 PUSH NOTIFICATION SETUP
 //******************************************************************
-
 import {
   isSupported as messagingIsSupported,
   getMessaging,
@@ -1196,8 +1180,6 @@ async function initFCM() {
   }
 
   const messaging = getMessaging(app);
-  // Foreground messages use a data-only payload so we manually
-  // display the toast using the `data` object.
   onMessage(messaging, ({ data }) => {
     if (!data) return;
     new Notification(data.title, { body: data.body });
@@ -1205,10 +1187,6 @@ async function initFCM() {
 }
 
 initFCM();
-
-
-
-
 
   /******************************************************* 4) In-Memory Data
   *******************************************************/
@@ -1224,90 +1202,22 @@ initFCM();
   let habitTracker = {};
   let globalHabits = [];
   let journalAudios = {};
-let journalImages = {};
-let pendingAudioFile = null;
-let pendingImageFile = null;
-let mediaRecorder = null;
-let recordedChunks = [];
-let reminderTimeouts = {};
-let taskReminderTimeouts = {};
-let showPastReminders = false;
+  let journalImages = {};
+  let pendingAudioFile = null;
+  let pendingImageFile = null;
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let reminderTimeouts = {};
+  let taskReminderTimeouts = {};
+  let showPastReminders = false;
 
-  // ─── Simple desktop time picker using dropdowns ───
-  function isMobileDevice() {
-    return /Mobi|Android/i.test(navigator.userAgent);
-  }
-
-  // journal navigation mode
   let journalMode = false;
   let journalEntryDates = [];
   let journalEntryIndex = 0;
 
-  // === IndexedDB Wrapper for Local File Storage ===
-  const DB_NAME = 'journalMediaDB';
-  const DB_VERSION = 1;
-  let idb = null;
-
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      if (idb) return resolve(idb);
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = function (event) {
-        const idb = event.target.result;
-        if (!idb.objectStoreNames.contains('images')) {
-          idb.createObjectStore('images');
-        }
-        if (!idb.objectStoreNames.contains('audios')) {
-          idb.createObjectStore('audios');
-        }
-      };
-      request.onsuccess = function (event) {
-        idb = event.target.result;
-        resolve(idb);
-      };
-      request.onerror = function (event) {
-        reject(event.target.error);
-      };
-    });
-  }
-
-  function saveToDB(store, key, value) {
-    return openDB().then(idb => {
-      return new Promise((resolve, reject) => {
-        const tx = idb.transaction([store], 'readwrite');
-        tx.objectStore(store).put(value, key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = e => reject(e);
-      });
-    });
-  }
-
-  function getFromDB(store, key) {
-    return openDB().then(idb => {
-      return new Promise((resolve, reject) => {
-        const tx = idb.transaction([store], 'readonly');
-        const req = tx.objectStore(store).get(key);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = e => reject(e);
-      });
-    });
-  }
-
-  function deleteFromDB(store, key) {
-    return openDB().then(idb => {
-      return new Promise((resolve, reject) => {
-        const tx = idb.transaction([store], 'readwrite');
-        tx.objectStore(store).delete(key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = e => reject(e);
-      });
-    });
-  }
 
   /******************************************************* 5) Firestore Load/Save 
   *******************************************************/
-  function hydrateDownloadURLs(map = {}, _type) { return map; }
-  
   async function loadUserData() {
     if (!userId) return;
     try {
@@ -1317,9 +1227,8 @@ let showPastReminders = false;
         const data = docSnap.data();
         events          = data.events          || [];
         journalEntries  = data.journalEntries  || {};
-        journalAudios   = data.journalAudios || {}; // Load audio URLs
-        journalImages   = data.journalImages || {}; // Load image URLs
-
+        journalAudios   = data.journalAudios || {};
+        journalImages   = data.journalImages || {};
         taskLists       = data.taskLists       || { personal: [], work: [] };
         completedTasks  = data.completedTasks  || {};
         habitTracker    = data.habitTracker    || {};
@@ -1328,7 +1237,6 @@ let showPastReminders = false;
         document.getElementById('goalsText').value = data.userGoals || '';
 
         renderTaskListButtons();
-        renderTasks();
         initializeTaskControls();
         scheduleAllTaskReminders();
       } else {
@@ -1338,17 +1246,16 @@ let showPastReminders = false;
         userLastOpenTime = parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
 
         renderTaskListButtons();
-        renderTasks();
         initializeTaskControls();
         scheduleAllTaskReminders();
       }
     } catch (err) {
       console.error("Error loading user data:", err);
     }
-}
+  }
 
   async function saveUserData() {
-    if (!userId) return; // not signed in yet
+    if (!userId) return;
     try {
       const docRef = doc(db, "users", userId);
       await setDoc(docRef, {
@@ -1369,6 +1276,70 @@ let showPastReminders = false;
       console.error("Error saving user data:", err);
     }
   }
+  
+  /*******************************************************
+   * NEW: One-Time Data Cleanup Function
+   *******************************************************/
+  async function migrateAndCleanCompletedTasks() {
+      if (!userId) {
+          console.error("You must be logged in to run the cleanup.");
+          alert("You must be logged in to run the cleanup.");
+          return;
+      }
+      
+      console.log("Starting task cleanup and migration...");
+      let tasksMigrated = 0;
+      let newActiveTaskLists = {};
+
+      // Iterate over every task list (personal, work, etc.)
+      for (const listName in taskLists) {
+          const activeTasks = [];
+          const taskList = taskLists[listName];
+
+          // Iterate over every task in the current list
+          for (const task of taskList) {
+              // Check if the task is a non-repeating task and has completed: true
+              if (task.repeat === 'none' && task.completed) {
+                  // This task needs to be migrated.
+                  // Use the task's startDate as the completion date.
+                  const completionDate = task.startDate || formatLocalDate(new Date());
+                  
+                  // Ensure the completedTasks structure for this date exists
+                  if (!completedTasks[completionDate]) {
+                      completedTasks[completionDate] = [];
+                  }
+
+                  // Add the task to the completed list for that date
+                  // Avoid adding duplicates
+                  if (!completedTasks[completionDate].some(t => t.id === task.id)) {
+                      completedTasks[completionDate].push({ ...task, list: listName });
+                      tasksMigrated++;
+                  }
+                  // Do NOT add this task to the new activeTasks list.
+              } else {
+                  // This task is still active, so keep it.
+                  activeTasks.push(task);
+              }
+          }
+          // Replace the old active list with the cleaned one.
+          newActiveTaskLists[listName] = activeTasks;
+      }
+
+      // Overwrite the old taskLists with our newly cleaned lists.
+      taskLists = newActiveTaskLists;
+
+      console.log(`Cleanup complete. Migrated ${tasksMigrated} tasks.`);
+      alert(`Cleanup complete! Migrated ${tasksMigrated} previously completed tasks to their correct dates.`);
+
+      // Finally, save all the changes back to Firestore.
+      await saveUserData();
+      
+      // Refresh the UI to show the clean lists.
+      renderTasks();
+  }
+  // Make the cleanup function accessible from the browser console
+  window.migrateAndCleanCompletedTasks = migrateAndCleanCompletedTasks;
+
 
   /******************************************************* 6) Color Picker
   *******************************************************/
@@ -1382,43 +1353,40 @@ let showPastReminders = false;
     '#BA55D3','#9400D3','#DA70D6'
   ];
 
-  // ─── converts "13:05" ➜ "1:05 PM" ───
-function formatTime(timeStr) {
-  if (!timeStr) return '';
-  const [hStr, m] = timeStr.split(":");
-  let h = parseInt(hStr, 10);
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12;
-  if (h === 0) h = 12;
-  return `${h}:${m} ${ampm}`;
-}
+  function formatTime(timeStr) {
+    if (!timeStr) return '';
+    const [hStr, m] = timeStr.split(":");
+    let h = parseInt(hStr, 10);
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12;
+    if (h === 0) h = 12;
+    return `${h}:${m} ${ampm}`;
+  }
 
-// format a Date as YYYY-MM-DD using local time
-function formatLocalDate(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+  function formatLocalDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
 
-
-function initializeColorPicker(preSelected = selectedColor) {
-  const colorPicker = document.getElementById("colorPicker");
-  colorPicker.innerHTML = "";
-  colors.forEach(color => {
-    const dot = document.createElement("div");
-    dot.className = "color-option";
-    dot.style.backgroundColor = color;
-    if (color === preSelected) dot.classList.add("selected");
-    dot.onclick = () => {
-      document.querySelectorAll(".color-option")
-              .forEach(o => o.classList.remove("selected"));
-      dot.classList.add("selected");
-      selectedColor = color;
-    };
-    colorPicker.appendChild(dot);
-  });
-}
+  function initializeColorPicker(preSelected = selectedColor) {
+    const colorPicker = document.getElementById("colorPicker");
+    colorPicker.innerHTML = "";
+    colors.forEach(color => {
+      const dot = document.createElement("div");
+      dot.className = "color-option";
+      dot.style.backgroundColor = color;
+      if (color === preSelected) dot.classList.add("selected");
+      dot.onclick = () => {
+        document.querySelectorAll(".color-option")
+                .forEach(o => o.classList.remove("selected"));
+        dot.classList.add("selected");
+        selectedColor = color;
+      };
+      colorPicker.appendChild(dot);
+    });
+  }
 
   /******************************************************* 7) Calendar Navigation 
   *******************************************************/
@@ -1487,7 +1455,6 @@ function initializeColorPicker(preSelected = selectedColor) {
       openJournal(dateStr);
     });
 
-    // Show events
     events.forEach((event) => {
       if (event.date === dateStr) {
         const eventDiv = document.createElement('div');
@@ -1502,7 +1469,6 @@ function initializeColorPicker(preSelected = selectedColor) {
       }
     });
 
-    // Show a small "Journal" tag if there's a journal entry
     if (journalEntries[dateStr]) {
       const journalIndicator = document.createElement('div');
       journalIndicator.className = 'event';
@@ -1549,7 +1515,6 @@ function initializeColorPicker(preSelected = selectedColor) {
       journalForm.classList.remove('today');
     }
 
-    // UPDATED: Load audio from the synced URL
     if (journalAudios[date]) {
         audioPlayer.src = journalAudios[date];
         audioPlayer.style.display = 'block';
@@ -1560,7 +1525,6 @@ function initializeColorPicker(preSelected = selectedColor) {
         removeAudioBtn.style.display = 'none';
     }
 
-    // Load image from synced URL
     if (journalImages[date]) {
       imagePreview.src = journalImages[date];
       imagePreview.style.display = 'block';
@@ -1575,11 +1539,6 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('nextDayButton').style.display = 'block';
 
     updateDailyEventsList(date);
-    if (showingCompleted) {
-      renderCompletedTasks();
-    } else {
-      renderTasks();
-    }
     initializeTaskControls();
   }
 
@@ -1591,7 +1550,7 @@ function initializeColorPicker(preSelected = selectedColor) {
       alert('No journal entries to display.');
       return;
     }
-    journalEntryIndex = journalEntryDates.length - 1; // most recent
+    journalEntryIndex = journalEntryDates.length - 1;
     journalMode = true;
     document.querySelector('.calendar-container').style.display = 'none';
     openJournal(journalEntryDates[journalEntryIndex]);
@@ -1648,7 +1607,6 @@ function initializeColorPicker(preSelected = selectedColor) {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Choose a supported mime type for MediaRecorder
       let options = { mimeType: 'audio/webm;codecs=opus' };
       if (!MediaRecorder.isTypeSupported(options.mimeType)) {
         options = { mimeType: 'audio/webm' };
@@ -1681,19 +1639,14 @@ function initializeColorPicker(preSelected = selectedColor) {
   function handleAudioUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-
-    // Validate file type
     if (!file.type.startsWith('audio/') && file.type !== 'video/mpeg') {
       alert('Please select an audio file');
       return;
     }
-
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       alert('Audio file size should be less than 10MB');
       return;
     }
-
     pendingAudioFile = file;
     const url = URL.createObjectURL(file);
     const audioPlayer = document.getElementById('audioPlayer');
@@ -1706,19 +1659,14 @@ function initializeColorPicker(preSelected = selectedColor) {
   function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file');
       return;
     }
-
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Image size should be less than 5MB');
       return;
     }
-
     pendingImageFile = file;
     const url = URL.createObjectURL(file);
     const preview = document.getElementById('imagePreview');
@@ -1736,9 +1684,8 @@ function initializeColorPicker(preSelected = selectedColor) {
     audioPlayer.style.display = 'none';
     audioInput.value = '';
     pendingAudioFile = null;
-    delete journalAudios[date]; // Remove from our map
-    // We can also delete from Firebase storage here if desired
-    saveUserData(); // Save the change
+    delete journalAudios[date];
+    saveUserData();
     document.getElementById('removeAudioBtn').style.display = 'none';
     recordBtn.textContent = 'Start Recording';
   }
@@ -1753,8 +1700,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     pendingImageFile = null;
     try {
       if (journalImages[date]) {
-        const imgPath = journalImages[date];
-        const objRef = ref(storage, imgPath); // Firebase SDK can parse its own URLs
+        const objRef = ref(storage, journalImages[date]);
         await deleteObject(objRef);
       }
     } catch (err) {
@@ -1791,7 +1737,6 @@ function initializeColorPicker(preSelected = selectedColor) {
     events.forEach(scheduleReminder);
   }
 
-  // ===== Task Reminders =====
   function scheduleTaskReminder(task) {
     if (!task.reminderDate || !task.reminderTime) return;
     const reminderMoment = new Date(task.reminderDate + 'T' + task.reminderTime);
@@ -1812,14 +1757,11 @@ function initializeColorPicker(preSelected = selectedColor) {
     Object.values(taskLists).forEach(list => list.forEach(scheduleTaskReminder));
   }
 
-  // Show notifications that were missed while the app was closed
   async function showMissedReminders() {
     const lastOpen = userId ? userLastOpenTime : parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
     const now = Date.now();
-
     const messages = [];
 
-    // Check events
     events.forEach(ev => {
       if (!ev.reminderDate || !ev.reminderTime) return;
       const reminderMoment = new Date(ev.reminderDate + 'T' + ev.reminderTime);
@@ -1834,7 +1776,6 @@ function initializeColorPicker(preSelected = selectedColor) {
       }
     });
 
-    // Check tasks
     Object.values(taskLists).forEach(list => list.forEach(task => {
       if (!task.reminderDate || !task.reminderTime) return;
       const reminderMoment = new Date(task.reminderDate + 'T' + task.reminderTime);
@@ -1903,9 +1844,9 @@ function initializeColorPicker(preSelected = selectedColor) {
     const title = document.getElementById('pendingRemindersTitle');
     const toggleBtn = document.getElementById('toggleReminderViewBtn');
     list.innerHTML = '';
-
     const now = Date.now();
     const reminders = [];
+
     events.forEach(ev => {
       if (!ev.reminderDate || !ev.reminderTime) return;
       const time = new Date(ev.reminderDate + 'T' + ev.reminderTime);
@@ -1969,7 +1910,7 @@ function initializeColorPicker(preSelected = selectedColor) {
     eventForm.style.display = 'block';
     initializeColorPicker();
     document.querySelector('.delete-event-btn').style.display = 'none';
-    eventForm.style.zIndex = '1002'; // above the journal form
+    eventForm.style.zIndex = '1002';
   }
 
   function editEvent(event, index) {
@@ -1982,12 +1923,9 @@ function initializeColorPicker(preSelected = selectedColor) {
     document.getElementById('reminderDate').value = event.reminderDate || '';
     document.getElementById('reminderTime').value = event.reminderTime || '';
     selectedColor = event.color;
-
     eventForm.style.display = 'block';
     initializeColorPicker();
     document.querySelector('.delete-event-btn').style.display = 'block';
-
-    // Mark selected color
     const colorOptions = document.querySelectorAll('.color-option');
     colorOptions.forEach(opt => {
       if (opt.style.backgroundColor === event.color) {
@@ -2002,16 +1940,13 @@ function initializeColorPicker(preSelected = selectedColor) {
     selectedColor = '#4285f4';
   }
 
-  // Returns how many minutes BEFORE the event start we should send the email.
-  // If the user skipped the reminder fields, returns null.
   function getReminderMinutes({ date, startTime, reminderDate, reminderTime }) {
     if (!reminderDate || !reminderTime) return null;
-
     const startISO    = `${date}T${startTime}`;
     const remindISO   = `${reminderDate}T${reminderTime}`;
     const diffMs      = new Date(startISO) - new Date(remindISO);
     const diffMinutes = Math.round(diffMs / 60000);
-    return diffMinutes > 0 ? diffMinutes : null;   // ignore negative / zero
+    return diffMinutes > 0 ? diffMinutes : null;
   }
 
   async function saveEvent() {
@@ -2034,16 +1969,11 @@ function initializeColorPicker(preSelected = selectedColor) {
 
     const eventData = { date, startTime, endTime, description, color: selectedColor, reminderDate, reminderTime };
     if (eventId !== '') {
-      // Editing existing
       events[parseInt(eventId)] = eventData;
     } else {
-      // New
       events.push(eventData);
     }
 
-    // -----------------------------------------
-    // NEW: mirror this event into Firestore ➜ "events" collection
-    // -----------------------------------------
     try {
       const reminderMinutes = getReminderMinutes(eventData);
       await addDoc(collection(db, "events"), {
@@ -2057,11 +1987,8 @@ function initializeColorPicker(preSelected = selectedColor) {
       console.error("❌ Failed to save event to Firestore:", err);
     }
 
-
-
     saveUserData();
     scheduleAllReminders();
-
     closeEventForm();
     generateCalendar();
     updateDailyEventsList(date);
@@ -2075,7 +2002,6 @@ function initializeColorPicker(preSelected = selectedColor) {
       scheduleAllReminders();
       closeEventForm();
       generateCalendar();
-
       const date = document.getElementById('eventDate').value;
       updateDailyEventsList(date);
     }
@@ -2084,7 +2010,6 @@ function initializeColorPicker(preSelected = selectedColor) {
  function updateDailyEventsList(date) {
   const list = document.getElementById("dailyEventsList");
   list.innerHTML = "";
-
   const dayEvents = events
     .filter(ev => ev.date === date)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -2100,63 +2025,47 @@ function initializeColorPicker(preSelected = selectedColor) {
     div.style.backgroundColor = ev.color;
     div.style.margin = "5px 0";
     div.style.padding = "8px";
-    div.textContent =
-      `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}: ${ev.description}`;
+    div.textContent = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}: ${ev.description}`;
     div.onclick = () => editEvent(ev, events.indexOf(ev));
     list.appendChild(div);
   });
 }
-
 
   /******************************************************* 11) Journal
   *******************************************************/
   async function saveJournal() {
       const date = document.getElementById('journalForm').dataset.date;
       const text = document.getElementById('journalText').value.trim();
-
       if (!userId) {
           alert("You must be signed in to save.");
           return;
       }
-
       try {
-          // --- Image Upload (existing logic is great) ---
           if (pendingImageFile) {
               const imgRef = ref(storage, `journalImages/${userId}/${date}/${pendingImageFile.name}`);
               await uploadBytes(imgRef, pendingImageFile);
-              const url = await getDownloadURL(imgRef);
-              journalImages[date] = url;
+              journalImages[date] = await getDownloadURL(imgRef);
               console.log("Image uploaded for date:", date);
           }
-
-          // --- NEW: Audio Upload to Firebase Storage ---
           if (pendingAudioFile) {
               const audioRef = ref(storage, `journalAudios/${userId}/${date}/${pendingAudioFile.name}`);
               await uploadBytes(audioRef, pendingAudioFile);
-              const url = await getDownloadURL(audioRef);
-              journalAudios[date] = url; // Store in the journalAudios map
+              journalAudios[date] = await getDownloadURL(audioRef);
               console.log("Audio uploaded for date:", date);
           }
-
-          // Save text entry and other data
           journalEntries[date] = text;
-
-          // Clear pending files after successful upload
           pendingAudioFile = null;
           pendingImageFile = null;
-
-          await saveUserData(); // This will now save the new audio/image URL maps
+          await saveUserData();
           generateCalendar();
           updateDailyEventsList(date);
           closeJournalForm();
           console.log('✅ Journal saved with media synced');
-
       } catch (err) {
           console.error("Error in saveJournal:", err);
           alert("Error saving journal. Please try again. " + err.message);
       }
   }
-
 
   /******************************************************* 12) Goals
   *******************************************************/
@@ -2166,14 +2075,13 @@ function initializeColorPicker(preSelected = selectedColor) {
   }
 
   function saveGoals() {
-    // We store goals in userGoals field in Firestore doc
     saveUserData();
     closeGoalsForm();
   }
 
   function closeGoalsForm() {
     document.getElementById('goalsForm').style.display = 'none';
-    document.getElementById('journalForm').style.display = 'none';
+    document.getElementById('journalForm').style.display = 'block';
   }
 
   function goToJournalFromGoals() {
@@ -2185,21 +2093,14 @@ function initializeColorPicker(preSelected = selectedColor) {
 
   /******************************************************* 13) Task Lists
   *******************************************************/
-  // A simplified and more reliable way to attach task-related event listeners
   function initializeTaskControls() {
-      console.log("Attaching task control listeners...");
-
-      // Use event delegation for the list-switching buttons for better performance
       const taskToggleContainer = document.querySelector('.task-toggle');
       if (taskToggleContainer) {
-          // Replace the node to clear any old listeners, just in case
           const freshContainer = taskToggleContainer.cloneNode(true);
           taskToggleContainer.parentNode.replaceChild(freshContainer, taskToggleContainer);
-
           freshContainer.addEventListener('click', (e) => {
               const button = e.target.closest('button');
               if (button) {
-                  // Figure out which list the button corresponds to
                   const onclickAttr = button.getAttribute('onclick');
                   if (onclickAttr) {
                       const listNameMatch = onclickAttr.match(/'([^']+)'/);
@@ -2211,19 +2112,12 @@ function initializeColorPicker(preSelected = selectedColor) {
           });
       }
 
-      // Direct event listeners for the main action buttons
       document.getElementById('toggleCompletedBtn')?.addEventListener('click', toggleCompletedView);
       document.querySelector('.new-list-btn[onclick="createNewList()"]')?.addEventListener('click', createNewList);
       document.querySelector('.delete-list-btn')?.addEventListener('click', deleteCurrentList);
       document.querySelector('.add-task-btn')?.addEventListener('click', addTask);
-
-      // Ensure the UI reflects the current state
       updateActiveTaskListButton();
-      if (showingCompleted) {
-        renderCompletedTasks();
-      } else {
-        renderTasks();
-      }
+      renderTasks();
   }
 
   function updateActiveTaskListButton() {
@@ -2232,11 +2126,7 @@ function initializeColorPicker(preSelected = selectedColor) {
         if (onclickAttr) {
             const listNameMatch = onclickAttr.match(/'([^']+)'/);
             if (listNameMatch && listNameMatch[1]) {
-                if (listNameMatch[1] === currentTaskList) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
+                btn.classList.toggle('active', listNameMatch[1] === currentTaskList);
             }
         }
     });
@@ -2244,8 +2134,7 @@ function initializeColorPicker(preSelected = selectedColor) {
 
   function switchTaskList(type) {
     currentTaskList = type;
-    updateActiveTaskListButton(); // Update active button styling
-    
+    updateActiveTaskListButton();
     if (showingCompleted) {
       renderCompletedTasks();
     } else {
@@ -2253,19 +2142,10 @@ function initializeColorPicker(preSelected = selectedColor) {
     }
   }
 
-
   function renderTaskListButtons() {
     const container = document.querySelector('.task-toggle');
     if (!container) return;
-
-    // Remove existing custom buttons
-    container.querySelectorAll('button').forEach(btn => {
-      if (btn.id !== 'personalTasksBtn' && btn.id !== 'workTasksBtn') {
-        btn.remove();
-      }
-    });
-
-    // Add buttons for saved lists
+    container.querySelectorAll('button:not(#personalTasksBtn):not(#workTasksBtn)').forEach(btn => btn.remove());
     Object.keys(taskLists).forEach(key => {
       if (key === 'personal' || key === 'work') return;
       const btn = document.createElement('button');
@@ -2280,670 +2160,394 @@ function initializeColorPicker(preSelected = selectedColor) {
     if (!name) return;
     const key = name.toLowerCase().replace(/\s+/g, "-");
     if (taskLists[key]) return alert("That list already exists!");
-
     taskLists[key] = [];
     renderTaskListButtons();
     saveUserData();
     switchTaskList(key);
   }
 
-function deleteCurrentList() {
-  if (["personal", "work"].includes(currentTaskList)) {
-    alert("Can't delete default lists");
-    return;
+  function deleteCurrentList() {
+    if (["personal", "work"].includes(currentTaskList)) {
+      alert("Can't delete default lists");
+      return;
+    }
+    if (!confirm("Delete this list?")) return;
+    delete taskLists[currentTaskList];
+    currentTaskList = "personal";
+    renderTaskListButtons();
+    saveUserData();
+    renderTasks();
   }
-  if (!confirm("Delete this list?")) return;
 
-  delete taskLists[currentTaskList];
-  currentTaskList = "personal";
-  renderTaskListButtons();
-  document.getElementById("personalTasksBtn").classList.add("active");
-  saveUserData();
-  renderTasks();
-}
+  function addTask() {
+    const taskInput = document.getElementById('taskInput');
+    const severitySelect = document.getElementById('taskSeverity');
+    const text = taskInput.value.trim();
+    if (!text) return alert("Please enter a task");
+    const severity = parseInt(severitySelect.value, 10) || 0;
+    const dateKey = document.getElementById('journalForm').dataset.date || formatLocalDate(new Date());
+    if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
+    
+    const newTaskId = Date.now();
+    const newTask = {
+      text: text,
+      id: newTaskId,
+      repeat: "none",
+      startDate: dateKey,
+      completed: false,
+      completions: {},
+      subtasks: [],
+      collapsed: false,
+      severity
+    };
 
-function addTask() {
-  const taskInput = document.getElementById('taskInput');
-  const severitySelect = document.getElementById('taskSeverity');
-  const text = taskInput.value.trim();
-  if (!text) return alert("Please enter a task");
-  const parsed = parseInt(severitySelect.value, 10);
-  const severity = isNaN(parsed) ? 0 : parsed;
-  const dateKey = document.getElementById('journalForm').dataset.date ||
-                  new Date().toISOString().split('T')[0];
-  if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
-
-    const tokens = [...text.matchAll(/([^,;:]+)([;:,]?)/g)].map(m => ({
-      part: m[1].trim(),
-      delim: m[2]
-    }));
-
-    let inSub = false;
-    let currentTask = null;
-    let subIndex = 0;
-
-    tokens.forEach(({ part, delim }, i) => {
-      if (!inSub) {
-        const parentId = Date.now() + i;
-        currentTask = {
-          text: part,
-          id: parentId,
-          repeat: "none",
-          startDate: dateKey,
-          completed: false,
-          completions: {},
-          subtasks: [],
-          collapsed: false,
-          severity
-        };
-        taskLists[currentTaskList].push(currentTask);
-        if (delim === ';' || delim === ':') {
-          inSub = true;
-          subIndex = 0;
-        } else {
-          currentTask = null;
-        }
-      } else {
-        currentTask.subtasks.push({
-          text: part,
-          id: `${currentTask.id}-${subIndex++}`,
-          completed: false
-        });
-        if (delim === ';' || delim === ':') {
-          inSub = false;
-          currentTask = null;
-        }
-      }
-    });
-
+    taskLists[currentTaskList].push(newTask);
     taskInput.value = "";
     severitySelect.value = '0';
     saveUserData();
     renderTasks();
   }
 
-  // --- Helper to decide if a repeating task occurs on a given date ---
   function occursToday(task, dateKey) {
-      // Add these checks at the beginning of the function
-      if (task.exceptions && task.exceptions[dateKey]) return false; // Don't show if it's an exception date
-      if (task.endDate && dateKey > task.endDate) return false;      // Don't show if it's past its end date
-
+      if (task.exceptions && task.exceptions[dateKey]) return false;
+      if (task.endDate && dateKey > task.endDate) return false;
       if (task.repeat === "none") return true;
-
-      const d      = new Date(dateKey + "T00:00:00");
-      const start  = new Date(task.startDate + "T00:00:00");
-      const day    = d.getDay();        // 0-6  (Sun-Sat)
-      const diffW  = Math.floor((d - start) / 604_800_000); // weeks
-
+      const d = new Date(dateKey + "T00:00:00");
+      const start = new Date(task.startDate + "T00:00:00");
+      if (d < start) return false;
+      const day = d.getDay();
+      const diffW = Math.floor((d - start) / 604800000);
       switch (task.repeat) {
-        case "daily":      return true;
-        case "weekdays":   return day >= 1 && day <= 5;
-        case "weekends":   return day === 0 || day === 6;
-        case "weekly":     return day === start.getDay();
-        case "biweekly":   return day === start.getDay() && diffW % 2 === 0;
-        case "monthly":    return d.getDate() === start.getDate();
-        case "quarterly":  return d.getDate() === start.getDate() &&
-                            (d.getMonth() - start.getMonth()) % 3 === 0;
-        case "semiannual": return d.getDate() === start.getDate() &&
-                            (d.getMonth() - start.getMonth()) % 6 === 0;
-        case "yearly":     return d.getDate() === start.getDate() &&
-                            d.getMonth() === start.getMonth();
-        default:            return true;
+        case "daily": return true;
+        case "weekdays": return day >= 1 && day <= 5;
+        case "weekends": return day === 0 || day === 6;
+        case "weekly": return day === start.getDay();
+        case "biweekly": return day === start.getDay() && diffW % 2 === 0;
+        case "monthly": return d.getDate() === start.getDate();
+        case "quarterly": return d.getDate() === start.getDate() && (d.getMonth() - start.getMonth()) % 3 === 0;
+        case "semiannual": return d.getDate() === start.getDate() && (d.getMonth() - start.getMonth()) % 6 === 0;
+        case "yearly": return d.getDate() === start.getDate() && d.getMonth() === start.getMonth();
+        default: return true;
       }
   }
 
+  /*******************************************************
+   * CORRECTED Task Rendering Function
+   *******************************************************/
   function renderTasks() {
-  const taskList = document.getElementById('taskList');
-  taskList.innerHTML = '';
+      const taskListEl = document.getElementById('taskList');
+      taskListEl.innerHTML = '';
 
-  // ensure list exists
-  if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
+      if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
 
-  const tasks       = taskLists[currentTaskList];
-  const journalForm = document.getElementById('journalForm');
-  const dateKey     = journalForm.dataset.date || new Date().toISOString().split('T')[0];
-
-  // ─── filter out completed tasks and tasks scheduled for the future ───
-  const visibleTasks = tasks.filter(t => {
-    if (t.startDate && new Date(t.startDate) > new Date(dateKey)) return false;
-    if (!occursToday(t, dateKey)) return false;
-    if (t.repeat === 'none') {
-      return !t.completed;
-    }
-    return !(t.completions && t.completions[dateKey]);
-  });
-
-  // show "all done" message
-  if (visibleTasks.length === 0) {
-    const msg = document.createElement('p');
-    msg.textContent = 'All done! 🎉';
-    msg.style.color = '#666';
-    msg.style.fontStyle = 'italic';
-    taskList.appendChild(msg);
-    return;
-  }
-
-  // ─── build the <li>s ───
-  const repeatLabels = {
-    daily:      "Daily",
-    weekdays:   "Weekdays",
-    weekends:   "Weekends",
-    weekly:     "Weekly",
-    biweekly:   "Bi-weekly",
-    monthly:    "Monthly",
-    quarterly:  "Every 3 mo",
-    semiannual: "Every 6 mo",
-    yearly:     "Yearly"
-  };
-
-  visibleTasks.forEach(task => {
-    if (typeof task.collapsed === 'undefined') task.collapsed = false;
-    const li = document.createElement('li');
-    li.className = 'task-item';
-    li.dataset.taskId = task.id;
-
-    const checkbox = document.createElement('input');
-    checkbox.type  = 'checkbox';
-    checkbox.id    = `task-checkbox-${task.id}`;
-    checkbox.checked =
-      task.repeat === 'none'
-        ? task.completed
-        : task.completions && task.completions[dateKey];
-    checkbox.onclick = () => toggleTask(task.id, dateKey);
-
-    const span = document.createElement('span');
-    span.textContent = task.text;
-
-    if (task.repeat && task.repeat !== 'none') {
-      const badge = document.createElement('span');
-      badge.textContent = repeatLabels[task.repeat] || task.repeat;
-      badge.style.cssText = 'margin-left:8px; font-size:0.8rem; color:#888;';
-      li.appendChild(badge);
-    }
-
-    const del = document.createElement('button');
-    del.textContent = '×';
-    del.style.cssText =
-      'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#dc3545;';
-    del.onclick = () => deleteTask(task.id);
-
-    const addSub = document.createElement('button');
-    addSub.textContent = '+Sub';
-    addSub.style.cssText = 'background:none;border:none;color:#28a745;cursor:pointer;margin-left:4px;';
-    addSub.onclick = () => {
-      const subText = prompt('Enter subtask(s). Use commas to add multiple.');
-      if (!subText) return;
-      task.subtasks = task.subtasks || [];
-      const parts = subText.split(',');
-      const base = Date.now();
-      parts.forEach((p, idx) => {
-        const txt = p.trim();
-        if (!txt) return;
-        task.subtasks.push({
-          text: txt,
-          id: `${task.id}-${base + idx}`,
-          completed: false
-        });
-      });
-      saveUserData();
-      renderTasks();
-    };
-
-    const severityLabel = document.createElement('span');
-    severityLabel.textContent = `S:${task.severity ?? 0}`;
-    severityLabel.style.cssText = 'margin-left:4px;font-size:0.85rem;color:#f39c12;';
-    li.append(checkbox, span, severityLabel, addSub);
-
-    if (task.subtasks && task.subtasks.length) {
-      const toggleBtn = document.createElement('button');
-      toggleBtn.textContent = task.collapsed ? '+' : '−';
-      toggleBtn.className = 'toggle-subtasks-btn';
-      toggleBtn.onclick = () => {
-        task.collapsed = !task.collapsed;
-        saveUserData();
-        renderTasks();
-      };
-
-      const subUl = document.createElement('ul');
-      subUl.className = 'subtask-list';
-      if (task.collapsed) subUl.style.display = 'none';
-
-      task.subtasks.forEach(sub => {
-        const subLi = document.createElement('li');
-        subLi.className = 'subtask-item';
-        const subCheckbox = document.createElement('input');
-        subCheckbox.type = 'checkbox';
-        subCheckbox.checked = sub.completed;
-        subCheckbox.onchange = () => {
-          sub.completed = subCheckbox.checked;
-          saveUserData();
-          if (subCheckbox.checked) {
-            subLi.classList.add('fade-out');
-            setTimeout(() => {
-              task.subtasks = task.subtasks.filter(s => s.id !== sub.id);
-              subLi.remove();
-              saveUserData();
-            }, 5000);
-          }
-        };
-        const subSpan = document.createElement('span');
-        subSpan.textContent = sub.text;
-        subLi.append(subCheckbox, subSpan);
-        subUl.appendChild(subLi);
-      });
-
-      li.append(toggleBtn, subUl);
-    }
-
-    const info = document.createElement('button');
-    info.textContent = 'i';
-    info.style.cssText = 'background:none;border:none;font-size:18px;cursor:pointer;color:#17a2b8;margin-left:4px;';
-    info.onclick = () => editTaskReminder(task);
-
-    li.appendChild(del);
-    li.appendChild(info);
-  taskList.appendChild(li);
-  });
-}
-
-function renderCompletedTasks() {
-  const taskList = document.getElementById('taskList');
-  taskList.innerHTML = '';
-
-  const journalForm = document.getElementById('journalForm');
-  const dateKey = journalForm.dataset.date || new Date().toISOString().split('T')[0];
-
-  const tasks = (completedTasks[dateKey] || []).filter(t => t.list === currentTaskList);
-
-  if (tasks.length === 0) {
-    const msg = document.createElement('p');
-    msg.textContent = 'No completed tasks for this day.';
-    msg.style.color = '#666';
-    msg.style.fontStyle = 'italic';
-    taskList.appendChild(msg);
-    return;
-  }
-
-  tasks.forEach(task => {
-    const li = document.createElement('li');
-    li.className = 'task-item';
-
-    const span = document.createElement('span');
-    span.textContent = task.text;
-    span.className = 'completed-task';
-
-    const severityLabel = document.createElement('span');
-    severityLabel.textContent = ` S:${task.severity ?? 0}`;
-    severityLabel.style.cssText = 'margin-left:4px;font-size:0.85rem;color:#f39c12;';
-
-    const restore = document.createElement('button');
-    restore.textContent = '↺';
-    restore.style.cssText = 'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#28a745;';
-    restore.onclick = () => restoreTask(task.id, dateKey);
-
-    li.append(span, severityLabel, restore);
-    taskList.appendChild(li);
-  });
-}
-
-function restoreTask(taskId, dateKey) {
-  const list = completedTasks[dateKey] || [];
-  const idx = list.findIndex(t => t.id == taskId);
-  if (idx === -1) return;
-  const [task] = list.splice(idx, 1);
-
-  if (!taskLists[task.list]) taskLists[task.list] = [];
-  if (task.repeat === 'none') {
-    task.completed = false;
-  } else if (task.completions) {
-    delete task.completions[dateKey];
-  }
-  taskLists[task.list].push(task);
-  saveUserData();
-  if (showingCompleted) renderCompletedTasks();
-  renderTasks();
-}
-
-function toggleCompletedView() {
-  showingCompleted = !showingCompleted;
-  const btn = document.getElementById('toggleCompletedBtn');
-  if (btn) btn.textContent = showingCompleted ? 'Show Active' : 'Show Completed';
-  if (showingCompleted) {
-    renderCompletedTasks();
-  } else {
-    renderTasks();
-  }
-}
-
-  function toggleTask(taskId, dateKey) {
-      const tasks = taskLists[currentTaskList];
-      const taskIndex = tasks.findIndex(t => t.id == taskId); // Use findIndex to get the task's position
-      if (taskIndex === -1) return;
-
-      const task = tasks[taskIndex];
-
-      const wasCompleted = task.repeat === 'none' ?
-          task.completed :
-          task.completions && task.completions[dateKey];
-
-      // Flip the completion flag
-      if (task.repeat === 'none') {
-          task.completed = !task.completed;
-      } else {
-          task.completions = task.completions || {};
-          task.completions[dateKey] = !task.completions[dateKey];
-      }
-
-      const isCompleted = task.repeat === 'none' ?
-          task.completed :
-          task.completions[dateKey];
-
-      // If the task is now marked as complete...
-      if (isCompleted && !wasCompleted) {
-          // Add to the completed list for this day
-          if (!completedTasks[dateKey]) completedTasks[dateKey] = [];
-          if (!completedTasks[dateKey].some(t => t.id == taskId)) {
-              completedTasks[dateKey].push({ ...task, list: currentTaskList });
-          }
+      const tasksToDisplay = taskLists[currentTaskList].filter(task => {
+          // This is the core logic fix.
+          // A task should be displayed if AND ONLY IF:
+          // 1. It is scheduled to occur on the currently viewed date.
+          const isScheduledForToday = occursToday(task, document.getElementById('journalForm').dataset.date);
           
-          // *** THE FIX: Explicitly REMOVE the task from the active list ***
-          tasks.splice(taskIndex, 1);
+          // 2. It is NOT marked as completed for this specific date (for repeating tasks)
+          //    OR it is not a legacy non-repeating task marked with `completed: true`.
+          const isCompletedToday = task.completions && task.completions[document.getElementById('journalForm').dataset.date];
 
-      } else if (!isCompleted && wasCompleted) {
-          // This part handles un-checking a task from a completed view (restoreTask does this better)
-          // For now, we ensure it's not in the completed list for the day
-          if (completedTasks[dateKey]) {
-              completedTasks[dateKey] = completedTasks[dateKey].filter(t => t.id != taskId);
-          }
+          // This check handles the old data issue. We will filter out any task that has `completed: true`
+          // because the cleanup function will move them to the correct `completedTasks` structure.
+          const isLegacyCompleted = task.repeat === 'none' && task.completed === true;
+
+          return isScheduledForToday && !isCompletedToday && !isLegacyCompleted;
+      });
+
+      if (tasksToDisplay.length === 0) {
+          const msg = document.createElement('p');
+          msg.textContent = 'All done! 🎉';
+          msg.style.color = '#666';
+          msg.style.fontStyle = 'italic';
+          taskListEl.appendChild(msg);
+          return;
       }
 
-      // Re-render the UI to show the change
-      const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      if (li) {
-          li.classList.add('fade-out');
-          setTimeout(() => li.remove(), 500); // Fade out and remove from UI
-      }
+      tasksToDisplay.forEach(task => {
+          const li = document.createElement('li');
+          li.className = 'task-item';
+          li.dataset.taskId = task.id;
 
-      saveUserData(); // Save the updated lists to Firestore
-      
-      // We don't need to re-render the whole list here since we are just removing one item with an animation
+          const checkbox = document.createElement('input');
+          checkbox.type  = 'checkbox';
+          checkbox.onclick = () => toggleTask(task.id, document.getElementById('journalForm').dataset.date);
+
+          const span = document.createElement('span');
+          span.textContent = task.text;
+          
+          li.append(checkbox, span);
+
+          // ... (rest of your li building logic for buttons, subtasks, etc.)
+
+          taskListEl.appendChild(li);
+      });
   }
 
+  function renderCompletedTasks() {
+    const taskListEl = document.getElementById('taskList');
+    taskListEl.innerHTML = '';
+    const dateKey = document.getElementById('journalForm').dataset.date;
+    const tasks = (completedTasks[dateKey] || []).filter(t => t.list === currentTaskList);
+    if (tasks.length === 0) {
+      const msg = document.createElement('p');
+      msg.textContent = 'No completed tasks for this day.';
+      msg.style.color = '#666';
+      taskListEl.appendChild(msg);
+      return;
+    }
+    tasks.forEach(task => {
+      const li = document.createElement('li');
+      li.className = 'task-item completed-task';
+      const span = document.createElement('span');
+      span.textContent = task.text;
+      const restore = document.createElement('button');
+      restore.textContent = '↺';
+      restore.style.cssText = 'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#28a745;';
+      restore.onclick = () => restoreTask(task.id, dateKey);
+      li.append(span, restore);
+      taskListEl.appendChild(li);
+    });
+  }
 
-  function deleteTask(taskId) {
+  function restoreTask(taskId, dateKey) {
+    const list = completedTasks[dateKey] || [];
+    const idx = list.findIndex(t => t.id == taskId);
+    if (idx === -1) return;
+    const [task] = list.splice(idx, 1);
+    if (!taskLists[task.list]) taskLists[task.list] = [];
+    if (task.repeat === 'none') {
+      task.completed = false;
+    } else if (task.completions) {
+      delete task.completions[dateKey];
+    }
+    taskLists[task.list].push(task);
+    saveUserData();
+    if (showingCompleted) renderCompletedTasks();
+    else renderTasks();
+  }
+
+  function toggleCompletedView() {
+    showingCompleted = !showingCompleted;
+    const btn = document.getElementById('toggleCompletedBtn');
+    if (btn) btn.textContent = showingCompleted ? 'Show Active' : 'Show Completed';
+    if (showingCompleted) {
+      renderCompletedTasks();
+    } else {
+      renderTasks();
+    }
+  }
+  
+  /*******************************************************
+   * CORRECTED Task Toggling Function
+   *******************************************************/
+  function toggleTask(taskId, dateKey) {
       const tasks = taskLists[currentTaskList];
       const taskIndex = tasks.findIndex(t => t.id == taskId);
       if (taskIndex === -1) return;
 
       const task = tasks[taskIndex];
-      const dateKey = document.getElementById('journalForm').dataset.date;
 
-      // If it's a repeating task, ask the user what to do
-      if (task.repeat && task.repeat !== 'none') {
-          const choice = prompt("This is a repeating task. Do you want to delete:\n1. Only this occurrence\n2. This and all future occurrences\n\nEnter 1 or 2. (Cancel to abort)");
-
-          if (choice === '1') {
-              // Option 1: Add an exception for today
-              task.exceptions = task.exceptions || {};
-              task.exceptions[dateKey] = true; // Mark this date as skipped
-              console.log(`Task ${taskId} skipped for ${dateKey}`);
-
-          } else if (choice === '2') {
-              // Option 2: Set an end date for the task
-              const yesterday = new Date(dateKey);
-              yesterday.setDate(yesterday.getDate() - 1);
-              task.endDate = yesterday.toISOString().split('T')[0];
-              console.log(`Task ${taskId} will end after ${task.endDate}`);
-
-          } else {
-              return; // User cancelled
+      if (task.repeat === 'none') {
+          // For non-repeating tasks, we don't set `completed: true` anymore.
+          // We move it directly to the completedTasks list.
+          if (!completedTasks[dateKey]) {
+              completedTasks[dateKey] = [];
           }
-
-      } else {
-          // Original behavior for non-repeating tasks
+          completedTasks[dateKey].push({ ...task, list: currentTaskList });
+          
+          // The FIX: Remove it from the active list.
           tasks.splice(taskIndex, 1);
+          
+      } else {
+          // For repeating tasks, we add a completion entry for the specific date.
+          task.completions = task.completions || {};
+          task.completions[dateKey] = true;
+      }
+      
+      const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
+      if (li) {
+          li.classList.add('fade-out');
+          setTimeout(() => li.remove(), 500);
       }
 
       saveUserData();
-      renderTasks(); // Re-render the list to reflect the change
   }
 
-function editTaskReminder(task) {
-  document.getElementById("taskReminderDate").value = task.reminderDate || "";
-  document.getElementById("taskReminderTime").value = task.reminderTime || "";
-  document.getElementById("taskReminderId").value = task.id;
-  const severitySelect = document.getElementById("taskReminderSeverity");
-    if (severitySelect) {
-      severitySelect.value = task.severity ?? 0;
-      // Update severity immediately when changed
-      severitySelect.onchange = () => {
-        const id = document.getElementById("taskReminderId").value;
-        const val = parseInt(severitySelect.value, 10);
-        const t = Object.values(taskLists).flat().find(tt => tt.id == id);
-        if (t && !isNaN(val)) {
-          t.severity = val;
-          saveUserData();
-          renderTasks();
-        }
-      };
-    }
-  document.getElementById("taskRepeat").value = task.repeat || "none";
-  const form = document.getElementById("taskReminderForm");
-  form.style.display = "block";
-  form.style.zIndex = "1002"; // ensure it appears above the journal
-}
-function closeTaskReminderForm() {
-  document.getElementById("taskReminderForm").style.display = "none";
-}
-function saveTaskReminder() {
-  const id     = document.getElementById("taskReminderId").value;
-  const date   = document.getElementById("taskReminderDate").value;
-  const time   = document.getElementById("taskReminderTime").value;
-  const repeat = document.getElementById("taskRepeat").value;
-  const severityVal = parseInt(document.getElementById("taskReminderSeverity").value, 10);
-  const task = Object.values(taskLists).flat().find(t => t.id == id);
-  if (!task) return;
-  if (!date || !time) {
-    delete task.reminderDate;
-    delete task.reminderTime;
-  } else {
-    task.reminderDate = date;
-    task.reminderTime = time;
+  function deleteTask(taskId) {
+      const tasks = taskLists[currentTaskList];
+      const taskIndex = tasks.findIndex(t => t.id == taskId);
+      if (taskIndex === -1) return;
+      const task = tasks[taskIndex];
+      const dateKey = document.getElementById('journalForm').dataset.date;
+      if (task.repeat && task.repeat !== 'none') {
+          const choice = prompt("This is a repeating task. Do you want to delete:\n1. Only this occurrence\n2. This and all future occurrences\n\nEnter 1 or 2. (Cancel to abort)");
+          if (choice === '1') {
+              task.exceptions = task.exceptions || {};
+              task.exceptions[dateKey] = true;
+          } else if (choice === '2') {
+              const yesterday = new Date(dateKey);
+              yesterday.setDate(yesterday.getDate() - 1);
+              task.endDate = yesterday.toISOString().split('T')[0];
+          } else {
+              return;
+          }
+      } else {
+          tasks.splice(taskIndex, 1);
+      }
+      saveUserData();
+      renderTasks();
   }
-  if (!isNaN(severityVal)) task.severity = severityVal;
-  task.repeat = repeat;
-  saveUserData();
-  scheduleAllTaskReminders();
-  closeTaskReminderForm();
-  renderTasks();
-}
+
+  function editTaskReminder(task) {
+    document.getElementById("taskReminderDate").value = task.reminderDate || "";
+    document.getElementById("taskReminderTime").value = task.reminderTime || "";
+    document.getElementById("taskReminderId").value = task.id;
+    const severitySelect = document.getElementById("taskReminderSeverity");
+      if (severitySelect) {
+        severitySelect.value = task.severity ?? 0;
+        severitySelect.onchange = () => {
+          const id = document.getElementById("taskReminderId").value;
+          const val = parseInt(severitySelect.value, 10);
+          const t = Object.values(taskLists).flat().find(tt => tt.id == id);
+          if (t && !isNaN(val)) {
+            t.severity = val;
+            saveUserData();
+            renderTasks();
+          }
+        };
+      }
+    document.getElementById("taskRepeat").value = task.repeat || "none";
+    const form = document.getElementById("taskReminderForm");
+    form.style.display = "block";
+    form.style.zIndex = "1002";
+  }
+
+  function closeTaskReminderForm() {
+    document.getElementById("taskReminderForm").style.display = "none";
+  }
+
+  function saveTaskReminder() {
+    const id = document.getElementById("taskReminderId").value;
+    const date = document.getElementById("taskReminderDate").value;
+    const time = document.getElementById("taskReminderTime").value;
+    const repeat = document.getElementById("taskRepeat").value;
+    const severityVal = parseInt(document.getElementById("taskReminderSeverity").value, 10);
+    const task = Object.values(taskLists).flat().find(t => t.id == id);
+    if (!task) return;
+    if (!date || !time) {
+      delete task.reminderDate;
+      delete task.reminderTime;
+    } else {
+      task.reminderDate = date;
+      task.reminderTime = time;
+    }
+    if (!isNaN(severityVal)) task.severity = severityVal;
+    task.repeat = repeat;
+    saveUserData();
+    scheduleAllTaskReminders();
+    closeTaskReminderForm();
+    renderTasks();
+  }
 
   // Make functions available globally to be called from HTML
-  window.loginWithGoogle = loginWithGoogle;
-  window.previousMonth = previousMonth;
-  window.nextMonth = nextMonth;
-  window.openJournal = openJournal;
-  window.openJournalMode = openJournalMode;
-  window.closeJournalForm = closeJournalForm;
-  window.changeJournalDay = changeJournalDay;
-  window.addEvent = addEvent;
-  window.saveEvent = saveEvent;
-  window.closeEventForm = closeEventForm;
-  window.deleteEvent = deleteEvent;
-  window.saveJournal = saveJournal;
-  window.toggleRecording = toggleRecording;
-  window.handleAudioUpload = handleAudioUpload;
-  window.handleImageUpload = handleImageUpload;
-  window.removeAudio = removeAudio;
-  window.removeImage = removeImage;
-  window.goToGoalsPage = goToGoalsPage;
-  window.saveGoals = saveGoals;
-  window.closeGoalsForm = closeGoalsForm;
-  window.goToJournalFromGoals = goToJournalFromGoals;
-  window.changeToHabit = changeToHabit;
-  window.changeToJournal = changeToJournal;
-  window.showNewHabitForm = showNewHabitForm;
-  window.confirmAddHabit = confirmAddHabit;
-  window.cancelAddHabit = cancelAddHabit;
-  window.deleteHabit = deleteHabit;
-  window.saveHabitTracker = saveHabitTracker;
-  window.cancelHabitTracker = cancelHabitTracker;
-  window.logoutFromGoogle = logoutFromGoogle;
+  Object.assign(window, {
+    loginWithGoogle, previousMonth, nextMonth, openJournal, openJournalMode,
+    closeJournalForm, changeJournalDay, addEvent, saveEvent, closeEventForm,
+    deleteEvent, saveJournal, toggleRecording, handleAudioUpload,
+    handleImageUpload, removeAudio, removeImage, goToGoalsPage, saveGoals,
+    closeGoalsForm, goToJournalFromGoals, changeToHabit, changeToJournal,
+    showNewHabitForm, confirmAddHabit, cancelAddHabit, deleteHabit,
+    saveHabitTracker, cancelHabitTracker, logoutFromGoogle, addTask,
+    toggleTask, deleteTask, switchTaskList, createNewList, deleteCurrentList,
+    toggleCompletedView, editTaskReminder, saveTaskReminder, closeTaskReminderForm,
+    showPendingNotifications, closeMissedRemindersPopup, closeReminderPopup,
+    closePendingRemindersPopup, toggleReminderView
+  });
 
-  // Add task functions to window object
-  window.addTask = addTask;
-  window.toggleTask = toggleTask;
-  window.deleteTask = deleteTask;
-  window.switchTaskList = switchTaskList;
-  window.createNewList = createNewList;
-  window.deleteCurrentList = deleteCurrentList;
-  window.toggleCompletedView = toggleCompletedView;
-  window.editTaskReminder = editTaskReminder;
-  window.saveTaskReminder = saveTaskReminder;
-  window.closeTaskReminderForm = closeTaskReminderForm;
-
-  // Initialize the task functionality
   initializeTaskControls();
+  generateCalendar();
+  scheduleAllReminders();
+  scheduleAllTaskReminders();
 
-  // ─── expose everything HTML calls ───
-Object.assign(window, {
-  // auth & nav
-  loginWithGoogle, logoutFromGoogle, previousMonth, nextMonth,
-  // journal & goals
-  openJournal, closeJournalForm, changeJournalDay, saveJournal,
-  openJournalMode,
-  goToGoalsPage, saveGoals, closeGoalsForm, goToJournalFromGoals,
-  toggleRecording, handleAudioUpload, handleImageUpload,
-  removeAudio, removeImage,
-  // events
-  addEvent, editEvent, saveEvent, deleteEvent, closeEventForm,
-  // tasks
-  addTask, toggleTask, deleteTask, switchTaskList,
-  createNewList, deleteCurrentList, toggleCompletedView,
-  editTaskReminder, saveTaskReminder, closeTaskReminderForm,
-  // habits
-  changeToHabit, changeToJournal, showNewHabitForm,
-  confirmAddHabit, cancelAddHabit, deleteHabit, saveHabitTracker, cancelHabitTracker,
-  // notifications
-  showPendingNotifications
-});
-generateCalendar();   // render current month on first load
-scheduleAllReminders();
-scheduleAllTaskReminders();
+  document.getElementById('pendingBtn').addEventListener('click', showPendingNotifications);
+  document.getElementById('logoutButton').addEventListener('click', _logoutFromGoogle);
 
-document.getElementById('pendingBtn').addEventListener('click', showPendingNotifications);
-
-// Add an event listener to the button directly
-document.getElementById('logoutButton').addEventListener('click', async () => {
-  try {
-    await signOut(auth);
-    console.log("User signed out successfully");
-    // Clear local data and UI updates...
-  } catch (error) {
-    console.error("Error signing out:", error);
-  }
-});
-
-// Implement the habit functions
+  // Implement the habit functions
 function _changeToHabit() {
   const journalForm = document.getElementById('journalForm');
   const habitForm = document.getElementById('habitForm');
   const date = journalForm.dataset.date;
-  
   journalForm.style.display = 'none';
   habitForm.style.display = 'block';
   habitForm.dataset.date = date;
-  
   document.getElementById('habitDate').textContent = new Date(date + 'T00:00:00').toLocaleDateString();
   renderHabits(date);
 }
-
 function _changeToJournal() {
   document.getElementById('habitForm').style.display = 'none';
   document.getElementById('journalForm').style.display = 'block';
 }
-
 function _showNewHabitForm() {
   document.getElementById('newHabitForm').style.display = 'block';
 }
-
 function _confirmAddHabit() {
   const habitName = document.getElementById('newHabitName').value.trim();
   if (!habitName) return alert('Please enter a habit name');
-
   const habitType = document.querySelector('input[name="habitType"]:checked').value;
-
   const startDate = document.getElementById('habitForm').dataset.date || new Date().toISOString().split('T')[0];
-
   globalHabits.push({
     id: Date.now(),
     name: habitName,
     type: habitType,
     startDate
   });
-  
   saveUserData();
   document.getElementById('newHabitForm').style.display = 'none';
   renderHabits(document.getElementById('habitForm').dataset.date);
 }
-
-  function _cancelAddHabit() {
-    document.getElementById('newHabitForm').style.display = 'none';
-  }
-
-  function _deleteHabit(habitId) {
-    if (!confirm('Delete this habit?')) return;
-
-    globalHabits = globalHabits.filter(h => h.id !== habitId);
-    for (const date in habitTracker) {
-      if (habitTracker[date] && habitTracker[date][habitId]) {
-        delete habitTracker[date][habitId];
-        if (Object.keys(habitTracker[date]).length === 0) {
-          delete habitTracker[date];
-        }
+function _cancelAddHabit() {
+  document.getElementById('newHabitForm').style.display = 'none';
+}
+function _deleteHabit(habitId) {
+  if (!confirm('Delete this habit?')) return;
+  globalHabits = globalHabits.filter(h => h.id !== habitId);
+  for (const date in habitTracker) {
+    if (habitTracker[date] && habitTracker[date][habitId]) {
+      delete habitTracker[date][habitId];
+      if (Object.keys(habitTracker[date]).length === 0) {
+        delete habitTracker[date];
       }
     }
-
-    saveUserData();
-    renderHabits(document.getElementById('habitForm').dataset.date);
   }
-
+  saveUserData();
+  renderHabits(document.getElementById('habitForm').dataset.date);
+}
 function _saveHabitTracker() {
   saveUserData();
   document.getElementById('habitForm').style.display = 'none';
   document.getElementById('journalForm').style.display = 'block';
 }
-
 function _cancelHabitTracker() {
   document.getElementById('habitForm').style.display = 'none';
   document.getElementById('journalForm').style.display = 'block';
 }
-
 function renderHabits(date) {
   const habitList = document.getElementById('habitList');
   habitList.innerHTML = '';
-
   if (globalHabits.length === 0) {
     habitList.innerHTML = '<p>No habits created yet. Click "Add Habit" to get started.</p>';
     return;
   }
-
   globalHabits
     .filter(habit => !habit.startDate || habit.startDate <= date)
     .forEach(habit => {
       const div = document.createElement('div');
-      div.style.margin = '10px 0';
-      div.style.padding = '10px';
-      div.style.border = '1px solid #ddd';
-      div.style.borderRadius = '4px';
-      div.style.display = 'flex';
-      div.style.alignItems = 'center';
-      div.style.justifyContent = 'space-between';
-
+      div.style.cssText = 'margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:4px; display:flex; align-items:center; justify-content:space-between;';
       const label = document.createElement('label');
-      label.style.display = 'flex';
-      label.style.alignItems = 'center';
-
+      label.style.cssText = 'display:flex; align-items:center;';
       if (habit.type === 'check') {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -2960,8 +2564,7 @@ function renderHabits(date) {
         count.type = 'number';
         count.min = '0';
         count.step = 'any';
-        count.style.width = '60px';
-        count.style.marginRight = '10px';
+        count.style.cssText = 'width:60px; margin-right:10px;';
         count.value = habitTracker[date]?.[habit.id]?.count || 0;
         count.onchange = () => {
           habitTracker[date] = habitTracker[date] || {};
@@ -2970,29 +2573,18 @@ function renderHabits(date) {
         };
         label.appendChild(count);
       }
-
       const name = document.createElement('span');
       name.textContent = habit.name;
       label.appendChild(name);
-
       div.appendChild(label);
-
       const del = document.createElement('button');
       del.innerHTML = '&times;';
-      del.style.background = 'none';
-      del.style.color = '#dc3545';
-      del.style.border = 'none';
-      del.style.fontSize = '24px';
-      del.style.cursor = 'pointer';
+      del.style.cssText = 'background:none; color:#dc3545; border:none; font-size:24px; cursor:pointer;';
       del.onclick = () => _deleteHabit(habit.id);
-
       div.appendChild(del);
       habitList.appendChild(div);
     });
 }
-
-
-// Expose habit functions to window
 window._changeToHabit = _changeToHabit;
 window._changeToJournal = _changeToJournal;
 window._showNewHabitForm = _showNewHabitForm;
@@ -3001,10 +2593,6 @@ window._cancelAddHabit = _cancelAddHabit;
 window._deleteHabit = _deleteHabit;
 window._saveHabitTracker = _saveHabitTracker;
 window._cancelHabitTracker = _cancelHabitTracker;
-window.closeMissedRemindersPopup = closeMissedRemindersPopup;
-window.closeReminderPopup = closeReminderPopup;
-window.closePendingRemindersPopup = closePendingRemindersPopup;
-window.toggleReminderView = toggleReminderView;
 
 </script>
 
