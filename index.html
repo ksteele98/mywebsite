@@ -1236,19 +1236,17 @@ initFCM();
         userLastOpenTime = data.lastOpenTime || parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
         document.getElementById('goalsText').value = data.userGoals || '';
 
-        renderTaskListButtons();
-        initializeTaskControls();
-        scheduleAllTaskReminders();
       } else {
         console.log("No existing Firestore doc for this user; starting fresh.");
         taskLists = { personal: [], work: [] };
         completedTasks = {};
         userLastOpenTime = parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
-
-        renderTaskListButtons();
-        initializeTaskControls();
-        scheduleAllTaskReminders();
       }
+
+      await migrateAndCleanCompletedTasks();
+      renderTaskListButtons();
+      initializeTaskControls();
+      scheduleAllTaskReminders();
     } catch (err) {
       console.error("Error loading user data:", err);
     }
@@ -1329,11 +1327,11 @@ initFCM();
       taskLists = newActiveTaskLists;
 
       console.log(`Cleanup complete. Migrated ${tasksMigrated} tasks.`);
-      alert(`Cleanup complete! Migrated ${tasksMigrated} previously completed tasks to their correct dates.`);
+      if (tasksMigrated > 0) {
+          await saveUserData();
+          alert(`Cleanup complete! Migrated ${tasksMigrated} previously completed tasks to their correct dates.`);
+      }
 
-      // Finally, save all the changes back to Firestore.
-      await saveUserData();
-      
       // Refresh the UI to show the clean lists.
       renderTasks();
   }
