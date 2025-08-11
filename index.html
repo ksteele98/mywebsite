@@ -151,14 +151,52 @@
       width: 90%;
       max-width: 300px;
       z-index: 1000;
+      max-height: 90vh;
+      overflow-y: auto;
     }
-    .task-reminder-form input {
+    .task-reminder-form input,
+    .task-reminder-form select {
       width: 100%;
       padding: 8px;
       margin: 10px 0;
       border: 1px solid #ddd;
       border-radius: 4px;
       box-sizing: border-box;
+    }
+
+    /* Styles for the task edit button and day picker */
+    .task-item-controls {
+      margin-left: auto;
+      display: flex;
+      gap: 5px;
+    }
+
+    .edit-task-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0 5px;
+    }
+
+    .weekday-picker {
+      display: flex;
+      justify-content: space-around;
+      padding: 8px;
+      background-color: #f7f7f7;
+      border-radius: 4px;
+      margin-top: 5px;
+    }
+
+    .weekday-picker label {
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .weekday-picker input:checked + span {
+      font-weight: bold;
+      color: #4285f4;
     }
     .time-inputs {
       display: flex;
@@ -786,8 +824,11 @@
     <button onclick="deleteEvent()" class="delete-event-btn">Delete</button>
   </div>
 </div>
+<!-- MODIFIED: Task Edit/Reminder Form -->
 <div class="task-reminder-form" id="taskReminderForm">
-  <h3>Task Reminder</h3>
+  <h3>Edit Task</h3>
+  <label for="taskEditText">Task Name:</label>
+  <input type="text" id="taskEditText" placeholder="Task Name">
   <div>
     <label for="taskReminderDate">Reminder Date (optional):</label>
     <input type="date" id="taskReminderDate">
@@ -796,25 +837,25 @@
     <label for="taskReminderTime">Reminder Time (optional):</label>
     <input type="time" id="taskReminderTime">
   </div>
-    <div>
-      <label for="taskReminderSeverity">Severity:</label>
-      <select id="taskReminderSeverity" class="task-severity-select">
-        <option value="0" selected></option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-      </select>
-    </div>
+  <div>
+    <label for="taskReminderSeverity">Severity:</label>
+    <select id="taskReminderSeverity" class="task-severity-select">
+      <option value="0" selected></option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+    </select>
+  </div>
   <div>
     <label for="taskRepeat">Repeat:</label>
-    <select id="taskRepeat">
+    <select id="taskRepeat" onchange="toggleWeeklyOptions(this.value)">
       <option value="none">Never</option>
-      <option value="daily">Daily</option>
+      <option value="daily">Every Day</option>
+      <option value="weekly">Once a Week</option>
       <option value="weekdays">Weekdays</option>
       <option value="weekends">Weekends</option>
-      <option value="weekly">Weekly</option>
       <option value="biweekly">Bi-weekly</option>
       <option value="monthly">Monthly</option>
       <option value="quarterly">Every 3 Months</option>
@@ -822,9 +863,23 @@
       <option value="yearly">Yearly</option>
     </select>
   </div>
+  <!-- NEW: Weekly day picker -->
+  <div id="weeklyRepeatOptions" style="display: none;">
+      <label>Repeat on:</label>
+      <div class="weekday-picker">
+          <label><input type="radio" name="repeatDay" value="0"><span>S</span></label>
+          <label><input type="radio" name="repeatDay" value="1"><span>M</span></label>
+          <label><input type="radio" name="repeatDay" value="2"><span>T</span></label>
+          <label><input type="radio" name="repeatDay" value="3"><span>W</span></label>
+          <label><input type="radio" name="repeatDay" value="4"><span>T</span></label>
+          <label><input type="radio" name="repeatDay" value="5"><span>F</span></label>
+          <label><input type="radio" name="repeatDay" value="6"><span>S</span></label>
+      </div>
+  </div>
+
   <input type="hidden" id="taskReminderId">
   <div class="event-actions">
-    <button onclick="saveTaskReminder()">Save</button>
+    <button onclick="saveTaskDetails()">Save Details</button>
     <button onclick="closeTaskReminderForm()">Cancel</button>
   </div>
 </div>
@@ -1014,6 +1069,22 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   
   function cancelHabitTracker() {
     window._cancelHabitTracker && window._cancelHabitTracker();
+  }
+
+  function openTaskEditor(taskId, listName) {
+    window._openTaskEditor && window._openTaskEditor(taskId, listName);
+  }
+
+  function saveTaskDetails() {
+    window._saveTaskDetails && window._saveTaskDetails();
+  }
+
+  function closeTaskReminderForm() {
+    window._closeTaskReminderForm && window._closeTaskReminderForm();
+  }
+
+  function toggleWeeklyOptions(value) {
+    window._toggleWeeklyOptions && window._toggleWeeklyOptions(value);
   }
 </script>
 <script type="module">
@@ -1223,6 +1294,7 @@ initFCM();
   let showPastReminders = false;
 
   let journalMode = false;
+  let editingTaskInfo = { id: null, listName: null };
   let journalEntryDates = [];
   let journalEntryIndex = 0;
 
@@ -2275,58 +2347,52 @@ initFCM();
       }
   }
 
-  /*******************************************************
-   * CORRECTED Task Rendering Function
-   *******************************************************/
   function renderTasks() {
       const taskListEl = document.getElementById('taskList');
+      if (!taskListEl) return;
+      const showCompleted = showingCompleted;
       taskListEl.innerHTML = '';
 
-      if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
+      const currentTasks = taskLists[currentTaskList] || [];
+      const filteredTasks = showCompleted ? currentTasks : currentTasks.filter(task => !task.completed);
 
-      const tasksToDisplay = taskLists[currentTaskList].filter(task => {
-          // This is the core logic fix.
-          // A task should be displayed if AND ONLY IF:
-          // 1. It is scheduled to occur on the currently viewed date.
-          const isScheduledForToday = occursToday(task, document.getElementById('journalForm').dataset.date);
-          
-          // 2. It is NOT marked as completed for this specific date (for repeating tasks)
-          //    OR it is not a legacy non-repeating task marked with `completed: true`.
-          const isCompletedToday = task.completions && task.completions[document.getElementById('journalForm').dataset.date];
+      filteredTasks.sort((a, b) => (a.completed - b.completed) || (b.severity - a.severity));
 
-          // This check handles the old data issue. We will filter out any task that has `completed: true`
-          // because the cleanup function will move them to the correct `completedTasks` structure.
-          const isLegacyCompleted = task.repeat === 'none' && task.completed === true;
-
-          return isScheduledForToday && !isCompletedToday && !isLegacyCompleted;
-      });
-
-      if (tasksToDisplay.length === 0) {
-          const msg = document.createElement('p');
-          msg.textContent = 'All done! 🎉';
-          msg.style.color = '#666';
-          msg.style.fontStyle = 'italic';
-          taskListEl.appendChild(msg);
-          return;
-      }
-
-      tasksToDisplay.forEach(task => {
-          const li = document.createElement('li');
-          li.className = 'task-item';
-          li.dataset.taskId = task.id;
+      filteredTasks.forEach(task => {
+          const taskItem = document.createElement('li');
+          taskItem.className = 'task-item';
+          if (task.completed) taskItem.classList.add('completed-task');
+          taskItem.dataset.id = task.id;
 
           const checkbox = document.createElement('input');
-          checkbox.type  = 'checkbox';
-          checkbox.onclick = () => toggleTask(task.id, document.getElementById('journalForm').dataset.date);
+          checkbox.type = 'checkbox';
+          checkbox.checked = task.completed;
+          checkbox.onchange = async () => {
+              task.completed = checkbox.checked;
+              if (task.completed && task.repeat && task.repeat !== 'none') {
+                  await createNextRecurrence(task, currentTaskList);
+              }
+              await saveJournal();
+              renderTasks();
+          };
 
-          const span = document.createElement('span');
-          span.textContent = task.text;
-          
-          li.append(checkbox, span);
+          const taskSpan = document.createElement('span');
+          taskSpan.textContent = task.text;
 
-          // ... (rest of your li building logic for buttons, subtasks, etc.)
+          const controls = document.createElement('div');
+          controls.className = 'task-item-controls';
+          const editBtn = document.createElement('button');
+          editBtn.className = 'edit-task-btn';
+          editBtn.innerHTML = 'ℹ️';
+          editBtn.title = 'Edit Task Details';
+          editBtn.onclick = () => openTaskEditor(task.id, currentTaskList);
+          controls.appendChild(editBtn);
 
-          taskListEl.appendChild(li);
+          taskItem.appendChild(checkbox);
+          taskItem.appendChild(taskSpan);
+          taskItem.appendChild(controls);
+
+          taskListEl.appendChild(taskItem);
       });
   }
 
@@ -2445,56 +2511,128 @@ initFCM();
       renderTasks();
   }
 
-  function editTaskReminder(task) {
-    document.getElementById("taskReminderDate").value = task.reminderDate || "";
-    document.getElementById("taskReminderTime").value = task.reminderTime || "";
-    document.getElementById("taskReminderId").value = task.id;
-    const severitySelect = document.getElementById("taskReminderSeverity");
-      if (severitySelect) {
-        severitySelect.value = task.severity ?? 0;
-        severitySelect.onchange = () => {
-          const id = document.getElementById("taskReminderId").value;
-          const val = parseInt(severitySelect.value, 10);
-          const t = Object.values(taskLists).flat().find(tt => tt.id == id);
-          if (t && !isNaN(val)) {
-            t.severity = val;
-            saveUserData();
-            renderTasks();
-          }
-        };
+  function toggleWeeklyOptions(value) {
+      const weeklyOptions = document.getElementById('weeklyRepeatOptions');
+      weeklyOptions.style.display = (value === 'weekly') ? 'block' : 'none';
+  }
+
+  function openTaskEditor(taskId, listName) {
+      editingTaskInfo = { id: taskId, listName: listName };
+      const task = taskLists[listName]?.find(t => t.id === taskId);
+      if (!task) {
+        console.error("Task not found for editing!");
+        return;
       }
-    document.getElementById("taskRepeat").value = task.repeat || "none";
-    const form = document.getElementById("taskReminderForm");
-    form.style.display = "block";
-    form.style.zIndex = "1002";
+
+      document.getElementById('taskEditText').value = task.text;
+      document.getElementById('taskReminderId').value = task.id;
+      document.getElementById('taskReminderSeverity').value = task.severity || '0';
+      document.getElementById('taskReminderDate').value = task.reminderDate || '';
+      document.getElementById('taskReminderTime').value = task.reminderTime || '';
+
+      const repeatSelect = document.getElementById('taskRepeat');
+      repeatSelect.value = task.repeat || 'none';
+      toggleWeeklyOptions(repeatSelect.value);
+
+      if (task.repeat === 'weekly') {
+        document.querySelectorAll('input[name="repeatDay"]').forEach(radio => radio.checked = false);
+        if (task.repeatDay !== undefined) {
+          const dayRadio = document.querySelector(`input[name="repeatDay"][value="${task.repeatDay}"]`);
+          if (dayRadio) dayRadio.checked = true;
+        }
+      }
+
+      document.getElementById('taskReminderForm').style.display = 'block';
+  }
+
+  async function saveTaskDetails() {
+      const { id: taskId, listName } = editingTaskInfo;
+      if (!taskId || !listName) {
+        console.error("No task is being edited.");
+        return;
+      }
+
+      const taskIndex = taskLists[listName]?.findIndex(t => t.id === taskId);
+      if (taskIndex === -1) {
+        console.error("Task to save not found!");
+        return;
+      }
+
+      const task = taskLists[listName][taskIndex];
+      task.text = document.getElementById('taskEditText').value.trim();
+      task.severity = document.getElementById('taskReminderSeverity').value;
+      task.reminderDate = document.getElementById('taskReminderDate').value;
+      task.reminderTime = document.getElementById('taskReminderTime').value;
+      task.repeat = document.getElementById('taskRepeat').value;
+
+      if (task.repeat === 'weekly') {
+        const selectedDayRadio = document.querySelector('input[name="repeatDay"]:checked');
+        if (selectedDayRadio) {
+          task.repeatDay = parseInt(selectedDayRadio.value, 10);
+        } else {
+          alert("For weekly repeats, please select a day.");
+          return;
+        }
+      } else {
+        delete task.repeatDay;
+      }
+
+      await saveJournal();
+      closeTaskReminderForm();
+      renderTasks();
+  }
+
+  async function createNextRecurrence(completedTask, listName) {
+      const todayStr = document.getElementById('journalForm').dataset.date;
+      const today = new Date(todayStr + 'T12:00:00');
+      let nextDate = new Date(today);
+
+      switch (completedTask.repeat) {
+          case 'daily':
+              nextDate.setDate(today.getDate() + 1);
+              break;
+          case 'weekly':
+              nextDate.setDate(today.getDate() + 7);
+              break;
+          default:
+              return;
+      }
+
+      const nextDateStr = nextDate.toISOString().split('T')[0];
+
+      const newTask = {
+          ...completedTask,
+          id: `task_${Date.now()}`,
+          completed: false,
+          subtasks: completedTask.subtasks ? completedTask.subtasks.map(st => ({...st, completed: false})) : [],
+      };
+
+      const dateDocRef = doc(db, 'users', userId, 'journal', nextDateStr);
+
+      try {
+          const dateDoc = await getDoc(dateDocRef);
+          let dateData = dateDoc.exists() ? dateDoc.data() : { taskLists: { personal: [], work: [] } };
+
+          if (!dateData.taskLists) dateData.taskLists = { personal: [], work: [] };
+          if (!dateData.taskLists[listName]) dateData.taskLists[listName] = [];
+
+          dateData.taskLists[listName].push(newTask);
+
+          await setDoc(dateDocRef, dateData, { merge: true });
+          console.log(`Created recurring task for ${nextDateStr}`);
+      } catch (error) {
+          console.error("Error creating recurring task:", error);
+      }
   }
 
   function closeTaskReminderForm() {
     document.getElementById("taskReminderForm").style.display = "none";
   }
 
-  function saveTaskReminder() {
-    const id = document.getElementById("taskReminderId").value;
-    const date = document.getElementById("taskReminderDate").value;
-    const time = document.getElementById("taskReminderTime").value;
-    const repeat = document.getElementById("taskRepeat").value;
-    const severityVal = parseInt(document.getElementById("taskReminderSeverity").value, 10);
-    const task = Object.values(taskLists).flat().find(t => t.id == id);
-    if (!task) return;
-    if (!date || !time) {
-      delete task.reminderDate;
-      delete task.reminderTime;
-    } else {
-      task.reminderDate = date;
-      task.reminderTime = time;
-    }
-    if (!isNaN(severityVal)) task.severity = severityVal;
-    task.repeat = repeat;
-    saveUserData();
-    scheduleAllTaskReminders();
-    closeTaskReminderForm();
-    renderTasks();
-  }
+  window._openTaskEditor = openTaskEditor;
+  window._saveTaskDetails = saveTaskDetails;
+  window._closeTaskReminderForm = closeTaskReminderForm;
+  window._toggleWeeklyOptions = toggleWeeklyOptions;
 
   // Make functions available globally to be called from HTML
   Object.assign(window, {
@@ -2506,8 +2644,7 @@ initFCM();
     showNewHabitForm, confirmAddHabit, cancelAddHabit, deleteHabit,
     saveHabitTracker, cancelHabitTracker, logoutFromGoogle, addTask,
     toggleTask, deleteTask, switchTaskList, createNewList, deleteCurrentList,
-    toggleCompletedView, editTaskReminder, saveTaskReminder, closeTaskReminderForm,
-    showPendingNotifications, closeMissedRemindersPopup, closeReminderPopup,
+    toggleCompletedView, showPendingNotifications, closeMissedRemindersPopup, closeReminderPopup,
     closePendingRemindersPopup, toggleReminderView
   });
 
