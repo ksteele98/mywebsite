@@ -382,6 +382,15 @@
       border-radius: 4px;
       box-sizing: border-box;
     }
+    .severity-badge {
+      background: #dc3545;
+      color: #fff;
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-left: 8px;
+      font-size: 12px;
+      display: inline-block;
+    }
     .add-task-btn {
       background: #4285f4;
       color: white;
@@ -2412,7 +2421,6 @@ initFCM();
 
           const taskSpan = document.createElement('span');
           taskSpan.textContent = task.text;
-
           const controls = document.createElement('div');
           controls.className = 'task-item-controls';
           const editBtn = document.createElement('button');
@@ -2422,8 +2430,18 @@ initFCM();
           editBtn.onclick = () => openTaskEditor(task.id, currentTaskList);
           controls.appendChild(editBtn);
 
+          const severityNum = parseInt(task.severity, 10) || 0;
+
           taskItem.appendChild(checkbox);
           taskItem.appendChild(taskSpan);
+
+          if (severityNum > 0) {
+            const sev = document.createElement('span');
+            sev.className = 'severity-badge';
+            sev.textContent = severityNum;
+            taskItem.appendChild(sev);
+          }
+
           taskItem.appendChild(controls);
 
           taskListEl.appendChild(taskItem);
@@ -2594,7 +2612,7 @@ initFCM();
 
       const task = taskLists[listName][taskIndex];
       task.text = document.getElementById('taskEditText').value.trim();
-      task.severity = document.getElementById('taskReminderSeverity').value;
+      task.severity = parseInt(document.getElementById('taskReminderSeverity').value, 10) || 0;
       task.reminderDate = document.getElementById('taskReminderDate').value;
       task.reminderTime = document.getElementById('taskReminderTime').value;
       task.repeat = document.getElementById('taskRepeat').value;
