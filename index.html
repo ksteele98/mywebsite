@@ -388,11 +388,11 @@
     }
     .task-container {
       display: none;
-      position: absolute;
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 1100;
+      z-index: 1200;
       background: #fff;
       border: 1px solid #ddd;
       border-radius: 4px;
@@ -940,40 +940,41 @@
   </div>
   
 
-  <div class="task-container" id="taskContainer">
-    <button class="close-task-btn" onclick="closeTaskPopup()">&times;</button>
-    <div class="tasks-header">
-      <h3>Tasks</h3>
-      <div class="task-buttons">
-        <button id="toggleCompletedBtn" class="new-list-btn" onclick="toggleCompletedView()">Show Completed</button>
-        <button class="new-list-btn" onclick="createNewList()">+ New List</button>
-        <button class="delete-list-btn" onclick="deleteCurrentList()">Delete List</button>
-        <button class="clear-tasks-btn" onclick="clearAllTasks()">Clear All Tasks</button>
-      </div>
-    </div>
-    <div class="task-toggle">
-      <button onclick="switchTaskList('personal')" id="personalTasksBtn" class="active">Personal Tasks</button>
-      <button onclick="switchTaskList('work')" id="workTasksBtn">Work Tasks</button>
-    </div>
-    <label style="display: block; margin: 8px 0; font-size: 14px;">
-      Severity:
-      <select id="taskSeverity" class="task-severity-select">
-        <option value="0" selected></option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-      </select>
-    </label>
-
-    <input type="text" id="taskInput" class="task-input" placeholder="Add a new task">
-    <button class="add-task-btn" onclick="addTask()">Add Task</button>
-    <ul class="task-list" id="taskList"></ul>
-  </div>
 
   <button onclick="saveJournal()">Save</button>
   <button onclick="closeJournalForm()">Cancel</button>
+</div>
+
+<div class="task-container" id="taskContainer">
+  <button class="close-task-btn" onclick="closeTaskPopup()">&times;</button>
+  <div class="tasks-header">
+    <h3>Tasks</h3>
+    <div class="task-buttons">
+      <button id="toggleCompletedBtn" class="new-list-btn" onclick="toggleCompletedView()">Show Completed</button>
+      <button class="new-list-btn" onclick="createNewList()">+ New List</button>
+      <button class="delete-list-btn" onclick="deleteCurrentList()">Delete List</button>
+      <button class="clear-tasks-btn" onclick="clearAllTasks()">Clear All Tasks</button>
+    </div>
+  </div>
+  <div class="task-toggle">
+    <button onclick="switchTaskList('personal')" id="personalTasksBtn" class="active">Personal Tasks</button>
+    <button onclick="switchTaskList('work')" id="workTasksBtn">Work Tasks</button>
+  </div>
+  <label style="display: block; margin: 8px 0; font-size: 14px;">
+    Severity:
+    <select id="taskSeverity" class="task-severity-select">
+      <option value="0" selected></option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+    </select>
+  </label>
+
+  <input type="text" id="taskInput" class="task-input" placeholder="Add a new task">
+  <button class="add-task-btn" onclick="addTask()">Add Task</button>
+  <ul class="task-list" id="taskList"></ul>
 </div>
 
 <button id="prevDayButton" class="nav-button day-nav-button" onclick="changeJournalDay(-1)">&lt;</button>
