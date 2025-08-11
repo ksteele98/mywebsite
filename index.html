@@ -2145,7 +2145,7 @@ initFCM();
 
   /******************************************************* 11) Journal
   *******************************************************/
-  async function saveJournal() {
+  async function saveJournal(closeAfterSave = true) {
       const date = document.getElementById('journalForm').dataset.date;
       const text = document.getElementById('journalText').value.trim();
       if (!userId) {
@@ -2171,7 +2171,7 @@ initFCM();
           await saveUserData();
           generateCalendar();
           updateDailyEventsList(date);
-          closeJournalForm();
+          if (closeAfterSave) closeJournalForm();
           console.log('✅ Journal saved with media synced');
       } catch (err) {
           console.error("Error in saveJournal:", err);
@@ -2372,7 +2372,7 @@ initFCM();
               if (task.completed && task.repeat && task.repeat !== 'none') {
                   await createNextRecurrence(task, currentTaskList);
               }
-              await saveJournal();
+              await saveJournal(false);
               renderTasks();
           };
 
@@ -2577,7 +2577,7 @@ initFCM();
         delete task.repeatDay;
       }
 
-      await saveJournal();
+      await saveJournal(false);
       closeTaskReminderForm();
       renderTasks();
   }
