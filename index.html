@@ -387,10 +387,30 @@
       color: #888;
     }
     .task-container {
-      margin-top: 20px;
-      border-top: 1px solid #ddd;
-      padding-top: 20px;
-      position: relative;
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1100;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      max-height: 80%;
+      overflow-y: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .close-task-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
     }
     .task-toggle {
       display: flex;
@@ -920,7 +940,8 @@
   </div>
   
 
-  <div class="task-container">
+  <div class="task-container" id="taskContainer">
+    <button class="close-task-btn" onclick="closeTaskPopup()">&times;</button>
     <div class="tasks-header">
       <h3>Tasks</h3>
       <div class="task-buttons">
@@ -2296,7 +2317,7 @@ initFCM();
     const taskInput = document.getElementById('taskInput');
     const severitySelect = document.getElementById('taskSeverity');
     const text = taskInput.value.trim();
-    if (!text) return alert("Please enter a task");
+    if (!text) return;
     const severity = parseInt(severitySelect.value, 10) || 0;
     const dateKey = document.getElementById('journalForm').dataset.date || formatLocalDate(new Date());
     if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
@@ -2629,6 +2650,16 @@ initFCM();
     document.getElementById("taskReminderForm").style.display = "none";
   }
 
+  function showTaskPopup() {
+    document.getElementById('taskContainer').style.display = 'block';
+  }
+
+  function closeTaskPopup() {
+    document.getElementById('taskContainer').style.display = 'none';
+  }
+
+  window.showTaskPopup = showTaskPopup;
+  window.closeTaskPopup = closeTaskPopup;
   window._openTaskEditor = openTaskEditor;
   window._saveTaskDetails = saveTaskDetails;
   window._closeTaskReminderForm = closeTaskReminderForm;
@@ -2646,6 +2677,18 @@ initFCM();
     toggleTask, deleteTask, switchTaskList, createNewList, deleteCurrentList,
     toggleCompletedView, showPendingNotifications, closeMissedRemindersPopup, closeReminderPopup,
     closePendingRemindersPopup, toggleReminderView
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.key === 'i' || e.key === 'I') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      const container = document.getElementById('taskContainer');
+      if (container.style.display === 'block') {
+        closeTaskPopup();
+      } else {
+        showTaskPopup();
+      }
+    }
   });
 
   initializeTaskControls();
