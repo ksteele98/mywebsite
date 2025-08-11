@@ -331,14 +331,23 @@
     .task-item.fade-out {
       opacity: 0;
     }
-    .task-item input[type="checkbox"] {
-      margin-right: 10px;
-    }
-    .subtask-list {
-      list-style: none;
-      padding-left: 20px;
-      margin-top: 4px;
-    }
+      .task-item input[type="checkbox"] {
+        margin-right: 10px;
+      }
+      .task-repeat-label {
+        display: block;
+        width: 100%;
+        font-size: 0.75rem;
+        color: #000;
+        background-color: #e0e0e0;
+        border-radius: 3px;
+        padding: 2px 4px;
+      }
+      .subtask-list {
+        list-style: none;
+        padding-left: 20px;
+        margin-top: 4px;
+      }
     .subtask-item {
       display: flex;
       align-items: center;
@@ -2324,31 +2333,49 @@ initFCM();
     renderTasks();
   }
 
-  function occursToday(task, dateKey) {
-      if (task.exceptions && task.exceptions[dateKey]) return false;
-      if (task.endDate && dateKey > task.endDate) return false;
-      if (task.repeat === "none") return true;
-      const d = new Date(dateKey + "T00:00:00");
-      const start = new Date(task.startDate + "T00:00:00");
-      if (d < start) return false;
-      const day = d.getDay();
-      const diffW = Math.floor((d - start) / 604800000);
-      switch (task.repeat) {
-        case "daily": return true;
-        case "weekdays": return day >= 1 && day <= 5;
-        case "weekends": return day === 0 || day === 6;
-        case "weekly": return day === start.getDay();
-        case "biweekly": return day === start.getDay() && diffW % 2 === 0;
-        case "monthly": return d.getDate() === start.getDate();
-        case "quarterly": return d.getDate() === start.getDate() && (d.getMonth() - start.getMonth()) % 3 === 0;
-        case "semiannual": return d.getDate() === start.getDate() && (d.getMonth() - start.getMonth()) % 6 === 0;
-        case "yearly": return d.getDate() === start.getDate() && d.getMonth() === start.getMonth();
-        default: return true;
-      }
-  }
+    function occursToday(task, dateKey) {
+        if (task.exceptions && task.exceptions[dateKey]) return false;
+        if (task.endDate && dateKey > task.endDate) return false;
+        if (task.repeat === "none") return true;
+        const d = new Date(dateKey + "T00:00:00");
+        const start = new Date(task.startDate + "T00:00:00");
+        if (d < start) return false;
+        const day = d.getDay();
+        const diffW = Math.floor((d - start) / 604800000);
+        switch (task.repeat) {
+          case "daily": return true;
+          case "weekdays": return day >= 1 && day <= 5;
+          case "weekends": return day === 0 || day === 6;
+          case "weekly": return day === start.getDay();
+          case "biweekly": return day === start.getDay() && diffW % 2 === 0;
+          case "monthly": return d.getDate() === start.getDate();
+          case "quarterly": return d.getDate() === start.getDate() && (d.getMonth() - start.getMonth()) % 3 === 0;
+          case "semiannual": return d.getDate() === start.getDate() && (d.getMonth() - start.getMonth()) % 6 === 0;
+          case "yearly": return d.getDate() === start.getDate() && d.getMonth() === start.getMonth();
+          default: return true;
+        }
+    }
 
-  function renderTasks() {
-      const taskListEl = document.getElementById('taskList');
+    function getTaskRepeatLabel(task) {
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        switch (task.repeat) {
+          case 'daily':
+            return 'Everyday';
+          case 'weekdays':
+            return 'Weekdays';
+          case 'weekends':
+            return 'Weekends';
+          case 'weekly':
+            return days[task.repeatDay ?? new Date(task.startDate + 'T00:00:00').getDay()];
+          case 'biweekly':
+            return 'Every other ' + days[task.repeatDay ?? new Date(task.startDate + 'T00:00:00').getDay()];
+          default:
+            return task.repeat ? task.repeat.charAt(0).toUpperCase() + task.repeat.slice(1) : '';
+        }
+    }
+
+    function renderTasks() {
+        const taskListEl = document.getElementById('taskList');
       if (!taskListEl) return;
       const showCompleted = showingCompleted;
       taskListEl.innerHTML = '';
@@ -2356,20 +2383,27 @@ initFCM();
       const currentTasks = taskLists[currentTaskList] || [];
       const filteredTasks = showCompleted ? currentTasks : currentTasks.filter(task => !task.completed);
 
-      filteredTasks.sort((a, b) => (a.completed - b.completed) || (b.severity - a.severity));
+        filteredTasks.sort((a, b) => (a.completed - b.completed) || (b.severity - a.severity));
 
-      filteredTasks.forEach(task => {
-          const taskItem = document.createElement('li');
-          taskItem.className = 'task-item';
-          if (task.completed) taskItem.classList.add('completed-task');
-          taskItem.dataset.id = task.id;
+        filteredTasks.forEach(task => {
+            const taskItem = document.createElement('li');
+            taskItem.className = 'task-item';
+            if (task.completed) taskItem.classList.add('completed-task');
+            taskItem.dataset.id = task.id;
 
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.checked = task.completed;
-          checkbox.onchange = async () => {
-              task.completed = checkbox.checked;
-              if (task.completed && task.repeat && task.repeat !== 'none') {
+            if (task.repeat && task.repeat !== 'none') {
+                const repeatLabel = document.createElement('span');
+                repeatLabel.className = 'task-repeat-label';
+                repeatLabel.textContent = getTaskRepeatLabel(task);
+                taskItem.appendChild(repeatLabel);
+            }
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = task.completed;
+            checkbox.onchange = async () => {
+                task.completed = checkbox.checked;
+                if (task.completed && task.repeat && task.repeat !== 'none') {
                   await createNextRecurrence(task, currentTaskList);
               }
               await saveJournal(false);
