@@ -2300,25 +2300,57 @@ initFCM();
   }
 
     function occursToday(task, dateKey) {
+        if (!task.startDate) return false;
         if (task.exceptions && task.exceptions[dateKey]) return false;
         if (task.endDate && dateKey > task.endDate) return false;
-        if (task.repeat === "none") return true;
+
         const d = new Date(dateKey + "T00:00:00");
         const start = new Date(task.startDate + "T00:00:00");
         if (d < start) return false;
+
         const day = d.getDay();
-        const diffW = Math.floor((d - start) / 604800000);
+        const weekMs = 7 * 24 * 60 * 60 * 1000;
+        const monthsBetween =
+          (d.getFullYear() - start.getFullYear()) * 12 +
+          (d.getMonth() - start.getMonth());
+
         switch (task.repeat) {
-          case "daily": return true;
-          case "weekdays": return day >= 1 && day <= 5;
-          case "weekends": return day === 0 || day === 6;
-          case "weekly": return day === start.getDay();
-          case "biweekly": return day === start.getDay() && diffW % 2 === 0;
-          case "monthly": return d.getDate() === start.getDate();
-          case "quarterly": return d.getDate() === start.getDate() && (d.getMonth() - start.getMonth()) % 3 === 0;
-          case "semiannual": return d.getDate() === start.getDate() && (d.getMonth() - start.getMonth()) % 6 === 0;
-          case "yearly": return d.getDate() === start.getDate() && d.getMonth() === start.getMonth();
-          default: return true;
+          case "none":
+            return dateKey === task.startDate;
+          case "daily":
+            return true;
+          case "weekdays":
+            return day >= 1 && day <= 5;
+          case "weekends":
+            return day === 0 || day === 6;
+          case "weekly": {
+            const target =
+              typeof task.repeatDay === "number" ? task.repeatDay : start.getDay();
+            return day === target;
+          }
+          case "biweekly": {
+            const target =
+              typeof task.repeatDay === "number" ? task.repeatDay : start.getDay();
+            const first = new Date(start);
+            const offset = (target - first.getDay() + 7) % 7;
+            first.setDate(first.getDate() + offset);
+            if (d < first) return false;
+            const diffW = Math.floor((d - first) / weekMs);
+            return day === target && diffW % 2 === 0;
+          }
+          case "monthly":
+            return d.getDate() === start.getDate();
+          case "quarterly":
+            return d.getDate() === start.getDate() && monthsBetween % 3 === 0;
+          case "semiannual":
+            return d.getDate() === start.getDate() && monthsBetween % 6 === 0;
+          case "yearly":
+            return (
+              d.getDate() === start.getDate() &&
+              d.getMonth() === start.getMonth()
+            );
+          default:
+            return false;
         }
     }
 
