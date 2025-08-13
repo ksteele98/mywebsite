@@ -2373,83 +2373,88 @@ initFCM();
     }
 
     function renderTasks() {
-        const taskListEl = document.getElementById('taskList');
+      const taskListEl = document.getElementById('taskList');
       if (!taskListEl) return;
-      const showCompleted = showingCompleted;
       taskListEl.innerHTML = '';
 
-      const currentTasks = taskLists[currentTaskList] || [];
-      const filteredTasks = showCompleted ? currentTasks : currentTasks.filter(task => !task.completed);
+      const dateKey = document.getElementById('journalForm').dataset.date;
+      const allTasks = taskLists[currentTaskList] || [];
+      const currentTasks = allTasks.filter(task => occursToday(task, dateKey));
+      const filteredTasks = currentTasks.filter(task => !(task.repeat !== 'none'
+        ? task.completions && task.completions[dateKey]
+        : task.completed));
 
-        filteredTasks.sort((a, b) => (a.completed - b.completed) || (b.severity - a.severity));
+      filteredTasks.sort((a, b) => (a.completed - b.completed) || (b.severity - a.severity));
 
-        filteredTasks.forEach(task => {
-            const taskItem = document.createElement('li');
-            taskItem.className = 'task-item';
-            if (task.completed) taskItem.classList.add('completed-task');
-            taskItem.dataset.id = task.id;
+      filteredTasks.forEach(task => {
+        const taskItem = document.createElement('li');
+        taskItem.className = 'task-item';
+        const isCompleted = task.repeat !== 'none'
+          ? task.completions && task.completions[dateKey]
+          : task.completed;
+        if (isCompleted) taskItem.classList.add('completed-task');
+        taskItem.dataset.id = task.id;
 
-            if (task.repeat && task.repeat !== 'none') {
-                const repeatLabel = document.createElement('span');
-                repeatLabel.className = 'task-repeat-label';
-                repeatLabel.textContent = getTaskRepeatLabel(task);
-                taskItem.appendChild(repeatLabel);
-            }
+        if (task.repeat && task.repeat !== 'none') {
+          const repeatLabel = document.createElement('span');
+          repeatLabel.className = 'task-repeat-label';
+          repeatLabel.textContent = getTaskRepeatLabel(task);
+          taskItem.appendChild(repeatLabel);
+        }
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = task.completed;
-            checkbox.onchange = async () => {
-                task.completed = checkbox.checked;
-                if (task.completed && task.repeat && task.repeat !== 'none') {
-                  await createNextRecurrence(task, currentTaskList);
-              }
-              await saveJournal(false);
-              renderTasks();
-          };
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isCompleted;
+        checkbox.onchange = () => {
+          toggleTask(task.id, dateKey, checkbox.checked);
+          renderTasks();
+        };
 
-          const taskSpan = document.createElement('span');
-          taskSpan.textContent = task.text;
-          const controls = document.createElement('div');
-          controls.className = 'task-item-controls';
-          const editBtn = document.createElement('button');
-          editBtn.className = 'edit-task-btn';
-          editBtn.innerHTML = 'ℹ️';
-          editBtn.title = 'Edit Task Details';
-          editBtn.onclick = () => openTaskEditor(task.id, currentTaskList);
-          controls.appendChild(editBtn);
+        const taskSpan = document.createElement('span');
+        taskSpan.textContent = task.text;
+        const controls = document.createElement('div');
+        controls.className = 'task-item-controls';
+        const editBtn = document.createElement('button');
+        editBtn.className = 'edit-task-btn';
+        editBtn.innerHTML = 'ℹ️';
+        editBtn.title = 'Edit Task Details';
+        editBtn.onclick = () => openTaskEditor(task.id, currentTaskList);
+        controls.appendChild(editBtn);
 
-          const severityNum = parseInt(task.severity, 10) || 0;
+        const severityNum = parseInt(task.severity, 10) || 0;
 
-          taskItem.appendChild(checkbox);
-          taskItem.appendChild(taskSpan);
+        taskItem.appendChild(checkbox);
+        taskItem.appendChild(taskSpan);
 
-          if (severityNum > 0) {
-            const sev = document.createElement('span');
-            sev.className = 'severity-badge';
-            sev.textContent = severityNum;
-            taskItem.appendChild(sev);
-          }
+        if (severityNum > 0) {
+          const sev = document.createElement('span');
+          sev.className = 'severity-badge';
+          sev.textContent = severityNum;
+          taskItem.appendChild(sev);
+        }
 
-          taskItem.appendChild(controls);
+        taskItem.appendChild(controls);
 
-          taskListEl.appendChild(taskItem);
+        taskListEl.appendChild(taskItem);
       });
-  }
+    }
 
   function renderCompletedTasks() {
     const taskListEl = document.getElementById('taskList');
     taskListEl.innerHTML = '';
     const dateKey = document.getElementById('journalForm').dataset.date;
-    const tasks = (completedTasks[dateKey] || []).filter(t => t.list === currentTaskList);
-    if (tasks.length === 0) {
+    const nonRepeat = (completedTasks[dateKey] || []).filter(t => t.list === currentTaskList);
+    const repeats = (taskLists[currentTaskList] || []).filter(t =>
+      occursToday(t, dateKey) && t.repeat !== 'none' && t.completions && t.completions[dateKey]
+    );
+    if (nonRepeat.length === 0 && repeats.length === 0) {
       const msg = document.createElement('p');
       msg.textContent = 'No completed tasks for this day.';
       msg.style.color = '#666';
       taskListEl.appendChild(msg);
       return;
     }
-    tasks.forEach(task => {
+    nonRepeat.forEach(task => {
       const li = document.createElement('li');
       li.className = 'task-item completed-task';
       const span = document.createElement('span');
@@ -2458,6 +2463,18 @@ initFCM();
       restore.textContent = '↺';
       restore.style.cssText = 'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#28a745;';
       restore.onclick = () => restoreTask(task.id, dateKey);
+      li.append(span, restore);
+      taskListEl.appendChild(li);
+    });
+    repeats.forEach(task => {
+      const li = document.createElement('li');
+      li.className = 'task-item completed-task';
+      const span = document.createElement('span');
+      span.textContent = task.text;
+      const restore = document.createElement('button');
+      restore.textContent = '↺';
+      restore.style.cssText = 'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#28a745;';
+      restore.onclick = () => { toggleTask(task.id, dateKey, false); renderCompletedTasks(); };
       li.append(span, restore);
       taskListEl.appendChild(li);
     });
@@ -2494,37 +2511,31 @@ initFCM();
   /*******************************************************
    * CORRECTED Task Toggling Function
    *******************************************************/
-  function toggleTask(taskId, dateKey) {
-      const tasks = taskLists[currentTaskList];
-      const taskIndex = tasks.findIndex(t => t.id == taskId);
-      if (taskIndex === -1) return;
+  function toggleTask(taskId, dateKey, isCompleted) {
+    const tasks = taskLists[currentTaskList];
+    const taskIndex = tasks.findIndex(t => t.id == taskId);
+    if (taskIndex === -1) return;
 
-      const task = tasks[taskIndex];
+    const task = tasks[taskIndex];
 
-      if (task.repeat === 'none') {
-          // For non-repeating tasks, we don't set `completed: true` anymore.
-          // We move it directly to the completedTasks list.
-          if (!completedTasks[dateKey]) {
-              completedTasks[dateKey] = [];
-          }
-          completedTasks[dateKey].push({ ...task, list: currentTaskList });
-          
-          // The FIX: Remove it from the active list.
-          tasks.splice(taskIndex, 1);
-          
+    if (task.repeat === 'none') {
+      if (isCompleted) {
+        if (!completedTasks[dateKey]) {
+          completedTasks[dateKey] = [];
+        }
+        completedTasks[dateKey].push({ ...task, list: currentTaskList });
+        tasks.splice(taskIndex, 1);
+      }
+    } else {
+      task.completions = task.completions || {};
+      if (isCompleted) {
+        task.completions[dateKey] = true;
       } else {
-          // For repeating tasks, we add a completion entry for the specific date.
-          task.completions = task.completions || {};
-          task.completions[dateKey] = true;
+        delete task.completions[dateKey];
       }
-      
-      const li = document.querySelector(`.task-item[data-task-id="${taskId}"]`);
-      if (li) {
-          li.classList.add('fade-out');
-          setTimeout(() => li.remove(), 500);
-      }
+    }
 
-      saveUserData();
+    saveUserData();
   }
 
   function deleteTask(taskId) {
@@ -2621,49 +2632,6 @@ initFCM();
       await saveJournal(false);
       closeTaskReminderForm();
       renderTasks();
-  }
-
-  async function createNextRecurrence(completedTask, listName) {
-      const todayStr = document.getElementById('journalForm').dataset.date;
-      const today = new Date(todayStr + 'T12:00:00');
-      let nextDate = new Date(today);
-
-      switch (completedTask.repeat) {
-          case 'daily':
-              nextDate.setDate(today.getDate() + 1);
-              break;
-          case 'weekly':
-              nextDate.setDate(today.getDate() + 7);
-              break;
-          default:
-              return;
-      }
-
-      const nextDateStr = nextDate.toISOString().split('T')[0];
-
-      const newTask = {
-          ...completedTask,
-          id: `task_${Date.now()}`,
-          completed: false,
-          subtasks: completedTask.subtasks ? completedTask.subtasks.map(st => ({...st, completed: false})) : [],
-      };
-
-      const dateDocRef = doc(db, 'users', userId, 'journal', nextDateStr);
-
-      try {
-          const dateDoc = await getDoc(dateDocRef);
-          let dateData = dateDoc.exists() ? dateDoc.data() : { taskLists: { personal: [], work: [] } };
-
-          if (!dateData.taskLists) dateData.taskLists = { personal: [], work: [] };
-          if (!dateData.taskLists[listName]) dateData.taskLists[listName] = [];
-
-          dateData.taskLists[listName].push(newTask);
-
-          await setDoc(dateDocRef, dateData, { merge: true });
-          console.log(`Created recurring task for ${nextDateStr}`);
-      } catch (error) {
-          console.error("Error creating recurring task:", error);
-      }
   }
 
   function closeTaskReminderForm() {
