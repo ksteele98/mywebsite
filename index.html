@@ -2607,7 +2607,12 @@ initFCM();
       task.severity = parseInt(document.getElementById('taskReminderSeverity').value, 10) || 0;
       task.reminderDate = document.getElementById('taskReminderDate').value;
       task.reminderTime = document.getElementById('taskReminderTime').value;
-      task.repeat = document.getElementById('taskRepeat').value;
+      const newRepeat = document.getElementById('taskRepeat').value;
+      const prevRepeat = task.repeat || 'none';
+      task.repeat = newRepeat;
+      if (prevRepeat === 'none' && newRepeat !== 'none') {
+        task.startDate = new Date().toISOString().split('T')[0];
+      }
 
       if (task.repeat === 'weekly') {
         const selectedDayRadio = document.querySelector('input[name="repeatDay"]:checked');
