@@ -2394,10 +2394,11 @@ initFCM();
 
       const dateKey = document.getElementById('journalForm').dataset.date;
       const allTasks = taskLists[currentTaskList] || [];
-      // Hide repeating tasks already completed for this day
+      // Hide tasks already completed for this day so repeating tasks
+      // disappear only on the days they are checked off
       const currentTasks = allTasks.filter(task =>
         occursToday(task, dateKey) &&
-        !(task.repeat !== "none" && isTaskCompletedForDate(task, dateKey))
+        !isTaskCompletedForDate(task, dateKey)
       );
 
       currentTasks.sort((a, b) => {
