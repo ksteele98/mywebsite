@@ -2372,6 +2372,12 @@ initFCM();
         }
     }
 
+    function isTaskCompletedForDate(task, dateKey) {
+        return task.repeat !== 'none'
+          ? task.completions && task.completions[dateKey]
+          : task.completed;
+    }
+
     function renderTasks() {
       const taskListEl = document.getElementById('taskList');
       if (!taskListEl) return;
@@ -2380,18 +2386,17 @@ initFCM();
       const dateKey = document.getElementById('journalForm').dataset.date;
       const allTasks = taskLists[currentTaskList] || [];
       const currentTasks = allTasks.filter(task => occursToday(task, dateKey));
-      const filteredTasks = currentTasks.filter(task => !(task.repeat !== 'none'
-        ? task.completions && task.completions[dateKey]
-        : task.completed));
 
-      filteredTasks.sort((a, b) => (a.completed - b.completed) || (b.severity - a.severity));
+      currentTasks.sort((a, b) => {
+        const aCompleted = isTaskCompletedForDate(a, dateKey) ? 1 : 0;
+        const bCompleted = isTaskCompletedForDate(b, dateKey) ? 1 : 0;
+        return (aCompleted - bCompleted) || (b.severity - a.severity);
+      });
 
-      filteredTasks.forEach(task => {
+      currentTasks.forEach(task => {
         const taskItem = document.createElement('li');
         taskItem.className = 'task-item';
-        const isCompleted = task.repeat !== 'none'
-          ? task.completions && task.completions[dateKey]
-          : task.completed;
+        const isCompleted = isTaskCompletedForDate(task, dateKey);
         if (isCompleted) taskItem.classList.add('completed-task');
         taskItem.dataset.id = task.id;
 
@@ -2407,7 +2412,6 @@ initFCM();
         checkbox.checked = isCompleted;
         checkbox.onchange = () => {
           toggleTask(task.id, dateKey, checkbox.checked);
-          renderTasks();
         };
 
         const taskSpan = document.createElement('span');
@@ -2443,18 +2447,16 @@ initFCM();
     const taskListEl = document.getElementById('taskList');
     taskListEl.innerHTML = '';
     const dateKey = document.getElementById('journalForm').dataset.date;
-    const nonRepeat = (completedTasks[dateKey] || []).filter(t => t.list === currentTaskList);
-    const repeats = (taskLists[currentTaskList] || []).filter(t =>
-      occursToday(t, dateKey) && t.repeat !== 'none' && t.completions && t.completions[dateKey]
-    );
-    if (nonRepeat.length === 0 && repeats.length === 0) {
+    const tasks = taskLists[currentTaskList] || [];
+    const completed = tasks.filter(t => occursToday(t, dateKey) && isTaskCompletedForDate(t, dateKey));
+    if (completed.length === 0) {
       const msg = document.createElement('p');
       msg.textContent = 'No completed tasks for this day.';
       msg.style.color = '#666';
       taskListEl.appendChild(msg);
       return;
     }
-    nonRepeat.forEach(task => {
+    completed.forEach(task => {
       const li = document.createElement('li');
       li.className = 'task-item completed-task';
       const span = document.createElement('span');
@@ -2462,39 +2464,10 @@ initFCM();
       const restore = document.createElement('button');
       restore.textContent = '↺';
       restore.style.cssText = 'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#28a745;';
-      restore.onclick = () => restoreTask(task.id, dateKey);
+      restore.onclick = () => { toggleTask(task.id, dateKey, false); };
       li.append(span, restore);
       taskListEl.appendChild(li);
     });
-    repeats.forEach(task => {
-      const li = document.createElement('li');
-      li.className = 'task-item completed-task';
-      const span = document.createElement('span');
-      span.textContent = task.text;
-      const restore = document.createElement('button');
-      restore.textContent = '↺';
-      restore.style.cssText = 'margin-left:auto;background:none;border:none;font-size:18px;cursor:pointer;color:#28a745;';
-      restore.onclick = () => { toggleTask(task.id, dateKey, false); renderCompletedTasks(); };
-      li.append(span, restore);
-      taskListEl.appendChild(li);
-    });
-  }
-
-  function restoreTask(taskId, dateKey) {
-    const list = completedTasks[dateKey] || [];
-    const idx = list.findIndex(t => t.id == taskId);
-    if (idx === -1) return;
-    const [task] = list.splice(idx, 1);
-    if (!taskLists[task.list]) taskLists[task.list] = [];
-    if (task.repeat === 'none') {
-      task.completed = false;
-    } else if (task.completions) {
-      delete task.completions[dateKey];
-    }
-    taskLists[task.list].push(task);
-    saveUserData();
-    if (showingCompleted) renderCompletedTasks();
-    else renderTasks();
   }
 
   function toggleCompletedView() {
@@ -2519,12 +2492,17 @@ initFCM();
     const task = tasks[taskIndex];
 
     if (task.repeat === 'none') {
+      task.completed = isCompleted;
       if (isCompleted) {
         if (!completedTasks[dateKey]) {
           completedTasks[dateKey] = [];
         }
-        completedTasks[dateKey].push({ ...task, list: currentTaskList });
-        tasks.splice(taskIndex, 1);
+        if (!completedTasks[dateKey].some(t => t.id === taskId && t.list === currentTaskList)) {
+          completedTasks[dateKey].push({ ...task, list: currentTaskList });
+        }
+      } else if (completedTasks[dateKey]) {
+        completedTasks[dateKey] = completedTasks[dateKey].filter(t => !(t.id === taskId && t.list === currentTaskList));
+        if (completedTasks[dateKey].length === 0) delete completedTasks[dateKey];
       }
     } else {
       task.completions = task.completions || {};
@@ -2536,6 +2514,8 @@ initFCM();
     }
 
     saveUserData();
+    if (showingCompleted) renderCompletedTasks();
+    else renderTasks();
   }
 
   function deleteTask(taskId) {
