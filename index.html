@@ -171,7 +171,7 @@
       flex-direction: column;
       align-items: center;
       gap: 5px;
-      margin-right: 5px;
+      margin-left: 5px;
     }
 
     .edit-task-btn {
@@ -2473,8 +2473,8 @@ initFCM();
 
         taskContent.appendChild(taskRow);
 
-        taskItem.appendChild(controls);
         taskItem.appendChild(taskContent);
+        taskItem.appendChild(controls);
 
         taskListEl.appendChild(taskItem);
       });
