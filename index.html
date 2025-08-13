@@ -180,6 +180,15 @@
       padding: 0 5px;
     }
 
+    .delete-task-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0 5px;
+      color: #dc3545;
+    }
+
     .weekday-picker {
       display: flex;
       justify-content: space-around;
@@ -2425,6 +2434,13 @@ initFCM();
         editBtn.onclick = () => openTaskEditor(task.id, currentTaskList);
         controls.appendChild(editBtn);
 
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-task-btn';
+        deleteBtn.innerHTML = '&times;';
+        deleteBtn.title = 'Delete Task';
+        deleteBtn.onclick = () => deleteTask(task.id);
+        controls.appendChild(deleteBtn);
+
         const severityNum = parseInt(task.severity, 10) || 0;
 
         taskItem.appendChild(checkbox);
@@ -2525,17 +2541,9 @@ initFCM();
       const task = tasks[taskIndex];
       const dateKey = document.getElementById('journalForm').dataset.date;
       if (task.repeat && task.repeat !== 'none') {
-          const choice = prompt("This is a repeating task. Do you want to delete:\n1. Only this occurrence\n2. This and all future occurrences\n\nEnter 1 or 2. (Cancel to abort)");
-          if (choice === '1') {
-              task.exceptions = task.exceptions || {};
-              task.exceptions[dateKey] = true;
-          } else if (choice === '2') {
-              const yesterday = new Date(dateKey);
-              yesterday.setDate(yesterday.getDate() - 1);
-              task.endDate = yesterday.toISOString().split('T')[0];
-          } else {
-              return;
-          }
+          const yesterday = new Date(dateKey);
+          yesterday.setDate(yesterday.getDate() - 1);
+          task.endDate = yesterday.toISOString().split('T')[0];
       } else {
           tasks.splice(taskIndex, 1);
       }
