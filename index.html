@@ -167,9 +167,11 @@
 
     /* Styles for the task edit button and day picker */
     .task-item-controls {
-      margin-left: auto;
       display: flex;
+      flex-direction: column;
+      align-items: center;
       gap: 5px;
+      margin-right: 5px;
     }
 
     .edit-task-btn {
@@ -329,7 +331,7 @@
     }
     .task-item {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       padding: 5px;
       border-bottom: 2px solid #add8e6;
       flex-wrap: wrap;
@@ -351,6 +353,16 @@
         background-color: #e0e0e0;
         border-radius: 3px;
         padding: 2px 4px;
+      }
+      .task-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .task-row {
+        display: flex;
+        align-items: center;
+        gap: 5px;
       }
       .subtask-list {
         list-style: none;
@@ -2414,22 +2426,6 @@ initFCM();
         if (isCompleted) taskItem.classList.add('completed-task');
         taskItem.dataset.id = task.id;
 
-        if (task.repeat && task.repeat !== 'none') {
-          const repeatLabel = document.createElement('span');
-          repeatLabel.className = 'task-repeat-label';
-          repeatLabel.textContent = getTaskRepeatLabel(task);
-          taskItem.appendChild(repeatLabel);
-        }
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = isCompleted;
-        checkbox.onchange = () => {
-          toggleTask(task.id, dateKey, checkbox.checked);
-        };
-
-        const taskSpan = document.createElement('span');
-        taskSpan.textContent = task.text;
         const controls = document.createElement('div');
         controls.className = 'task-item-controls';
         const editBtn = document.createElement('button');
@@ -2438,7 +2434,6 @@ initFCM();
         editBtn.title = 'Edit Task Details';
         editBtn.onclick = () => openTaskEditor(task.id, currentTaskList);
         controls.appendChild(editBtn);
-
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-task-btn';
         deleteBtn.innerHTML = '&times;';
@@ -2446,19 +2441,40 @@ initFCM();
         deleteBtn.onclick = () => deleteTask(task.id);
         controls.appendChild(deleteBtn);
 
+        const taskContent = document.createElement('div');
+        taskContent.className = 'task-content';
+        if (task.repeat && task.repeat !== 'none') {
+          const repeatLabel = document.createElement('span');
+          repeatLabel.className = 'task-repeat-label';
+          repeatLabel.textContent = getTaskRepeatLabel(task);
+          taskContent.appendChild(repeatLabel);
+        }
+
+        const taskRow = document.createElement('div');
+        taskRow.className = 'task-row';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = isCompleted;
+        checkbox.onchange = () => {
+          toggleTask(task.id, dateKey, checkbox.checked);
+        };
+        const taskSpan = document.createElement('span');
+        taskSpan.textContent = task.text;
+        taskRow.appendChild(checkbox);
+        taskRow.appendChild(taskSpan);
+
         const severityNum = parseInt(task.severity, 10) || 0;
-
-        taskItem.appendChild(checkbox);
-        taskItem.appendChild(taskSpan);
-
         if (severityNum > 0) {
           const sev = document.createElement('span');
           sev.className = 'severity-badge';
           sev.textContent = severityNum;
-          taskItem.appendChild(sev);
+          taskRow.appendChild(sev);
         }
 
+        taskContent.appendChild(taskRow);
+
         taskItem.appendChild(controls);
+        taskItem.appendChild(taskContent);
 
         taskListEl.appendChild(taskItem);
       });
