@@ -2337,7 +2337,13 @@ initFCM();
 
         switch (task.repeat) {
           case "none":
-            return dateKey === task.startDate;
+            // For one-time tasks, keep them visible on all days after their
+            // start date until they are completed. Previously, non-repeating
+            // tasks would only appear on their start date, making it easy to
+            // lose track of unfinished items. By always returning true here,
+            // the surrounding filters will continue to show the task on future
+            // days until `task.completed` becomes true.
+            return true;
           case "daily":
             return true;
           case "weekdays":
