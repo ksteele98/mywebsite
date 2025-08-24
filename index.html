@@ -2320,66 +2320,113 @@ initFCM();
     saveUserData();
     renderTasks();
   }
+  function toDate(dstr){ return new Date(dstr + "T00:00:00"); }
+function ymd(d){ return d.toISOString().split("T")[0]; }
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+
+function alignToFirstWeeklyOccurrence(task, target){
+  const s = toDate(task.startDate);
+  const offset = (target - s.getDay() + 7) % 7;
+  return addDays(s, offset);
+}
+
+function weeklyWindow(task, d){
+  const start = toDate(task.startDate);
+  const target = (typeof task.repeatDay === 'number') ? task.repeatDay : start.getDay();
+  const day = d.getDay();
+  const deltaToPrev = (day - target + 7) % 7;
+  const prev = addDays(d, -deltaToPrev);     // last scheduled day (<= d)
+  const next = addDays(prev, 7);             // next scheduled day after prev
+  const firstOccur = alignToFirstWeeklyOccurrence(task, target);
+  return { prev, next, firstOccur };
+}
+
+function biweeklyWindow(task, d){
+  const start = toDate(task.startDate);
+  const target = (typeof task.repeatDay === 'number') ? task.repeatDay : start.getDay();
+  const first = alignToFirstWeeklyOccurrence(task, target);
+  if (d < first) return { prev: null, next: first, firstOccur: first };
+
+  const diffDays = Math.floor((toDate(ymd(d)) - first) / 86400000);
+  const k = Math.floor(diffDays / 14);
+  const prev = addDays(first, k * 14);
+  const next = addDays(first, (k + 1) * 14);
+  return { prev, next, firstOccur: first };
+}
+
+function wasCompletedInWindow(task, win){
+  if (!task.completions) return false;
+  return Object.keys(task.completions).some(key => {
+    const dt = toDate(key);
+    return dt > (win.prev || new Date(0)) && dt <= win.next;
+  });
+}
+
+function matchesOriginalSchedule(task, d){
+  const start = toDate(task.startDate);
+  const monthsBetween =
+    (d.getFullYear() - start.getFullYear()) * 12 +
+    (d.getMonth() - start.getMonth());
+  switch (task.repeat){
+    case "monthly":     return d.getDate() === start.getDate();
+    case "quarterly":   return d.getDate() === start.getDate() && monthsBetween % 3 === 0;
+    case "semiannual":  return d.getDate() === start.getDate() && monthsBetween % 6 === 0;
+    case "yearly":      return d.getDate() === start.getDate() && d.getMonth() === start.getMonth();
+    default:            return false;
+  }
+}
 
     function occursToday(task, dateKey) {
-        if (!task.startDate) return false;
-        if (task.exceptions && task.exceptions[dateKey]) return false;
-        if (task.endDate && dateKey > task.endDate) return false;
+  if (!task.startDate) return false;
+  if (task.exceptions && task.exceptions[dateKey]) return false;
+  if (task.endDate && dateKey > task.endDate) return false;
 
-        const d = new Date(dateKey + "T00:00:00");
-        const start = new Date(task.startDate + "T00:00:00");
-        if (d < start) return false;
+  const d = toDate(dateKey);
+  const start = toDate(task.startDate);
+  if (d < start) return false;
 
-        const day = d.getDay();
-        const weekMs = 7 * 24 * 60 * 60 * 1000;
-        const monthsBetween =
-          (d.getFullYear() - start.getFullYear()) * 12 +
-          (d.getMonth() - start.getMonth());
+  switch (task.repeat) {
+    case "none":
+      // One-time tasks: show every day after start until completed.
+      return true;
 
-        switch (task.repeat) {
-          case "none":
-            // For one-time tasks, keep them visible on all days after their
-            // start date until they are completed. Previously, non-repeating
-            // tasks would only appear on their start date, making it easy to
-            // lose track of unfinished items. By always returning true here,
-            // the surrounding filters will continue to show the task on future
-            // days until `task.completed` becomes true.
-            return true;
-          case "daily":
-            return true;
-          case "weekdays":
-            return day >= 1 && day <= 5;
-          case "weekends":
-            return day === 0 || day === 6;
-          case "weekly": {
-            const target =
-              typeof task.repeatDay === "number" ? task.repeatDay : start.getDay();
-            return day === target;
-          }
-          case "biweekly": {
-            const target =
-              typeof task.repeatDay === "number" ? task.repeatDay : start.getDay();
-            const first = new Date(start);
-            const offset = (target - first.getDay() + 7) % 7;
-            first.setDate(first.getDate() + offset);
-            if (d < first) return false;
-            const diffW = Math.floor((d - first) / weekMs);
-            return day === target && diffW % 2 === 0;
-          }
-          case "monthly":
-            return d.getDate() === start.getDate();
-          case "quarterly":
-            return d.getDate() === start.getDate() && monthsBetween % 3 === 0;
-          case "semiannual":
-            return d.getDate() === start.getDate() && monthsBetween % 6 === 0;
-          case "yearly":
-            return (
-              d.getDate() === start.getDate() &&
-              d.getMonth() === start.getMonth()
-            );
-          default:
-            return false;
-        }
+    case "daily":
+      // Always visible (per-day completion already handled elsewhere).
+      return true;
+
+    case "weekdays": {
+      const day = d.getDay();
+      return day >= 1 && day <= 5;
+    }
+
+    case "weekends": {
+      const day = d.getDay();
+      return day === 0 || day === 6;
+    }
+
+    case "weekly": {
+      const win = weeklyWindow(task, d);
+      // Don’t show in the pre-start partial window
+      if (win.prev < start && d < win.firstOccur) return false;
+      if (wasCompletedInWindow(task, win)) return false;
+      // Carry from the day after the last occurrence up to (and including) the next one
+      return d > win.prev && d <= win.next;
+    }
+
+    case "biweekly": {
+      const win = biweeklyWindow(task, d);
+      if (d < win.firstOccur) return false;
+      if (wasCompletedInWindow(task, win)) return false;
+      // If prev is null (we're before first), treat window as (-∞, first]
+      return d > (win.prev || addDays(win.firstOccur, -14)) && d <= win.next;
+    }
+
+    default:
+      // Monthly / quarterly / semiannual / yearly:
+      // keep original “on the day only” behavior for now.
+      return matchesOriginalSchedule(task, d);
+  }
+
     }
 
     function getTaskRepeatLabel(task) {
