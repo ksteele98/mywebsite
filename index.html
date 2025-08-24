@@ -2222,10 +2222,7 @@ initFCM();
           });
       }
 
-      document.getElementById('toggleCompletedBtn')?.addEventListener('click', toggleCompletedView);
-      document.querySelector('.new-list-btn[onclick="createNewList()"]')?.addEventListener('click', createNewList);
-      document.querySelector('.delete-list-btn')?.addEventListener('click', deleteCurrentList);
-      document.querySelector('.add-task-btn')?.addEventListener('click', addTask);
+    
       updateActiveTaskListButton();
       renderTasks();
   }
