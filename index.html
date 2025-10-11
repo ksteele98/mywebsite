@@ -2355,7 +2355,8 @@ function wasCompletedInWindow(task, win){
   if (!task.completions) return false;
   return Object.keys(task.completions).some(key => {
     const dt = toDate(key);
-    return dt > (win.prev || new Date(0)) && dt <= win.next;
+    const lowerBound = win.prev || win.firstOccur || new Date(0);
+    return dt >= lowerBound && dt < win.next;
   });
 }
 
@@ -2406,16 +2407,17 @@ function matchesOriginalSchedule(task, d){
       // Don’t show in the pre-start partial window
       if (win.prev < start && d < win.firstOccur) return false;
       if (wasCompletedInWindow(task, win)) return false;
-      // Carry from the day after the last occurrence up to (and including) the next one
-      return d > win.prev && d <= win.next;
+      // Carry from the scheduled day (inclusive) up to, but not including, the next occurrence
+      return d >= win.prev && d < win.next;
     }
 
     case "biweekly": {
       const win = biweeklyWindow(task, d);
       if (d < win.firstOccur) return false;
       if (wasCompletedInWindow(task, win)) return false;
-      // If prev is null (we're before first), treat window as (-∞, first]
-      return d > (win.prev || addDays(win.firstOccur, -14)) && d <= win.next;
+      // If prev is null (we're before first), anchor the window at the first occurrence
+      const lowerBound = win.prev || win.firstOccur;
+      return d >= lowerBound && d < win.next;
     }
 
     default:
