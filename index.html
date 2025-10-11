@@ -1441,7 +1441,6 @@ initFCM();
       console.log(`Cleanup complete. Migrated ${tasksMigrated} tasks.`);
       if (tasksMigrated > 0) {
           await saveUserData();
-          alert(`Cleanup complete! Migrated ${tasksMigrated} previously completed tasks to their correct dates.`);
       }
 
       // Refresh the UI to show the clean lists.
