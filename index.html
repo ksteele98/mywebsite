@@ -1280,10 +1280,14 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   let userLastOpenTime = 0; // track last time user opened app across devices
   const provider = new GoogleAuthProvider();
 
+  const TIMER_STATE_KEY = 'timeWidgetStateV1';
+
   let timerElapsedSeconds = 0;
+  let timerStartedAtMs = null;
   let timerIntervalId = null;
+
   let countdownSecondsLeft = 5 * 60;
-  let countdownIntervalId = null;
+  let countdownTargetAtMs = null;
 
   function formatHms(totalSeconds) {
     const safeSeconds = Math.max(0, Math.floor(totalSeconds));
@@ -1293,13 +1297,70 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     return `${hours}:${minutes}:${seconds}`;
   }
 
+  function getLiveTimerElapsedSeconds() {
+    if (!timerStartedAtMs) return timerElapsedSeconds;
+    return timerElapsedSeconds + (Date.now() - timerStartedAtMs) / 1000;
+  }
+
+  function getLiveCountdownSecondsLeft() {
+    if (!countdownTargetAtMs) return countdownSecondsLeft;
+    return Math.max(0, (countdownTargetAtMs - Date.now()) / 1000);
+  }
+
+  function saveTimeWidgetState() {
+    const payload = {
+      timerElapsedSeconds,
+      timerStartedAtMs,
+      countdownSecondsLeft,
+      countdownTargetAtMs
+    };
+    localStorage.setItem(TIMER_STATE_KEY, JSON.stringify(payload));
+  }
+
+  function loadTimeWidgetState() {
+    try {
+      const raw = localStorage.getItem(TIMER_STATE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      timerElapsedSeconds = Number(parsed?.timerElapsedSeconds) || 0;
+      timerStartedAtMs = Number.isFinite(parsed?.timerStartedAtMs) ? parsed.timerStartedAtMs : null;
+      countdownSecondsLeft = Number(parsed?.countdownSecondsLeft);
+      countdownSecondsLeft = Number.isFinite(countdownSecondsLeft) && countdownSecondsLeft >= 0 ? countdownSecondsLeft : 5 * 60;
+      countdownTargetAtMs = Number.isFinite(parsed?.countdownTargetAtMs) ? parsed.countdownTargetAtMs : null;
+    } catch (error) {
+      console.warn('Unable to restore timer state:', error);
+    }
+  }
+
   function syncTimeDisplays() {
     const timerDisplay = document.getElementById('timerDisplay');
     const countdownDisplay = document.getElementById('countdownDisplay');
     const timerStartStopBtn = document.getElementById('timerStartStopBtn');
-    if (timerDisplay) timerDisplay.textContent = formatHms(timerElapsedSeconds);
-    if (countdownDisplay) countdownDisplay.textContent = formatHms(countdownSecondsLeft);
-    if (timerStartStopBtn) timerStartStopBtn.textContent = timerIntervalId ? 'Stop' : 'Start';
+
+    const timerSeconds = getLiveTimerElapsedSeconds();
+    const countdownSeconds = getLiveCountdownSecondsLeft();
+
+    if (timerDisplay) timerDisplay.textContent = formatHms(timerSeconds);
+    if (countdownDisplay) countdownDisplay.textContent = formatHms(countdownSeconds);
+    if (timerStartStopBtn) timerStartStopBtn.textContent = timerStartedAtMs ? 'Stop' : 'Start';
+  }
+
+  function startTickerIfNeeded() {
+    const shouldTick = Boolean(timerStartedAtMs || countdownTargetAtMs);
+    if (shouldTick && !timerIntervalId) {
+      timerIntervalId = setInterval(() => {
+        if (countdownTargetAtMs && getLiveCountdownSecondsLeft() <= 0) {
+          countdownSecondsLeft = 0;
+          countdownTargetAtMs = null;
+          alert('Countdown complete!');
+          saveTimeWidgetState();
+        }
+        syncTimeDisplays();
+      }, 250);
+    } else if (!shouldTick && timerIntervalId) {
+      clearInterval(timerIntervalId);
+      timerIntervalId = null;
+    }
   }
 
   function _toggleTimePanel() {
@@ -1309,58 +1370,58 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   }
 
   function _startStopTimer() {
-    if (timerIntervalId) {
-      clearInterval(timerIntervalId);
-      timerIntervalId = null;
+    if (timerStartedAtMs) {
+      timerElapsedSeconds = getLiveTimerElapsedSeconds();
+      timerStartedAtMs = null;
+      startTickerIfNeeded();
+      saveTimeWidgetState();
       syncTimeDisplays();
       return;
     }
-    timerIntervalId = setInterval(() => {
-      timerElapsedSeconds += 1;
-      syncTimeDisplays();
-    }, 1000);
+
+    timerStartedAtMs = Date.now();
+    startTickerIfNeeded();
+    saveTimeWidgetState();
     syncTimeDisplays();
   }
 
   function _resetTimer() {
-    clearInterval(timerIntervalId);
-    timerIntervalId = null;
     timerElapsedSeconds = 0;
+    timerStartedAtMs = null;
+    startTickerIfNeeded();
+    saveTimeWidgetState();
     syncTimeDisplays();
   }
 
   function _startCountdown() {
     const minutesInput = document.getElementById('countdownMinutes');
-    if (!countdownIntervalId && countdownSecondsLeft <= 0) {
+    if (!countdownTargetAtMs && getLiveCountdownSecondsLeft() <= 0) {
       const chosenMinutes = Number(minutesInput?.value);
       countdownSecondsLeft = (Number.isFinite(chosenMinutes) && chosenMinutes > 0 ? chosenMinutes : 1) * 60;
     }
-    clearInterval(countdownIntervalId);
-    countdownIntervalId = setInterval(() => {
-      countdownSecondsLeft -= 1;
-      syncTimeDisplays();
-      if (countdownSecondsLeft <= 0) {
-        clearInterval(countdownIntervalId);
-        countdownIntervalId = null;
-        countdownSecondsLeft = 0;
-        syncTimeDisplays();
-        alert('Countdown complete!');
-      }
-    }, 1000);
+
+    const secondsToRun = getLiveCountdownSecondsLeft();
+    countdownTargetAtMs = Date.now() + (secondsToRun * 1000);
+    startTickerIfNeeded();
+    saveTimeWidgetState();
     syncTimeDisplays();
   }
 
   function _pauseCountdown() {
-    clearInterval(countdownIntervalId);
-    countdownIntervalId = null;
+    countdownSecondsLeft = getLiveCountdownSecondsLeft();
+    countdownTargetAtMs = null;
+    startTickerIfNeeded();
+    saveTimeWidgetState();
+    syncTimeDisplays();
   }
 
   function _resetCountdown() {
-    clearInterval(countdownIntervalId);
-    countdownIntervalId = null;
+    countdownTargetAtMs = null;
     const minutesInput = document.getElementById('countdownMinutes');
     const chosenMinutes = Number(minutesInput?.value);
     countdownSecondsLeft = (Number.isFinite(chosenMinutes) && chosenMinutes > 0 ? chosenMinutes : 5) * 60;
+    startTickerIfNeeded();
+    saveTimeWidgetState();
     syncTimeDisplays();
   }
 
@@ -1370,6 +1431,14 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   window._startCountdown = _startCountdown;
   window._pauseCountdown = _pauseCountdown;
   window._resetCountdown = _resetCountdown;
+
+  loadTimeWidgetState();
+  if (timerStartedAtMs && timerStartedAtMs > Date.now()) timerStartedAtMs = Date.now();
+  if (countdownTargetAtMs && countdownTargetAtMs <= Date.now()) {
+    countdownTargetAtMs = null;
+    countdownSecondsLeft = 0;
+  }
+  startTickerIfNeeded();
   syncTimeDisplays();
 
   // This function triggers the Google popup
