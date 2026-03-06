@@ -16,6 +16,66 @@
       overflow-x: hidden;
       overflow-y: auto;
     }
+    .time-widget-button {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 1300;
+      background: #1f2937;
+      color: white;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    .time-panel {
+      position: fixed;
+      top: 52px;
+      left: 12px;
+      z-index: 1300;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 12px;
+      width: 230px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+      display: none;
+    }
+    .time-panel h4 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+    .time-row {
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .time-display {
+      font-family: monospace;
+      font-size: 22px;
+      margin: 4px 0 8px;
+    }
+    .time-panel input[type="number"] {
+      width: 70px;
+      padding: 6px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+    .time-controls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .time-controls button {
+      border: 1px solid #d1d5db;
+      background: #f3f4f6;
+      border-radius: 6px;
+      padding: 5px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
     .calendar-container {
       max-width: 1200px;
       margin: 0 auto;
@@ -785,6 +845,29 @@
 </head>
 <body>
 
+<button class="time-widget-button" onclick="toggleTimePanel()">⏱ Time</button>
+<div class="time-panel" id="timePanel">
+  <div class="time-row">
+    <h4>Timer</h4>
+    <div class="time-display" id="timerDisplay">00:00:00</div>
+    <div class="time-controls">
+      <button onclick="startStopTimer()" id="timerStartStopBtn">Start</button>
+      <button onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+  <div class="time-row" style="margin-bottom:0;">
+    <h4>Countdown</h4>
+    <input type="number" id="countdownMinutes" min="1" value="5" aria-label="Countdown minutes">
+    <span>min</span>
+    <div class="time-display" id="countdownDisplay">00:05:00</div>
+    <div class="time-controls">
+      <button onclick="startCountdown()">Start</button>
+      <button onclick="pauseCountdown()">Pause</button>
+      <button onclick="resetCountdown()">Reset</button>
+    </div>
+  </div>
+</div>
+
 <div id="authSection" style="display: none; text-align:center; margin-bottom: 20px;">
   <button onclick="loginWithGoogle()" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
     Sign in with Google
@@ -1115,6 +1198,30 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   function toggleWeeklyOptions(value) {
     window._toggleWeeklyOptions && window._toggleWeeklyOptions(value);
   }
+
+  function toggleTimePanel() {
+    window._toggleTimePanel && window._toggleTimePanel();
+  }
+
+  function startStopTimer() {
+    window._startStopTimer && window._startStopTimer();
+  }
+
+  function resetTimer() {
+    window._resetTimer && window._resetTimer();
+  }
+
+  function startCountdown() {
+    window._startCountdown && window._startCountdown();
+  }
+
+  function pauseCountdown() {
+    window._pauseCountdown && window._pauseCountdown();
+  }
+
+  function resetCountdown() {
+    window._resetCountdown && window._resetCountdown();
+  }
 </script>
 <script type="module">
 // ─── expose everything HTML calls ───
@@ -1172,6 +1279,98 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   let userId = null;  // will store current Google user's uid here
   let userLastOpenTime = 0; // track last time user opened app across devices
   const provider = new GoogleAuthProvider();
+
+  let timerElapsedSeconds = 0;
+  let timerIntervalId = null;
+  let countdownSecondsLeft = 5 * 60;
+  let countdownIntervalId = null;
+
+  function formatHms(totalSeconds) {
+    const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+    const hours = String(Math.floor(safeSeconds / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((safeSeconds % 3600) / 60)).padStart(2, '0');
+    const seconds = String(safeSeconds % 60).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
+  function syncTimeDisplays() {
+    const timerDisplay = document.getElementById('timerDisplay');
+    const countdownDisplay = document.getElementById('countdownDisplay');
+    const timerStartStopBtn = document.getElementById('timerStartStopBtn');
+    if (timerDisplay) timerDisplay.textContent = formatHms(timerElapsedSeconds);
+    if (countdownDisplay) countdownDisplay.textContent = formatHms(countdownSecondsLeft);
+    if (timerStartStopBtn) timerStartStopBtn.textContent = timerIntervalId ? 'Stop' : 'Start';
+  }
+
+  function _toggleTimePanel() {
+    const panel = document.getElementById('timePanel');
+    if (!panel) return;
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function _startStopTimer() {
+    if (timerIntervalId) {
+      clearInterval(timerIntervalId);
+      timerIntervalId = null;
+      syncTimeDisplays();
+      return;
+    }
+    timerIntervalId = setInterval(() => {
+      timerElapsedSeconds += 1;
+      syncTimeDisplays();
+    }, 1000);
+    syncTimeDisplays();
+  }
+
+  function _resetTimer() {
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+    timerElapsedSeconds = 0;
+    syncTimeDisplays();
+  }
+
+  function _startCountdown() {
+    const minutesInput = document.getElementById('countdownMinutes');
+    if (!countdownIntervalId && countdownSecondsLeft <= 0) {
+      const chosenMinutes = Number(minutesInput?.value);
+      countdownSecondsLeft = (Number.isFinite(chosenMinutes) && chosenMinutes > 0 ? chosenMinutes : 1) * 60;
+    }
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = setInterval(() => {
+      countdownSecondsLeft -= 1;
+      syncTimeDisplays();
+      if (countdownSecondsLeft <= 0) {
+        clearInterval(countdownIntervalId);
+        countdownIntervalId = null;
+        countdownSecondsLeft = 0;
+        syncTimeDisplays();
+        alert('Countdown complete!');
+      }
+    }, 1000);
+    syncTimeDisplays();
+  }
+
+  function _pauseCountdown() {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+  }
+
+  function _resetCountdown() {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+    const minutesInput = document.getElementById('countdownMinutes');
+    const chosenMinutes = Number(minutesInput?.value);
+    countdownSecondsLeft = (Number.isFinite(chosenMinutes) && chosenMinutes > 0 ? chosenMinutes : 5) * 60;
+    syncTimeDisplays();
+  }
+
+  window._toggleTimePanel = _toggleTimePanel;
+  window._startStopTimer = _startStopTimer;
+  window._resetTimer = _resetTimer;
+  window._startCountdown = _startCountdown;
+  window._pauseCountdown = _pauseCountdown;
+  window._resetCountdown = _resetCountdown;
+  syncTimeDisplays();
 
   // This function triggers the Google popup
   async function _loginWithGoogle() {
