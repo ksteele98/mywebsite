@@ -2031,6 +2031,23 @@ initFCM();
     }
   }
 
+  function stopRecordingIfActive() {
+    if (!mediaRecorder || mediaRecorder.state !== 'recording') {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      const previousOnStop = mediaRecorder.onstop;
+      mediaRecorder.onstop = (event) => {
+        if (typeof previousOnStop === 'function') {
+          previousOnStop(event);
+        }
+        resolve();
+      };
+      mediaRecorder.stop();
+    });
+  }
+
   function handleAudioUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -2083,6 +2100,9 @@ initFCM();
     audioPlayer.style.display = 'none';
     audioInput.value = '';
     pendingAudioFile = null;
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
     if (pendingAudioObjectUrl) {
       URL.revokeObjectURL(pendingAudioObjectUrl);
       pendingAudioObjectUrl = null;
@@ -2437,6 +2457,7 @@ initFCM();
   /******************************************************* 11) Journal
   *******************************************************/
   async function saveJournal(closeAfterSave = true) {
+      await stopRecordingIfActive();
       const date = document.getElementById('journalForm').dataset.date;
       const text = document.getElementById('journalText').value.trim();
       if (!userId) {
