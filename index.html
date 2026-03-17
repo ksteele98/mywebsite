@@ -1586,6 +1586,7 @@ initFCM();
   let pendingImageFile = null;
   let mediaRecorder = null;
   let recordedChunks = [];
+  let pendingAudioObjectUrl = null;
   let reminderTimeouts = {};
   let taskReminderTimeouts = {};
   let showPastReminders = false;
@@ -1872,6 +1873,7 @@ initFCM();
     const removeImageBtn = document.getElementById('removeImageBtn');
 
     recordedChunks = [];
+    pendingAudioFile = null;
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
     }
@@ -1994,17 +1996,33 @@ initFCM();
       const mimeType = options.mimeType || 'audio/webm';
       mediaRecorder = new MediaRecorder(stream, options);
       recordedChunks = [];
-      mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+      mediaRecorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
       mediaRecorder.onstop = () => {
+        if (recordedChunks.length === 0) {
+          alert('No audio was captured. Please try recording again.');
+          stream.getTracks().forEach(track => track.stop());
+          document.getElementById('recordAudioBtn').textContent = 'Start Recording';
+          return;
+        }
         const blob = new Blob(recordedChunks, { type: mimeType });
+        if (pendingAudioObjectUrl) {
+          URL.revokeObjectURL(pendingAudioObjectUrl);
+        }
         const url = URL.createObjectURL(blob);
+        pendingAudioObjectUrl = url;
         const audioPlayer = document.getElementById('audioPlayer');
         audioPlayer.src = url;
         audioPlayer.style.display = 'block';
         audioPlayer.load();
-        pendingAudioFile = new File([blob], 'journal.webm', { type: mimeType });
+        const extension = mimeType.includes('mp4') ? 'm4a' : 'webm';
+        pendingAudioFile = new File([blob], `journal.${extension}`, { type: mimeType });
         document.getElementById('recordAudioBtn').textContent = 'Start Recording';
         document.getElementById('removeAudioBtn').style.display = 'block';
+        stream.getTracks().forEach(track => track.stop());
       };
       mediaRecorder.start();
       document.getElementById('recordAudioBtn').textContent = 'Stop Recording';
@@ -2025,6 +2043,10 @@ initFCM();
       return;
     }
     pendingAudioFile = file;
+    if (pendingAudioObjectUrl) {
+      URL.revokeObjectURL(pendingAudioObjectUrl);
+      pendingAudioObjectUrl = null;
+    }
     const url = URL.createObjectURL(file);
     const audioPlayer = document.getElementById('audioPlayer');
     audioPlayer.src = url;
@@ -2061,6 +2083,10 @@ initFCM();
     audioPlayer.style.display = 'none';
     audioInput.value = '';
     pendingAudioFile = null;
+    if (pendingAudioObjectUrl) {
+      URL.revokeObjectURL(pendingAudioObjectUrl);
+      pendingAudioObjectUrl = null;
+    }
     delete journalAudios[date];
     saveUserData();
     document.getElementById('removeAudioBtn').style.display = 'none';
@@ -2428,6 +2454,10 @@ initFCM();
               const audioRef = ref(storage, `journalAudios/${userId}/${date}/${pendingAudioFile.name}`);
               await uploadBytes(audioRef, pendingAudioFile);
               journalAudios[date] = await getDownloadURL(audioRef);
+              const audioPlayer = document.getElementById('audioPlayer');
+              audioPlayer.src = journalAudios[date];
+              audioPlayer.style.display = 'block';
+              audioPlayer.load();
               console.log("Audio uploaded for date:", date);
           }
           journalEntries[date] = text;
