@@ -1583,10 +1583,12 @@ initFCM();
   let journalAudios = {};
   let journalImages = {};
   let pendingAudioFile = null;
+  let pendingAudioFileName = '';
   let pendingImageFile = null;
   let mediaRecorder = null;
   let recordedChunks = [];
   let activeRecordingStream = null;
+  let recordingStopPromise = Promise.resolve();
   let pendingAudioObjectUrl = null;
   let reminderTimeouts = {};
   let taskReminderTimeouts = {};
@@ -1877,10 +1879,13 @@ initFCM();
 
     recordedChunks = [];
     pendingAudioFile = null;
+    pendingAudioFileName = '';
     clearPendingAudioObjectUrl();
     if (mediaRecorder && mediaRecorder.state === 'recording') {
+      requestRecorderData();
       mediaRecorder.stop();
     }
+    recordingStopPromise = Promise.resolve();
     activeRecordingStream?.getTracks().forEach(track => track.stop());
     activeRecordingStream = null;
     recordBtn.textContent = 'Start Recording';
@@ -1990,6 +1995,8 @@ initFCM();
     'audio/webm',
     'audio/mp4;codecs=mp4a.40.2',
     'audio/mp4',
+    'video/mp4;codecs=mp4a.40.2',
+    'video/mp4',
     'audio/ogg;codecs=opus',
     'audio/ogg'
   ];
@@ -2001,20 +2008,41 @@ initFCM();
   }
 
   function getAudioExtension(mimeType = '') {
-    if (mimeType.includes('mp4')) return 'm4a';
-    if (mimeType.includes('ogg')) return 'ogg';
-    if (mimeType.includes('mpeg')) return 'mp3';
-    if (mimeType.includes('wav')) return 'wav';
-    if (mimeType.includes('webm')) return 'webm';
+    const type = mimeType.toLowerCase();
+    if (type.includes('mp4')) return 'm4a';
+    if (type.includes('ogg')) return 'ogg';
+    if (type.includes('mpeg')) return 'mp3';
+    if (type.includes('wav')) return 'wav';
+    if (type.includes('webm')) return 'webm';
     return 'audio';
   }
 
-  function getSafeStorageFileName(file, date) {
+  function getSafeStorageFileName(file, date, preferredName = '') {
     const extension = getAudioExtension(file.type) || 'audio';
-    const originalName = (file.name || `journal.${extension}`).replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fallbackName = `journal.${extension}`;
+    const originalName = (preferredName || file.name || fallbackName).replace(/[^a-zA-Z0-9._-]/g, '_');
     const hasExtension = /\.[a-zA-Z0-9]+$/.test(originalName);
     const name = hasExtension ? originalName : `${originalName}.${extension}`;
     return `${Date.now()}-${date}-${name}`;
+  }
+
+  function getAudioUploadMetadata(file) {
+    const type = (file.type || '').toLowerCase();
+    let contentType = file.type || 'application/octet-stream';
+    if (type === 'video/mp4') contentType = 'audio/mp4';
+    if (type === 'video/webm') contentType = 'audio/webm';
+    if (type === 'video/ogg') contentType = 'audio/ogg';
+    return { contentType };
+  }
+
+  function requestRecorderData() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      try {
+        mediaRecorder.requestData();
+      } catch (err) {
+        console.warn('Could not flush recorder data before stopping:', err);
+      }
+    }
   }
 
   function clearPendingAudioObjectUrl() {
@@ -2034,14 +2062,14 @@ initFCM();
 
   async function toggleRecording() {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.requestData();
+      requestRecorderData();
       mediaRecorder.stop();
-      return;
+      return recordingStopPromise;
     }
 
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
       alert('Audio recording is not supported in this browser. Please upload an audio file instead.');
-      return;
+      return Promise.resolve();
     }
 
     try {
@@ -2052,11 +2080,17 @@ initFCM();
         alert('Audio recording is not supported in this browser. Please upload an audio file instead.');
         stream.getTracks().forEach(track => track.stop());
         activeRecordingStream = null;
-        return;
+        return Promise.resolve();
       }
 
       mediaRecorder = new MediaRecorder(stream, options);
       recordedChunks = [];
+
+      let resolveRecordingStop;
+      recordingStopPromise = new Promise(resolve => {
+        resolveRecordingStop = resolve;
+      });
+
       mediaRecorder.ondataavailable = e => {
         if (e.data && e.data.size > 0) {
           recordedChunks.push(e.data);
@@ -2067,56 +2101,60 @@ initFCM();
         tracks.forEach(track => track.stop());
         activeRecordingStream = null;
 
-        if (recordedChunks.length === 0) {
-          alert('No audio was captured. Please try recording again.');
+        try {
+          if (recordedChunks.length === 0) {
+            alert('No audio was captured. Please try recording again.');
+            return;
+          }
+
+          const recordedType = mediaRecorder.mimeType || options.mimeType || recordedChunks[0].type || 'audio/webm';
+          const blob = new Blob(recordedChunks, { type: recordedType });
+          clearPendingAudioObjectUrl();
+          pendingAudioObjectUrl = URL.createObjectURL(blob);
+          showAudioPreview(pendingAudioObjectUrl);
+
+          const extension = getAudioExtension(recordedType);
+          pendingAudioFile = blob;
+          pendingAudioFileName = `journal.${extension}`;
+          document.getElementById('audioFileInput').value = '';
+        } catch (err) {
+          console.error('Error preparing recorded audio:', err);
+          alert('The recording finished, but the audio could not be prepared for saving. Please try again.');
+        } finally {
           document.getElementById('recordAudioBtn').textContent = 'Start Recording';
-          return;
+          resolveRecordingStop();
+          recordingStopPromise = Promise.resolve();
         }
-
-        const recordedType = mediaRecorder.mimeType || options.mimeType || recordedChunks[0].type || 'audio/webm';
-        const blob = new Blob(recordedChunks, { type: recordedType });
-        clearPendingAudioObjectUrl();
-        pendingAudioObjectUrl = URL.createObjectURL(blob);
-        showAudioPreview(pendingAudioObjectUrl);
-
-        const extension = getAudioExtension(recordedType);
-        pendingAudioFile = new File([blob], `journal.${extension}`, { type: recordedType });
-        document.getElementById('audioFileInput').value = '';
-        document.getElementById('recordAudioBtn').textContent = 'Start Recording';
       };
-      mediaRecorder.start();
+      mediaRecorder.start(1000);
       document.getElementById('recordAudioBtn').textContent = 'Stop Recording';
+      return recordingStopPromise;
     } catch (err) {
       console.error('Error accessing microphone:', err);
       alert('Unable to access the microphone. Please allow microphone access or upload an audio file.');
       activeRecordingStream?.getTracks().forEach(track => track.stop());
       activeRecordingStream = null;
       document.getElementById('recordAudioBtn').textContent = 'Start Recording';
+      recordingStopPromise = Promise.resolve();
+      return recordingStopPromise;
     }
   }
 
   function stopRecordingIfActive() {
     if (!mediaRecorder || mediaRecorder.state !== 'recording') {
-      return Promise.resolve();
+      return recordingStopPromise || Promise.resolve();
     }
 
-    return new Promise((resolve) => {
-      const previousOnStop = mediaRecorder.onstop;
-      mediaRecorder.onstop = (event) => {
-        if (typeof previousOnStop === 'function') {
-          previousOnStop(event);
-        }
-        resolve();
-      };
-      mediaRecorder.requestData();
-      mediaRecorder.stop();
-    });
+    requestRecorderData();
+    mediaRecorder.stop();
+    return recordingStopPromise;
   }
 
   function handleAudioUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-    if (!file.type.startsWith('audio/') && file.type !== 'video/mpeg') {
+    const isSupportedAudioFile = file.type.startsWith('audio/') || ['video/mp4', 'video/webm', 'video/ogg', 'video/mpeg'].includes(file.type);
+    if (!isSupportedAudioFile) {
       alert('Please select an audio file');
       return;
     }
@@ -2125,6 +2163,7 @@ initFCM();
       return;
     }
     pendingAudioFile = file;
+    pendingAudioFileName = file.name || '';
     clearPendingAudioObjectUrl();
     pendingAudioObjectUrl = URL.createObjectURL(file);
     showAudioPreview(pendingAudioObjectUrl);
@@ -2158,9 +2197,12 @@ initFCM();
     audioPlayer.style.display = 'none';
     audioInput.value = '';
     pendingAudioFile = null;
+    pendingAudioFileName = '';
     if (mediaRecorder && mediaRecorder.state === 'recording') {
+      requestRecorderData();
       mediaRecorder.stop();
     }
+    recordingStopPromise = Promise.resolve();
     activeRecordingStream?.getTracks().forEach(track => track.stop());
     activeRecordingStream = null;
     clearPendingAudioObjectUrl();
@@ -2521,40 +2563,58 @@ initFCM();
           alert("You must be signed in to save.");
           return;
       }
+
+      let mediaError = null;
       try {
           if (pendingImageFile) {
               const imgRef = ref(storage, `journalImages/${userId}/${date}/${pendingImageFile.name}`);
               await uploadBytes(imgRef, pendingImageFile);
               journalImages[date] = await getDownloadURL(imgRef);
+              pendingImageFile = null;
               console.log("Image uploaded for date:", date);
           }
-          if (pendingAudioFile) {
-              const safeAudioName = getSafeStorageFileName(pendingAudioFile, date);
+      } catch (err) {
+          mediaError = err;
+          console.error("Error uploading journal image:", err);
+      }
+
+      try {
+          if (!mediaError && pendingAudioFile) {
+              const safeAudioName = getSafeStorageFileName(pendingAudioFile, date, pendingAudioFileName);
               const audioRef = ref(storage, `journalAudios/${userId}/${date}/${safeAudioName}`);
-              await uploadBytes(audioRef, pendingAudioFile, { contentType: pendingAudioFile.type || 'audio/*' });
+              await uploadBytes(audioRef, pendingAudioFile, getAudioUploadMetadata(pendingAudioFile));
               journalAudios[date] = await getDownloadURL(audioRef);
               const audioPlayer = document.getElementById('audioPlayer');
               audioPlayer.src = journalAudios[date];
               audioPlayer.style.display = 'block';
               audioPlayer.load();
+              pendingAudioFile = null;
+              pendingAudioFileName = '';
+              clearPendingAudioObjectUrl();
               console.log("Audio uploaded for date:", date);
           }
-          journalEntries[date] = text;
-          pendingAudioFile = null;
-          pendingImageFile = null;
-          clearPendingAudioObjectUrl();
-          const saved = await saveUserData();
-          if (!saved) {
-              throw new Error('The audio uploaded, but the journal data did not save to Firestore. Please try again.');
-          }
-          generateCalendar();
-          updateDailyEventsList(date);
-          if (closeAfterSave) closeJournalForm();
-          console.log('✅ Journal saved with media synced');
       } catch (err) {
-          console.error("Error in saveJournal:", err);
-          alert("Error saving journal. Please try again. " + err.message);
+          mediaError = err;
+          console.error("Error uploading journal audio:", err);
       }
+
+      journalEntries[date] = text;
+      const saved = await saveUserData();
+      if (!saved) {
+          alert('Error saving journal text. Please check your connection and try again.');
+          return;
+      }
+
+      generateCalendar();
+      updateDailyEventsList(date);
+
+      if (mediaError) {
+          alert('Your journal text was saved, but the audio/image upload failed. Please keep this window open and try Save again. ' + mediaError.message);
+          return;
+      }
+
+      if (closeAfterSave) closeJournalForm();
+      console.log('✅ Journal saved with media synced');
   }
 
   /******************************************************* 12) Goals
