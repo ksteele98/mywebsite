@@ -616,25 +616,6 @@
       padding: 6px 12px;
       margin-right: 10px;
     }
-    .media-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
-      align-items: center;
-    }
-    .file-upload-input {
-      display: none;
-    }
-    .file-upload-label {
-      padding: 6px 12px;
-      background: #007bff;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-
     .image-section img {
       max-width: 100%;
       margin: 10px 0;
@@ -756,15 +737,12 @@
     }
 
     /* ========== 3. Give buttons breathing space ========== */
-    .media-controls,
     .event-actions,
     .reminder-inputs,
     .time-inputs {
       gap:12px;                    /* modern browsers respect flex-gap */
       flex-wrap:wrap;              /* let them drop to a new row */
     }
-    .media-controls button,
-    .media-controls label,
     .event-actions button {
       flex:1 1 48%;                /* two per row on tiny screens */
       min-width:120px;             /* avoid micro-buttons */
@@ -810,9 +788,7 @@
       .habit-form  button,
       .task-reminder-form button,
       .task-buttons button,
-      .task-toggle  button,
-      .media-controls button,
-      .media-controls label{
+      .task-toggle  button{
         padding:6px 10px;
         font-size:13px;
       }
@@ -1021,13 +997,6 @@
     </div>
   </div>
 
-  <div class="media-controls">
-    <button id="recordAudioBtn" onclick="toggleRecording()">Start Recording</button>
-    <label for="audioFileInput" class="file-upload-label">Upload Audio</label>
-    <input type="file" id="audioFileInput" accept="audio/*,video/mpeg" onchange="handleAudioUpload(event)" class="file-upload-input">
-    <label for="imageFileInput" class="file-upload-label">Upload Image</label>
-    <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)" class="file-upload-input">
-  </div>
 
   <div class="image-section" style="position:relative;">
     <img id="imagePreview" style="display:none; width:100%; margin:10px 0;" />
@@ -1865,10 +1834,7 @@ initFCM();
     const journalDate = document.getElementById('journalDate');
     const journalText = document.getElementById('journalText');
     const audioPlayer = document.getElementById('audioPlayer');
-    const recordBtn = document.getElementById('recordAudioBtn');
-    const fileInput = document.getElementById('audioFileInput');
     const imagePreview = document.getElementById('imagePreview');
-    const imageInput = document.getElementById('imageFileInput');
     const removeAudioBtn = document.getElementById('removeAudioBtn');
     const removeImageBtn = document.getElementById('removeImageBtn');
 
@@ -1877,10 +1843,6 @@ initFCM();
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
     }
-    recordBtn.textContent = 'Start Recording';
-    fileInput.value = '';
-    imageInput.value = '';
-
     const displayDate = new Date(date + 'T00:00:00');
     journalDate.textContent = displayDate.toLocaleDateString();
     journalText.value = journalEntries[date] || '';
@@ -1977,60 +1939,8 @@ initFCM();
   }
 
   /*******************************************************
-   10) Audio Recording/Upload
+   10) Audio/Images
   *******************************************************/
-  async function toggleRecording() {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      let options = { mimeType: 'audio/webm;codecs=opus' };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { mimeType: 'audio/webm' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options = {};
-        }
-      }
-      const mimeType = options.mimeType || 'audio/webm';
-      mediaRecorder = new MediaRecorder(stream, options);
-      recordedChunks = [];
-      mediaRecorder.ondataavailable = e => {
-        if (e.data && e.data.size > 0) {
-          recordedChunks.push(e.data);
-        }
-      };
-      mediaRecorder.onstop = () => {
-        if (recordedChunks.length === 0) {
-          alert('No audio was captured. Please try recording again.');
-          stream.getTracks().forEach(track => track.stop());
-          document.getElementById('recordAudioBtn').textContent = 'Start Recording';
-          return;
-        }
-        const blob = new Blob(recordedChunks, { type: mimeType });
-        if (pendingAudioObjectUrl) {
-          URL.revokeObjectURL(pendingAudioObjectUrl);
-        }
-        const url = URL.createObjectURL(blob);
-        pendingAudioObjectUrl = url;
-        const audioPlayer = document.getElementById('audioPlayer');
-        audioPlayer.src = url;
-        audioPlayer.style.display = 'block';
-        audioPlayer.load();
-        const extension = mimeType.includes('mp4') ? 'm4a' : 'webm';
-        pendingAudioFile = new File([blob], `journal.${extension}`, { type: mimeType });
-        document.getElementById('recordAudioBtn').textContent = 'Start Recording';
-        document.getElementById('removeAudioBtn').style.display = 'block';
-        stream.getTracks().forEach(track => track.stop());
-      };
-      mediaRecorder.start();
-      document.getElementById('recordAudioBtn').textContent = 'Stop Recording';
-    } catch (err) {
-      console.error('Error accessing microphone:', err);
-    }
-  }
-
   function stopRecordingIfActive() {
     if (!mediaRecorder || mediaRecorder.state !== 'recording') {
       return Promise.resolve();
@@ -2048,57 +1958,11 @@ initFCM();
     });
   }
 
-  function handleAudioUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('audio/') && file.type !== 'video/mpeg') {
-      alert('Please select an audio file');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Audio file size should be less than 10MB');
-      return;
-    }
-    pendingAudioFile = file;
-    if (pendingAudioObjectUrl) {
-      URL.revokeObjectURL(pendingAudioObjectUrl);
-      pendingAudioObjectUrl = null;
-    }
-    const url = URL.createObjectURL(file);
-    const audioPlayer = document.getElementById('audioPlayer');
-    audioPlayer.src = url;
-    audioPlayer.style.display = 'block';
-    audioPlayer.load();
-    document.getElementById('removeAudioBtn').style.display = 'block';
-  }
-
-  function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
-      return;
-    }
-    pendingImageFile = file;
-    const url = URL.createObjectURL(file);
-    const preview = document.getElementById('imagePreview');
-    preview.src = url;
-    preview.style.display = 'block';
-    document.getElementById('removeImageBtn').style.display = 'block';
-  }
-
   function removeAudio() {
     const audioPlayer = document.getElementById('audioPlayer');
-    const recordBtn = document.getElementById('recordAudioBtn');
-    const audioInput = document.getElementById('audioFileInput');
     const date = document.getElementById('journalForm').dataset.date;
     audioPlayer.src = '';
     audioPlayer.style.display = 'none';
-    audioInput.value = '';
     pendingAudioFile = null;
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
@@ -2110,16 +1974,13 @@ initFCM();
     delete journalAudios[date];
     saveUserData();
     document.getElementById('removeAudioBtn').style.display = 'none';
-    recordBtn.textContent = 'Start Recording';
   }
 
   async function removeImage() {
     const preview = document.getElementById('imagePreview');
-    const imageInput = document.getElementById('imageFileInput');
     const date = document.getElementById('journalForm').dataset.date;
     preview.src = '';
     preview.style.display = 'none';
-    imageInput.value = '';
     pendingImageFile = null;
     try {
       if (journalImages[date]) {
@@ -3032,8 +2893,7 @@ function matchesOriginalSchedule(task, d){
   Object.assign(window, {
     loginWithGoogle, previousMonth, nextMonth, openJournal, openJournalMode,
     closeJournalForm, changeJournalDay, addEvent, saveEvent, closeEventForm,
-    deleteEvent, saveJournal, toggleRecording, handleAudioUpload,
-    handleImageUpload, removeAudio, removeImage, goToGoalsPage, saveGoals,
+    deleteEvent, saveJournal, removeAudio, removeImage, goToGoalsPage, saveGoals,
     closeGoalsForm, goToJournalFromGoals, changeToHabit, changeToJournal,
     showNewHabitForm, confirmAddHabit, cancelAddHabit, deleteHabit,
     saveHabitTracker, cancelHabitTracker, logoutFromGoogle, addTask,
