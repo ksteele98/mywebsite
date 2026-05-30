@@ -1586,6 +1586,7 @@ initFCM();
   let pendingImageFile = null;
   let mediaRecorder = null;
   let recordedChunks = [];
+  let activeRecordingStream = null;
   let pendingAudioObjectUrl = null;
   let reminderTimeouts = {};
   let taskReminderTimeouts = {};
@@ -1634,7 +1635,7 @@ initFCM();
   }
 
   async function saveUserData() {
-    if (!userId) return;
+    if (!userId) return false;
     try {
       const docRef = doc(db, "users", userId);
       await setDoc(docRef, {
@@ -1651,8 +1652,10 @@ initFCM();
       });
       console.log("Data saved to Firestore!");
       scheduleAllTaskReminders();
+      return true;
     } catch (err) {
       console.error("Error saving user data:", err);
+      return false;
     }
   }
   
@@ -1874,9 +1877,12 @@ initFCM();
 
     recordedChunks = [];
     pendingAudioFile = null;
+    clearPendingAudioObjectUrl();
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
     }
+    activeRecordingStream?.getTracks().forEach(track => track.stop());
+    activeRecordingStream = null;
     recordBtn.textContent = 'Start Recording';
     fileInput.value = '';
     imageInput.value = '';
@@ -1979,21 +1985,76 @@ initFCM();
   /*******************************************************
    10) Audio Recording/Upload
   *******************************************************/
+  const AUDIO_RECORDING_TYPES = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4;codecs=mp4a.40.2',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+    'audio/ogg'
+  ];
+
+  function getSupportedAudioRecordingOptions() {
+    if (!window.MediaRecorder) return null;
+    const supportedType = AUDIO_RECORDING_TYPES.find(type => MediaRecorder.isTypeSupported(type));
+    return supportedType ? { mimeType: supportedType } : {};
+  }
+
+  function getAudioExtension(mimeType = '') {
+    if (mimeType.includes('mp4')) return 'm4a';
+    if (mimeType.includes('ogg')) return 'ogg';
+    if (mimeType.includes('mpeg')) return 'mp3';
+    if (mimeType.includes('wav')) return 'wav';
+    if (mimeType.includes('webm')) return 'webm';
+    return 'audio';
+  }
+
+  function getSafeStorageFileName(file, date) {
+    const extension = getAudioExtension(file.type) || 'audio';
+    const originalName = (file.name || `journal.${extension}`).replace(/[^a-zA-Z0-9._-]/g, '_');
+    const hasExtension = /\.[a-zA-Z0-9]+$/.test(originalName);
+    const name = hasExtension ? originalName : `${originalName}.${extension}`;
+    return `${Date.now()}-${date}-${name}`;
+  }
+
+  function clearPendingAudioObjectUrl() {
+    if (pendingAudioObjectUrl) {
+      URL.revokeObjectURL(pendingAudioObjectUrl);
+      pendingAudioObjectUrl = null;
+    }
+  }
+
+  function showAudioPreview(url) {
+    const audioPlayer = document.getElementById('audioPlayer');
+    audioPlayer.src = url;
+    audioPlayer.style.display = 'block';
+    audioPlayer.load();
+    document.getElementById('removeAudioBtn').style.display = 'block';
+  }
+
   async function toggleRecording() {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.requestData();
       mediaRecorder.stop();
       return;
     }
+
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+      alert('Audio recording is not supported in this browser. Please upload an audio file instead.');
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      let options = { mimeType: 'audio/webm;codecs=opus' };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { mimeType: 'audio/webm' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options = {};
-        }
+      activeRecordingStream = stream;
+      const options = getSupportedAudioRecordingOptions();
+      if (options === null) {
+        alert('Audio recording is not supported in this browser. Please upload an audio file instead.');
+        stream.getTracks().forEach(track => track.stop());
+        activeRecordingStream = null;
+        return;
       }
-      const mimeType = options.mimeType || 'audio/webm';
+
       mediaRecorder = new MediaRecorder(stream, options);
       recordedChunks = [];
       mediaRecorder.ondataavailable = e => {
@@ -2002,32 +2063,35 @@ initFCM();
         }
       };
       mediaRecorder.onstop = () => {
+        const tracks = activeRecordingStream?.getTracks() || stream.getTracks();
+        tracks.forEach(track => track.stop());
+        activeRecordingStream = null;
+
         if (recordedChunks.length === 0) {
           alert('No audio was captured. Please try recording again.');
-          stream.getTracks().forEach(track => track.stop());
           document.getElementById('recordAudioBtn').textContent = 'Start Recording';
           return;
         }
-        const blob = new Blob(recordedChunks, { type: mimeType });
-        if (pendingAudioObjectUrl) {
-          URL.revokeObjectURL(pendingAudioObjectUrl);
-        }
-        const url = URL.createObjectURL(blob);
-        pendingAudioObjectUrl = url;
-        const audioPlayer = document.getElementById('audioPlayer');
-        audioPlayer.src = url;
-        audioPlayer.style.display = 'block';
-        audioPlayer.load();
-        const extension = mimeType.includes('mp4') ? 'm4a' : 'webm';
-        pendingAudioFile = new File([blob], `journal.${extension}`, { type: mimeType });
+
+        const recordedType = mediaRecorder.mimeType || options.mimeType || recordedChunks[0].type || 'audio/webm';
+        const blob = new Blob(recordedChunks, { type: recordedType });
+        clearPendingAudioObjectUrl();
+        pendingAudioObjectUrl = URL.createObjectURL(blob);
+        showAudioPreview(pendingAudioObjectUrl);
+
+        const extension = getAudioExtension(recordedType);
+        pendingAudioFile = new File([blob], `journal.${extension}`, { type: recordedType });
+        document.getElementById('audioFileInput').value = '';
         document.getElementById('recordAudioBtn').textContent = 'Start Recording';
-        document.getElementById('removeAudioBtn').style.display = 'block';
-        stream.getTracks().forEach(track => track.stop());
       };
       mediaRecorder.start();
       document.getElementById('recordAudioBtn').textContent = 'Stop Recording';
     } catch (err) {
       console.error('Error accessing microphone:', err);
+      alert('Unable to access the microphone. Please allow microphone access or upload an audio file.');
+      activeRecordingStream?.getTracks().forEach(track => track.stop());
+      activeRecordingStream = null;
+      document.getElementById('recordAudioBtn').textContent = 'Start Recording';
     }
   }
 
@@ -2044,6 +2108,7 @@ initFCM();
         }
         resolve();
       };
+      mediaRecorder.requestData();
       mediaRecorder.stop();
     });
   }
@@ -2060,16 +2125,9 @@ initFCM();
       return;
     }
     pendingAudioFile = file;
-    if (pendingAudioObjectUrl) {
-      URL.revokeObjectURL(pendingAudioObjectUrl);
-      pendingAudioObjectUrl = null;
-    }
-    const url = URL.createObjectURL(file);
-    const audioPlayer = document.getElementById('audioPlayer');
-    audioPlayer.src = url;
-    audioPlayer.style.display = 'block';
-    audioPlayer.load();
-    document.getElementById('removeAudioBtn').style.display = 'block';
+    clearPendingAudioObjectUrl();
+    pendingAudioObjectUrl = URL.createObjectURL(file);
+    showAudioPreview(pendingAudioObjectUrl);
   }
 
   function handleImageUpload(event) {
@@ -2103,10 +2161,9 @@ initFCM();
     if (mediaRecorder && mediaRecorder.state === 'recording') {
       mediaRecorder.stop();
     }
-    if (pendingAudioObjectUrl) {
-      URL.revokeObjectURL(pendingAudioObjectUrl);
-      pendingAudioObjectUrl = null;
-    }
+    activeRecordingStream?.getTracks().forEach(track => track.stop());
+    activeRecordingStream = null;
+    clearPendingAudioObjectUrl();
     delete journalAudios[date];
     saveUserData();
     document.getElementById('removeAudioBtn').style.display = 'none';
@@ -2472,8 +2529,9 @@ initFCM();
               console.log("Image uploaded for date:", date);
           }
           if (pendingAudioFile) {
-              const audioRef = ref(storage, `journalAudios/${userId}/${date}/${pendingAudioFile.name}`);
-              await uploadBytes(audioRef, pendingAudioFile);
+              const safeAudioName = getSafeStorageFileName(pendingAudioFile, date);
+              const audioRef = ref(storage, `journalAudios/${userId}/${date}/${safeAudioName}`);
+              await uploadBytes(audioRef, pendingAudioFile, { contentType: pendingAudioFile.type || 'audio/*' });
               journalAudios[date] = await getDownloadURL(audioRef);
               const audioPlayer = document.getElementById('audioPlayer');
               audioPlayer.src = journalAudios[date];
@@ -2484,7 +2542,11 @@ initFCM();
           journalEntries[date] = text;
           pendingAudioFile = null;
           pendingImageFile = null;
-          await saveUserData();
+          clearPendingAudioObjectUrl();
+          const saved = await saveUserData();
+          if (!saved) {
+              throw new Error('The audio uploaded, but the journal data did not save to Firestore. Please try again.');
+          }
           generateCalendar();
           updateDailyEventsList(date);
           if (closeAfterSave) closeJournalForm();
