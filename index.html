@@ -360,6 +360,50 @@
       overflow-y: auto;
       z-index: 1000;
     }
+
+    .motivation-stats-panel {
+      margin: 12px 0 16px;
+      padding: 14px;
+      border: 1px solid #dbeafe;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+      box-shadow: 0 2px 8px rgba(66, 133, 244, 0.08);
+    }
+    .motivation-stats-panel h4 {
+      margin: 0 0 10px;
+      color: #1f2937;
+    }
+    .motivation-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .motivation-stat-card {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .motivation-stat-value {
+      display: block;
+      color: #2563eb;
+      font-size: 24px;
+      font-weight: bold;
+      line-height: 1;
+    }
+    .motivation-stat-label {
+      display: block;
+      color: #4b5563;
+      font-size: 12px;
+      margin-top: 6px;
+    }
+    .motivation-message {
+      margin: 0;
+      color: #166534;
+      font-weight: bold;
+      text-align: center;
+    }
     .close-btn {
       position: absolute;
       top: 10px;
@@ -1005,6 +1049,8 @@
   <h3>Daily Overview</h3>
   <div id="journalDate" style="margin-bottom: 10px;"></div>
 
+  <div id="motivationStatsPanel" class="motivation-stats-panel" aria-live="polite"></div>
+
   <div class="daily-events">
     <h4>Events</h4>
     <div id="dailyEventsList"></div>
@@ -1628,6 +1674,7 @@ initFCM();
       renderTaskListButtons();
       initializeTaskControls();
       scheduleAllTaskReminders();
+      renderMotivationStats();
     } catch (err) {
       console.error("Error loading user data:", err);
     }
@@ -1746,6 +1793,100 @@ initFCM();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  }
+
+  function isHabitCompletedOnDate(habit, dateKey) {
+    const habitEntry = habitTracker[dateKey]?.[habit.id];
+    if (!habitEntry) return false;
+    return habit.type === 'check'
+      ? habitEntry.completed === true
+      : (parseFloat(habitEntry.count) || 0) > 0;
+  }
+
+  function countHabitCompletions(dateKey) {
+    return globalHabits
+      .filter(habit => !habit.startDate || habit.startDate <= dateKey)
+      .filter(habit => isHabitCompletedOnDate(habit, dateKey))
+      .length;
+  }
+
+  function getCurrentHabitStreak(habit, todayKey) {
+    if (habit.startDate && habit.startDate > todayKey) return 0;
+
+    let streak = 0;
+    const cursor = new Date(`${todayKey}T00:00:00`);
+    while (!habit.startDate || formatLocalDate(cursor) >= habit.startDate) {
+      const cursorKey = formatLocalDate(cursor);
+      if (!isHabitCompletedOnDate(habit, cursorKey)) break;
+      streak += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function calculateWeeklyStats(dateKey = formatLocalDate(new Date())) {
+    const selectedDate = new Date(`${dateKey}T00:00:00`);
+    const weekStart = new Date(selectedDate);
+    weekStart.setDate(selectedDate.getDate() - selectedDate.getDay());
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const tasksCompletedThisWeek = Object.entries(completedTasks || {}).reduce((total, [completedDateKey, tasks]) => {
+      const completedDate = new Date(`${completedDateKey}T00:00:00`);
+      if (completedDate < weekStart || completedDate > weekEnd) return total;
+      if (Array.isArray(tasks)) return total + tasks.length;
+      if (tasks && typeof tasks === 'object') return total + Object.keys(tasks).length;
+      return total;
+    }, 0);
+
+    const todayKey = formatLocalDate(new Date());
+    const habitsCompletedToday = countHabitCompletions(todayKey);
+    const bestCurrentStreak = globalHabits.reduce((best, habit) => {
+      return Math.max(best, getCurrentHabitStreak(habit, todayKey));
+    }, 0);
+
+    let motivationalMessage = 'Start small today — one checkmark can build momentum.';
+    if (tasksCompletedThisWeek >= 10 || bestCurrentStreak >= 7) {
+      motivationalMessage = 'Amazing momentum — your consistency is really paying off!';
+    } else if (tasksCompletedThisWeek > 0 && habitsCompletedToday > 0) {
+      motivationalMessage = 'Great balance today — tasks are moving and habits are growing.';
+    } else if (habitsCompletedToday > 0) {
+      motivationalMessage = 'Nice habit progress today — keep that streak alive!';
+    } else if (tasksCompletedThisWeek > 0) {
+      motivationalMessage = 'You are making progress this week — keep checking things off!';
+    }
+
+    return {
+      tasksCompletedThisWeek,
+      habitsCompletedToday,
+      bestCurrentStreak,
+      motivationalMessage
+    };
+  }
+
+  function renderMotivationStats(dateKey = document.getElementById('journalForm')?.dataset.date || formatLocalDate(new Date())) {
+    const panel = document.getElementById('motivationStatsPanel');
+    if (!panel) return;
+
+    const stats = calculateWeeklyStats(dateKey);
+    panel.innerHTML = `
+      <h4>Motivation Summary</h4>
+      <div class="motivation-stats-grid">
+        <div class="motivation-stat-card">
+          <span class="motivation-stat-value">${stats.tasksCompletedThisWeek}</span>
+          <span class="motivation-stat-label">Tasks completed this week</span>
+        </div>
+        <div class="motivation-stat-card">
+          <span class="motivation-stat-value">${stats.habitsCompletedToday}</span>
+          <span class="motivation-stat-label">Habits completed today</span>
+        </div>
+        <div class="motivation-stat-card">
+          <span class="motivation-stat-value">${stats.bestCurrentStreak}</span>
+          <span class="motivation-stat-label">Best current streak</span>
+        </div>
+      </div>
+      <p class="motivation-message">${stats.motivationalMessage}</p>
+    `;
   }
 
   function initializeColorPicker(preSelected = selectedColor) {
@@ -1919,6 +2060,7 @@ initFCM();
 
     updateDailyEventsList(date);
     initializeTaskControls();
+    renderMotivationStats(date);
   }
 
   function openJournalMode() {
@@ -2922,6 +3064,7 @@ function matchesOriginalSchedule(task, d){
     }
 
     saveUserData();
+    renderMotivationStats(dateKey);
     if (showingCompleted) renderCompletedTasks();
     else renderTasks();
   }
@@ -3080,6 +3223,7 @@ function _confirmAddHabit() {
     startDate
   });
   saveUserData();
+  renderMotivationStats(startDate);
   document.getElementById('newHabitForm').style.display = 'none';
   renderHabits(document.getElementById('habitForm').dataset.date);
 }
@@ -3098,10 +3242,12 @@ function _deleteHabit(habitId) {
     }
   }
   saveUserData();
+  renderMotivationStats(document.getElementById('habitForm').dataset.date);
   renderHabits(document.getElementById('habitForm').dataset.date);
 }
 function _saveHabitTracker() {
   saveUserData();
+  renderMotivationStats(document.getElementById('habitForm').dataset.date);
   document.getElementById('habitForm').style.display = 'none';
   document.getElementById('journalForm').style.display = 'block';
 }
@@ -3132,6 +3278,7 @@ function renderHabits(date) {
           habitTracker[date] = habitTracker[date] || {};
           habitTracker[date][habit.id] = habitTracker[date][habit.id] || {};
           habitTracker[date][habit.id].completed = checkbox.checked;
+          renderMotivationStats(date);
         };
         label.appendChild(checkbox);
       } else {
@@ -3145,6 +3292,7 @@ function renderHabits(date) {
           habitTracker[date] = habitTracker[date] || {};
           habitTracker[date][habit.id] = habitTracker[date][habit.id] || {};
           habitTracker[date][habit.id].count = parseFloat(count.value) || 0;
+          renderMotivationStats(date);
         };
         label.appendChild(count);
       }
