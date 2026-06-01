@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="manifest" href="/mywebsite/manifest.json">
-  <title>Calendar App (Google Auth)</title>
+  <meta name="theme-color" content="#2563eb" />
+  <title>Momentum Calendar</title>
 
   <style>
     /* === Your existing CSS unchanged === */
@@ -836,11 +837,504 @@
         border:2px solid #7ac3ff;
       }
     }
+
+
+    /* ========== Modern UI refresh ========== */
+    :root {
+      --bg: #eef4ff;
+      --bg-2: #f8fbff;
+      --surface: rgba(255, 255, 255, 0.9);
+      --surface-solid: #ffffff;
+      --surface-muted: #f5f7fb;
+      --text: #172033;
+      --muted: #667085;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-soft: #dbeafe;
+      --accent: #f59e0b;
+      --danger: #dc2626;
+      --border: rgba(99, 102, 241, 0.16);
+      --shadow-sm: 0 8px 24px rgba(31, 41, 55, 0.08);
+      --shadow-md: 0 20px 60px rgba(31, 41, 55, 0.14);
+      --radius: 22px;
+      --radius-sm: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+      background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, 0.22), transparent 34rem),
+        radial-gradient(circle at top right, rgba(245, 158, 11, 0.16), transparent 30rem),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 58%, #ffffff 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.32) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease, border-color 160ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    .calendar-cell:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.28);
+      outline-offset: 2px;
+    }
+
+    .app-shell {
+      width: min(1200px, 100%);
+      margin: 0 auto 22px;
+      padding: 18px 15px 0;
+    }
+
+    .app-hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: end;
+      padding: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 30px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(238, 246, 255, 0.76));
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(14px);
+    }
+
+    .app-hero::after {
+      content: "";
+      position: absolute;
+      width: 240px;
+      height: 240px;
+      right: -80px;
+      top: -90px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(245, 158, 11, 0.18));
+    }
+
+    .app-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 8px;
+      color: var(--primary-dark);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .app-title {
+      margin: 0;
+      color: #0f172a;
+      font-size: clamp(2rem, 5vw, 4.25rem);
+      line-height: 0.96;
+      letter-spacing: -0.07em;
+    }
+
+    .app-subtitle {
+      max-width: 620px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .app-status-card {
+      position: relative;
+      z-index: 1;
+      min-width: 190px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .status-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .status-value {
+      display: block;
+      margin-top: 4px;
+      color: var(--primary-dark);
+      font-size: 1.35rem;
+      font-weight: 850;
+    }
+
+    #authSection,
+    #logoutSection {
+      width: min(1200px, calc(100% - 30px));
+      margin: 18px auto 20px !important;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(12px);
+    }
+
+    #logoutSection {
+      text-align: center !important;
+    }
+
+    #authSection button,
+    #logoutSection button,
+    .nav-button,
+    .add-event-btn,
+    .add-task-btn,
+    .new-list-btn,
+    .goals-btn,
+    .change-habit-btn,
+    .task-toggle button,
+    .event-actions button,
+    .time-controls button {
+      border-radius: 999px !important;
+      font-weight: 750;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+    }
+
+    #authSection button,
+    #logoutSection button,
+    .nav-button,
+    .add-event-btn,
+    .add-task-btn,
+    .new-list-btn,
+    .goals-btn,
+    .change-habit-btn,
+    .event-actions button:first-child {
+      background: linear-gradient(135deg, var(--primary), #4f46e5) !important;
+      color: #fff !important;
+      border: 0 !important;
+    }
+
+    #subscribeBtn {
+      background: linear-gradient(135deg, #fbbf24, var(--accent)) !important;
+      color: #1f2937 !important;
+    }
+
+    #pendingBtn,
+    .event-actions button:last-child,
+    .time-controls button {
+      background: var(--surface-muted) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+    }
+
+    #logoutButton,
+    .delete-list-btn,
+    .delete-event-btn {
+      background: linear-gradient(135deg, var(--danger), #ef4444) !important;
+      color: #fff !important;
+    }
+
+    .time-widget-button {
+      top: 18px;
+      left: 18px;
+      background: rgba(15, 23, 42, 0.88);
+      padding: 10px 16px;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
+      backdrop-filter: blur(10px);
+    }
+
+    .time-panel,
+    .event-form,
+    .task-reminder-form,
+    .journal-form,
+    .habit-form,
+    .reminder-popup .popup-content {
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(16px);
+    }
+
+    .time-panel {
+      top: 64px;
+      width: 270px;
+    }
+
+    .calendar-container {
+      position: relative;
+      margin-top: 16px;
+      padding: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.76);
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(14px);
+    }
+
+    .calendar-header {
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .current-month {
+      color: #0f172a;
+      font-size: clamp(1.45rem, 3vw, 2.45rem);
+      font-weight: 900;
+      letter-spacing: -0.045em;
+    }
+
+    .calendar-grid {
+      gap: 10px;
+      background: transparent;
+    }
+
+    .day-header {
+      color: var(--muted);
+      background: transparent;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .calendar-cell {
+      min-height: 132px;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff, #f9fbff);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .calendar-cell:hover {
+      transform: translateY(-3px);
+      border-color: rgba(37, 99, 235, 0.34);
+      box-shadow: 0 18px 38px rgba(37, 99, 235, 0.13);
+    }
+
+    .calendar-cell.today {
+      position: relative;
+      border: 2px solid var(--primary);
+      background: linear-gradient(180deg, #eff6ff, #ffffff);
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.18);
+    }
+
+    .calendar-cell.today::after {
+      content: "Today";
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: var(--primary-dark);
+      background: var(--primary-soft);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .other-month {
+      background: rgba(248, 250, 252, 0.7);
+      opacity: 0.68;
+    }
+
+    .date-number {
+      color: #334155;
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+
+    .event {
+      margin-top: 5px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 0.76rem;
+      font-weight: 750;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.13);
+    }
+
+    .journal-form {
+      width: min(880px, calc(100vw - 32px));
+      padding: 28px;
+    }
+
+    .journal-form h3,
+    .event-form h3,
+    .task-reminder-form h3,
+    .habit-form h3 {
+      margin-top: 0;
+      color: #0f172a;
+      font-size: 1.55rem;
+      letter-spacing: -0.035em;
+    }
+
+    .daily-events,
+    .task-container,
+    .motivation-stats-panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .motivation-stats-panel {
+      background: linear-gradient(135deg, rgba(219, 234, 254, 0.92), rgba(236, 253, 245, 0.92));
+    }
+
+    .motivation-stat-card {
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+    }
+
+    .journal-textarea,
+    .task-input,
+    .task-severity-select,
+    .event-form input,
+    .task-reminder-form input,
+    .task-reminder-form select,
+    .time-panel input[type="number"],
+    .reminder-inputs input[type="time"],
+    .reminder-inputs input[type="date"],
+    .time-inputs input[type="time"] {
+      border: 1px solid rgba(148, 163, 184, 0.36);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .journal-textarea {
+      min-height: 170px;
+      border: 1px solid var(--border);
+    }
+
+    .task-item {
+      margin-bottom: 8px;
+      border: 1px solid rgba(37, 99, 235, 0.12);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+    }
+
+    .color-option {
+      width: 30px;
+      height: 30px;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8), 0 6px 14px rgba(15, 23, 42, 0.12);
+    }
+
+    .color-option.selected {
+      border-color: #111827;
+      transform: scale(1.1);
+    }
+
+    @media (max-width: 768px) {
+      .app-shell {
+        padding-top: 54px;
+      }
+
+      .app-hero {
+        grid-template-columns: 1fr;
+        padding: 22px;
+      }
+
+      .app-status-card {
+        min-width: 0;
+      }
+
+      #logoutSection {
+        display: none;
+        text-align: left !important;
+      }
+
+      #logoutSection button {
+        margin: 5px !important;
+      }
+
+      .calendar-container {
+        padding: 14px;
+        border-radius: 22px;
+      }
+
+      .calendar-grid {
+        gap: 6px;
+      }
+
+      .calendar-cell {
+        min-height: 94px;
+        border-radius: 14px;
+      }
+
+      .calendar-cell.today::after {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .app-title {
+        font-size: 2.25rem;
+      }
+
+      .app-subtitle {
+        font-size: 0.92rem;
+      }
+
+      .calendar-container,
+      .journal-form,
+      .habit-form,
+      .event-form,
+      .task-reminder-form,
+      .goals-form {
+        width: calc(100vw - 20px);
+      }
+
+      .calendar-cell {
+        min-height: 74px;
+        padding: 6px;
+      }
+
+      .event {
+        padding: 3px 5px;
+        font-size: 0.64rem;
+      }
+    }
+
   </style>
 </head>
 <body>
 
-<button class="time-widget-button" onclick="toggleTimePanel()">⏱ Time</button>
+<button class="time-widget-button" onclick="toggleTimePanel()">Time</button>
 <div class="time-panel" id="timePanel">
   <div class="time-row">
     <h4>Timer</h4>
@@ -862,6 +1356,20 @@
     </div>
   </div>
 </div>
+
+<header class="app-shell">
+  <section class="app-hero" aria-label="Calendar dashboard introduction">
+    <div>
+      <p class="app-kicker">Plan your momentum</p>
+      <h1 class="app-title">Momentum Calendar</h1>
+      <p class="app-subtitle">A cleaner home for your events, daily journal, habits, reminders, and task lists.</p>
+    </div>
+    <div class="app-status-card" aria-label="Dashboard view">
+      <span class="status-label">Current view</span>
+      <span class="status-value">Month planner</span>
+    </div>
+  </section>
+</header>
 
 <div id="authSection" style="display: none; text-align:center; margin-bottom: 20px;">
   <button onclick="loginWithGoogle()" style="background: #DB4437; color:white; padding: 10px 20px; border:none; border-radius:4px; cursor:pointer;">
