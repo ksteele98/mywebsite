@@ -199,7 +199,7 @@
     .color-option.selected {
       border: 2px solid #000;
     }
-    .task-reminder-form {
+    .task-details-form {
       position: fixed;
       top: 50%;
       left: 50%;
@@ -216,8 +216,8 @@
       max-height: 90vh;
       overflow-y: auto;
     }
-    .task-reminder-form input,
-    .task-reminder-form select {
+    .task-details-form input,
+    .task-details-form select {
       width: 100%;
       padding: 8px;
       margin: 10px 0;
@@ -287,29 +287,6 @@
       font-size: 14px;
     }
     .time-inputs input[type="time"] {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    .reminder-inputs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 10px 0;
-    }
-    .reminder-inputs div {
-      flex: 1;
-      min-width: 120px;
-    }
-    .reminder-inputs label {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 14px;
-    }
-    .reminder-inputs input[type="time"],
-    .reminder-inputs input[type="date"] {
       width: 100%;
       padding: 8px;
       border: 1px solid #ddd;
@@ -663,27 +640,6 @@
       gap: 10px;
     }
 
-    /* Popup for missed reminders */
-    .reminder-popup {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-    }
-    .reminder-popup .popup-content {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      max-width: 300px;
-      width: 90%;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
 
     @media screen and (max-width: 768px) {
       .calendar-grid {
@@ -734,9 +690,6 @@
       .time-inputs div {
         flex: 100%;
       }
-      .reminder-inputs div {
-        flex: 100%;
-      }
       .task-toggle button {
         flex: 100%;
       }
@@ -750,7 +703,7 @@
     .journal-form,
     .event-form,
     .habit-form,
-    .task-reminder-form,
+    .task-details-form,
     .goals-form {
       max-width:100vw;             /* never exceed the viewport */
       box-sizing:border-box;       /* include padding/border in that width */
@@ -758,7 +711,6 @@
 
     /* ========== 3. Give buttons breathing space ========== */
     .event-actions,
-    .reminder-inputs,
     .time-inputs {
       gap:12px;                    /* modern browsers respect flex-gap */
       flex-wrap:wrap;              /* let them drop to a new row */
@@ -781,7 +733,7 @@
       .journal-form,
       .habit-form,
       .event-form,
-      .task-reminder-form,
+      .task-details-form,
       .goals-form{
         width:70vw;            /* ~70 % of viewport */
         max-width:420px;       /* don’t let big phones stretch it */
@@ -806,7 +758,7 @@
       .journal-form button,
       .event-form  button,
       .habit-form  button,
-      .task-reminder-form button,
+      .task-details-form button,
       .task-buttons button,
       .task-toggle  button{
         padding:6px 10px;
@@ -1043,13 +995,7 @@
       border: 0 !important;
     }
 
-    #subscribeBtn {
-      background: linear-gradient(135deg, #fbbf24, var(--accent)) !important;
-      color: #1f2937 !important;
-    }
-
-    #pendingBtn,
-    .event-actions button:last-child,
+        .event-actions button:last-child,
     .time-controls button {
       background: var(--surface-muted) !important;
       color: var(--text) !important;
@@ -1074,10 +1020,9 @@
 
     .time-panel,
     .event-form,
-    .task-reminder-form,
+    .task-details-form,
     .journal-form,
-    .habit-form,
-    .reminder-popup .popup-content {
+    .habit-form {
       border: 1px solid rgba(255, 255, 255, 0.72);
       border-radius: var(--radius);
       background: var(--surface);
@@ -1192,7 +1137,7 @@
 
     .journal-form h3,
     .event-form h3,
-    .task-reminder-form h3,
+    .task-details-form h3,
     .habit-form h3 {
       margin-top: 0;
       color: #0f172a;
@@ -1222,11 +1167,9 @@
     .task-input,
     .task-severity-select,
     .event-form input,
-    .task-reminder-form input,
-    .task-reminder-form select,
+    .task-details-form input,
+    .task-details-form select,
     .time-panel input[type="number"],
-    .reminder-inputs input[type="time"],
-    .reminder-inputs input[type="date"],
     .time-inputs input[type="time"] {
       border: 1px solid rgba(148, 163, 184, 0.36);
       border-radius: 14px;
@@ -1314,7 +1257,7 @@
       .journal-form,
       .habit-form,
       .event-form,
-      .task-reminder-form,
+      .task-details-form,
       .goals-form {
         width: calc(100vw - 20px);
       }
@@ -1362,7 +1305,7 @@
     <div>
       <p class="app-kicker">Plan your momentum</p>
       <h1 class="app-title">Momentum Calendar</h1>
-      <p class="app-subtitle">A cleaner home for your events, daily journal, habits, reminders, and task lists.</p>
+      <p class="app-subtitle">A cleaner home for your events, daily journal, habits, checklist subtasks, and task lists.</p>
     </div>
     <div class="app-status-card" aria-label="Dashboard view">
       <span class="status-label">Current view</span>
@@ -1381,10 +1324,6 @@
   <button onclick="openJournalMode()" id="journalModeBtn" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer; margin-right: 10px;">
     Journal Mode
   </button>
-   <button id="subscribeBtn"          style="background:#FFB400;color:#000;padding:8px 16px;
-               border:none;border-radius:4px;cursor:pointer;margin-right:10px">   🔔 Enable Notifications
-  </button>
-  <button id="pendingBtn" style="background:#6c757d;color:white;padding:8px 16px;border:none;border-radius:4px;cursor:pointer;margin-right:10px">View Pending</button>
   <button onclick="logoutFromGoogle()" id="logoutButton" style="background: #4285F4; color:white; padding: 8px 16px; border:none; border-radius:4px; cursor:pointer;">
     Sign Out
   </button>
@@ -1422,16 +1361,6 @@
       <input type="time" id="eventEndTime" required>
     </div>
   </div>
-  <div class="reminder-inputs">
-    <div>
-      <label for="reminderDate">Reminder Date (optional):</label>
-      <input type="date" id="reminderDate">
-    </div>
-    <div>
-      <label for="reminderTime">Reminder Time (optional):</label>
-      <input type="time" id="reminderTime">
-    </div>
-  </div>
   <h4>Select Color:</h4>
   <div class="color-picker" id="colorPicker"></div>
   <input type="hidden" id="eventDate">
@@ -1442,22 +1371,18 @@
     <button onclick="deleteEvent()" class="delete-event-btn">Delete</button>
   </div>
 </div>
-<!-- MODIFIED: Task Edit/Reminder Form -->
-<div class="task-reminder-form" id="taskReminderForm">
+<!-- Task Edit Form -->
+<div class="task-details-form" id="taskDetailsForm">
   <h3>Edit Task</h3>
   <label for="taskEditText">Task Name:</label>
   <input type="text" id="taskEditText" placeholder="Task Name">
   <div>
-    <label for="taskReminderDate">Reminder Date (optional):</label>
-    <input type="date" id="taskReminderDate">
+    <label for="taskSubtasksEdit">Subtasks:</label>
+    <textarea id="taskSubtasksEdit" class="task-input" rows="4" placeholder="One subtask per line"></textarea>
   </div>
   <div>
-    <label for="taskReminderTime">Reminder Time (optional):</label>
-    <input type="time" id="taskReminderTime">
-  </div>
-  <div>
-    <label for="taskReminderSeverity">Severity:</label>
-    <select id="taskReminderSeverity" class="task-severity-select">
+    <label for="taskDetailsSeverity">Severity:</label>
+    <select id="taskDetailsSeverity" class="task-severity-select">
       <option value="0" selected></option>
       <option value="1">1</option>
       <option value="2">2</option>
@@ -1495,10 +1420,10 @@
       </div>
   </div>
 
-  <input type="hidden" id="taskReminderId">
+  <input type="hidden" id="taskDetailsId">
   <div class="event-actions">
     <button onclick="saveTaskDetails()">Save Details</button>
-    <button onclick="closeTaskReminderForm()">Cancel</button>
+    <button onclick="closeTaskDetailsForm()">Cancel</button>
   </div>
 </div>
 
@@ -1545,6 +1470,7 @@
     </label>
 
     <input type="text" id="taskInput" class="task-input" placeholder="Add a new task">
+    <textarea id="subtaskInput" class="task-input" rows="3" placeholder="Add subtasks (one per line)"></textarea>
     <button class="add-task-btn" onclick="addTask()">Add Task</button>
     <ul class="task-list" id="taskList"></ul>
   </div>
@@ -1597,30 +1523,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   </div>
 </div>
 
-
-<div id="missedRemindersPopup" class="reminder-popup" style="display:none;">
-  <div class="popup-content">
-    <h3>Missed Reminders</h3>
-    <ul id="missedRemindersList" style="padding-left:20px;"></ul>
-    <button onclick="closeMissedRemindersPopup()">Close</button>
-  </div>
-</div>
-
-<div id="reminderPopup" class="reminder-popup" style="display:none;">
-  <div class="popup-content">
-    <p id="reminderPopupMsg"></p>
-    <button onclick="closeReminderPopup()">Close</button>
-  </div>
-</div>
-
-<div id="pendingRemindersPopup" class="reminder-popup" style="display:none;">
-  <div class="popup-content">
-    <h3 id="pendingRemindersTitle">Pending Reminders</h3>
-    <button id="toggleReminderViewBtn" onclick="toggleReminderView()" style="margin-bottom:10px;">Show Past</button>
-    <ul id="pendingRemindersList" style="padding-left:20px;"></ul>
-    <button onclick="closePendingRemindersPopup()">Close</button>
-  </div>
-</div>
 
 
   </div>
@@ -1677,8 +1579,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     window._saveTaskDetails && window._saveTaskDetails();
   }
 
-  function closeTaskReminderForm() {
-    window._closeTaskReminderForm && window._closeTaskReminderForm();
+  function closeTaskDetailsForm() {
+    window._closeTaskDetailsForm && window._closeTaskDetailsForm();
   }
 
   function toggleWeeklyOptions(value) {
@@ -1727,12 +1629,8 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     getFirestore,
     doc,
     getDoc,
-    setDoc,
-    addDoc,
-    collection,
-    Timestamp
+    setDoc
   } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
-  // NEW: push-subscription flow -------------------------------
 
   /********************** 2) Firebase Config 
        (from your snippet)
@@ -1759,7 +1657,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
 
 
   let userId = null;  // will store current Google user's uid here
-  let userLastOpenTime = 0; // track last time user opened app across devices
   const provider = new GoogleAuthProvider();
 
   const TIMER_STATE_KEY = 'timeWidgetStateV1';
@@ -1940,8 +1837,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       document.getElementById('authSection').style.display = 'none';
       document.getElementById('logoutSection').style.display = 'block';
       await loadUserData();
-      scheduleAllReminders();
-      await showMissedReminders();
       generateCalendar();
       renderTasks();
     } else {
@@ -1971,81 +1866,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   window._logoutFromGoogle = _logoutFromGoogle;
   window._loginWithGoogle = _loginWithGoogle;
 
-//******************************************************************
-// 🔔 PUSH NOTIFICATION SETUP
-//******************************************************************
-import {
-  isSupported as messagingIsSupported,
-  getMessaging,
-  getToken,
-  onMessage
-} from 'https://www.gstatic.com/firebasejs/10.7.2/firebase-messaging.js';
-
-let userFcmToken = null;
-
-async function fcmSupported() {
-  try {
-    return await messagingIsSupported();
-  } catch {
-    return false;
-  }
-}
-
-async function initFCM() {
-  if (!await fcmSupported()) return;
-
-  await navigator.serviceWorker.register('./firebase-messaging-sw.js', {
-    scope: './'
-  });
-  console.log('✅ SW registered');
-
-  async function subscribeForPush() {
-    const messaging = getMessaging(app);
-    const swReg = await navigator.serviceWorker.ready;
-    const fcmToken = await getToken(messaging, {
-      vapidKey: 'BHI71aycFWx3ntjc3nuZvAGDvAakYzBd-0cCRl8YuswkYkX3hQ9j4sysD6XXNBWrPZSsGHB2isMfC6u-3Uounzo',
-      serviceWorkerRegistration: swReg
-    });
-    console.log('✅ FCM token acquired:', fcmToken);
-    userFcmToken = fcmToken;
-    window.userFcmToken = fcmToken;
-    const uid = auth.currentUser?.uid;
-    if (uid) await setDoc(doc(db, 'users', uid), { fcmToken }, { merge: true });
-    const subBtn = document.getElementById('subscribeBtn');
-    if (subBtn) {
-      subBtn.disabled = true;
-      subBtn.textContent = 'Notifications On';
-      subBtn.style.display = 'none';
-    }
-  }
-
-  const subBtn = document.getElementById('subscribeBtn');
-  if (!subBtn) return;
-  subBtn.addEventListener('click', async () => {
-    if (await Notification.requestPermission() !== 'granted') return;
-    try {
-      await subscribeForPush();
-      alert('🎉 Notifications enabled!');
-    } catch (err) {
-      console.error('FCM token error', err);
-      alert('Could not subscribe for push. Check console.');
-    }
-  });
-
-  if (Notification.permission === 'granted') {
-    try { await subscribeForPush(); } catch (err) {
-      console.error('FCM auto-subscribe error', err);
-    }
-  }
-
-  const messaging = getMessaging(app);
-  onMessage(messaging, ({ data }) => {
-    if (!data) return;
-    new Notification(data.title, { body: data.body });
-  });
-}
-
-initFCM();
 
   /******************************************************* 4) In-Memory Data
   *******************************************************/
@@ -2060,10 +1880,6 @@ initFCM();
 
   let habitTracker = {};
   let globalHabits = [];
-  let reminderTimeouts = {};
-  let taskReminderTimeouts = {};
-  let showPastReminders = false;
-
   let journalMode = false;
   let editingTaskInfo = { id: null, listName: null };
   let journalEntryDates = [];
@@ -2085,20 +1901,17 @@ initFCM();
         completedTasks  = data.completedTasks  || {};
         habitTracker    = data.habitTracker    || {};
         globalHabits    = data.globalHabits    || [];
-        userLastOpenTime = data.lastOpenTime || parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
         document.getElementById('goalsText').value = data.userGoals || '';
 
       } else {
         console.log("No existing Firestore doc for this user; starting fresh.");
         taskLists = { personal: [], work: [] };
         completedTasks = {};
-        userLastOpenTime = parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
       }
 
       await migrateAndCleanCompletedTasks();
       renderTaskListButtons();
       initializeTaskControls();
-      scheduleAllTaskReminders();
       renderMotivationStats();
     } catch (err) {
       console.error("Error loading user data:", err);
@@ -2116,11 +1929,9 @@ initFCM();
         completedTasks,
         habitTracker,
         globalHabits,
-        lastOpenTime: userLastOpenTime,
         userGoals: document.getElementById('goalsText')?.value || ''
       });
       console.log("Data saved to Firestore!");
-      scheduleAllTaskReminders();
     } catch (err) {
       console.error("Error saving user data:", err);
     }
@@ -2507,190 +2318,6 @@ initFCM();
   /*******************************************************
    10) Events
   *******************************************************/
-  function scheduleReminder(ev) {
-    if (!ev.reminderDate || !ev.reminderTime) return;
-    const reminderMoment = new Date(ev.reminderDate + 'T' + ev.reminderTime);
-    const timeout = reminderMoment.getTime() - Date.now();
-    if (timeout <= 0) return;
-    const idx = events.indexOf(ev);
-    if (reminderTimeouts[idx]) clearTimeout(reminderTimeouts[idx]);
-    reminderTimeouts[idx] = setTimeout(() => {
-      const timeRange = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}`;
-      const body = `${timeRange}: ${ev.description}`;
-      if (Notification.permission === 'granted') {
-        new Notification('Event Reminder', { body });
-      }
-      showReminderPopup(body);
-    }, timeout);
-  }
-
-  function scheduleAllReminders() {
-    Object.values(reminderTimeouts).forEach(clearTimeout);
-    reminderTimeouts = {};
-    events.forEach(scheduleReminder);
-  }
-
-  function scheduleTaskReminder(task) {
-    if (!task.reminderDate || !task.reminderTime) return;
-    const reminderMoment = new Date(task.reminderDate + 'T' + task.reminderTime);
-    const timeout = reminderMoment.getTime() - Date.now();
-    if (timeout <= 0) return;
-    if (taskReminderTimeouts[task.id]) clearTimeout(taskReminderTimeouts[task.id]);
-    taskReminderTimeouts[task.id] = setTimeout(() => {
-      if (Notification.permission === 'granted') {
-        new Notification('Task Reminder', { body: task.text });
-      }
-      showReminderPopup(task.text);
-    }, timeout);
-  }
-
-  function scheduleAllTaskReminders() {
-    Object.values(taskReminderTimeouts).forEach(clearTimeout);
-    taskReminderTimeouts = {};
-    Object.values(taskLists).forEach(list => list.forEach(scheduleTaskReminder));
-  }
-
-  async function showMissedReminders() {
-    const lastOpen = userId ? userLastOpenTime : parseInt(localStorage.getItem('lastOpenTime') || '0', 10);
-    const now = Date.now();
-    const messages = [];
-
-    events.forEach(ev => {
-      if (!ev.reminderDate || !ev.reminderTime) return;
-      const reminderMoment = new Date(ev.reminderDate + 'T' + ev.reminderTime);
-      const t = reminderMoment.getTime();
-      if (t > lastOpen && t <= now) {
-        const timeRange = `${formatTime(ev.startTime)} - ${formatTime(ev.endTime)}`;
-        const body = `${timeRange}: ${ev.description}`;
-        if (Notification.permission === 'granted') {
-          new Notification('Event Reminder', { body });
-        }
-        messages.push(body);
-      }
-    });
-
-    Object.values(taskLists).forEach(list => list.forEach(task => {
-      if (!task.reminderDate || !task.reminderTime) return;
-      const reminderMoment = new Date(task.reminderDate + 'T' + task.reminderTime);
-      const t = reminderMoment.getTime();
-      if (t > lastOpen && t <= now) {
-        if (Notification.permission === 'granted') {
-          new Notification('Task Reminder', { body: task.text });
-        }
-        messages.push(task.text);
-      }
-    }));
-
-    if (userId) {
-      userLastOpenTime = now;
-      try {
-        await setDoc(doc(db, 'users', userId), { lastOpenTime: now }, { merge: true });
-      } catch (err) {
-        console.error('Error updating lastOpenTime:', err);
-      }
-    } else {
-      localStorage.setItem('lastOpenTime', String(now));
-    }
-    messages.forEach(showReminderPopup);
-    showMissedRemindersPopup(messages);
-  }
-
-  function showMissedRemindersPopup(messages) {
-    if (!messages || messages.length === 0) return;
-    const list = document.getElementById('missedRemindersList');
-    list.innerHTML = '';
-    messages.forEach(m => {
-      const li = document.createElement('li');
-      li.textContent = m;
-      list.appendChild(li);
-    });
-    document.getElementById('missedRemindersPopup').style.display = 'flex';
-  }
-
-  function closeMissedRemindersPopup() {
-    document.getElementById('missedRemindersPopup').style.display = 'none';
-  }
-
-  function showReminderPopup(message) {
-    const el = document.getElementById('reminderPopupMsg');
-    if (el) el.textContent = message;
-    document.getElementById('reminderPopup').style.display = 'flex';
-  }
-
-  function closeReminderPopup() {
-    document.getElementById('reminderPopup').style.display = 'none';
-  }
-
-  function showPendingNotifications() {
-    showPastReminders = false;
-    updatePendingRemindersList();
-    document.getElementById('pendingRemindersPopup').style.display = 'flex';
-  }
-
-  function toggleReminderView() {
-    showPastReminders = !showPastReminders;
-    updatePendingRemindersList();
-  }
-
-  function updatePendingRemindersList() {
-    const list = document.getElementById('pendingRemindersList');
-    const title = document.getElementById('pendingRemindersTitle');
-    const toggleBtn = document.getElementById('toggleReminderViewBtn');
-    list.innerHTML = '';
-    const now = Date.now();
-    const reminders = [];
-
-    events.forEach(ev => {
-      if (!ev.reminderDate || !ev.reminderTime) return;
-      const time = new Date(ev.reminderDate + 'T' + ev.reminderTime);
-      reminders.push({ type: 'Event', desc: ev.description, time });
-    });
-    Object.values(taskLists).forEach(list => list.forEach(task => {
-      if (!task.reminderDate || !task.reminderTime) return;
-      const time = new Date(task.reminderDate + 'T' + task.reminderTime);
-      reminders.push({ type: 'Task', desc: task.text, time });
-    }));
-
-    if (showPastReminders) {
-      title.textContent = 'Past Reminders';
-      toggleBtn.textContent = 'Show Upcoming';
-      const past = reminders.filter(r => r.time.getTime() <= now)
-                            .sort((a,b) => b.time - a.time)
-                            .slice(0,10);
-      if (past.length === 0) {
-        const li = document.createElement('li');
-        li.textContent = 'No past reminders';
-        list.appendChild(li);
-      } else {
-        past.forEach(r => {
-          const li = document.createElement('li');
-          li.textContent = `${r.type}: ${r.desc} @ ${r.time.toLocaleString()}`;
-          list.appendChild(li);
-        });
-      }
-    } else {
-      title.textContent = 'Pending Reminders';
-      toggleBtn.textContent = 'Show Past';
-      const upcoming = reminders.filter(r => r.time.getTime() > now)
-                               .sort((a,b) => a.time - b.time);
-      if (upcoming.length === 0) {
-        const li = document.createElement('li');
-        li.textContent = 'No pending notifications';
-        list.appendChild(li);
-      } else {
-        upcoming.forEach(u => {
-          const li = document.createElement('li');
-          li.textContent = `${u.type}: ${u.desc} @ ${u.time.toLocaleString()}`;
-          list.appendChild(li);
-        });
-      }
-    }
-  }
-
-  function closePendingRemindersPopup() {
-    document.getElementById('pendingRemindersPopup').style.display = 'none';
-  }
-
   function addEvent(date) {
     const eventForm = document.getElementById('eventForm');
     document.getElementById('eventDate').value = date;
@@ -2698,8 +2325,6 @@ initFCM();
     document.getElementById('eventDescription').value = '';
     document.getElementById('eventStartTime').value = '';
     document.getElementById('eventEndTime').value = '';
-    document.getElementById('reminderDate').value = '';
-    document.getElementById('reminderTime').value = '';
     eventForm.style.display = 'block';
     initializeColorPicker();
     document.querySelector('.delete-event-btn').style.display = 'none';
@@ -2713,8 +2338,6 @@ initFCM();
     document.getElementById('eventEndTime').value = event.endTime;
     document.getElementById('eventDescription').value = event.description;
     document.getElementById('eventId').value = index;
-    document.getElementById('reminderDate').value = event.reminderDate || '';
-    document.getElementById('reminderTime').value = event.reminderTime || '';
     selectedColor = event.color;
     eventForm.style.display = 'block';
     initializeColorPicker();
@@ -2733,14 +2356,6 @@ initFCM();
     selectedColor = '#4285f4';
   }
 
-  function getReminderMinutes({ date, startTime, reminderDate, reminderTime }) {
-    if (!reminderDate || !reminderTime) return null;
-    const startISO    = `${date}T${startTime}`;
-    const remindISO   = `${reminderDate}T${reminderTime}`;
-    const diffMs      = new Date(startISO) - new Date(remindISO);
-    const diffMinutes = Math.round(diffMs / 60000);
-    return diffMinutes > 0 ? diffMinutes : null;
-  }
 
   async function saveEvent() {
     const date = document.getElementById('eventDate').value;
@@ -2748,8 +2363,6 @@ initFCM();
     const endTime = document.getElementById('eventEndTime').value;
     const description = document.getElementById('eventDescription').value;
     const eventId = document.getElementById('eventId').value;
-    const reminderDate = document.getElementById('reminderDate').value;
-    const reminderTime = document.getElementById('reminderTime').value;
 
     if (!description || !startTime || !endTime) {
       alert('Please fill in all fields');
@@ -2760,28 +2373,15 @@ initFCM();
       return;
     }
 
-    const eventData = { date, startTime, endTime, description, color: selectedColor, reminderDate, reminderTime };
+    const eventData = { date, startTime, endTime, description, color: selectedColor };
     if (eventId !== '') {
       events[parseInt(eventId)] = eventData;
     } else {
       events.push(eventData);
     }
 
-    try {
-      const reminderMinutes = getReminderMinutes(eventData);
-      await addDoc(collection(db, "events"), {
-        title:     eventData.description,
-        startTime: Timestamp.fromDate(new Date(`${eventData.date}T${eventData.startTime}`)),
-        reminderMinutes,
-        uid:       userId,
-        emailSent: false
-      });
-    } catch (err) {
-      console.error("❌ Failed to save event to Firestore:", err);
-    }
 
     saveUserData();
-    scheduleAllReminders();
     closeEventForm();
     generateCalendar();
     updateDailyEventsList(date);
@@ -2792,7 +2392,6 @@ initFCM();
     if (eventId !== '') {
       events.splice(parseInt(eventId), 1);
       saveUserData();
-      scheduleAllReminders();
       closeEventForm();
       generateCalendar();
       const date = document.getElementById('eventDate').value;
@@ -2955,12 +2554,64 @@ initFCM();
     renderTasks();
   }
 
+
+  function normalizeSubtask(subtask, index = 0) {
+    if (typeof subtask === 'string') {
+      return { id: `${Date.now()}-${index}`, text: subtask, completed: false };
+    }
+    return {
+      id: subtask?.id || `${Date.now()}-${index}`,
+      text: subtask?.text || '',
+      completed: Boolean(subtask?.completed)
+    };
+  }
+
+  function parseSubtaskText(value, existingSubtasks = []) {
+    const existingByText = new Map((existingSubtasks || []).map((subtask, index) => {
+      const normalized = normalizeSubtask(subtask, index);
+      return [normalized.text, normalized];
+    }));
+    return value
+      .split(/\n|,/)
+      .map(text => text.trim())
+      .filter(Boolean)
+      .map((text, index) => {
+        const existing = existingByText.get(text);
+        return {
+          id: existing?.id || `${Date.now()}-${index}`,
+          text,
+          completed: Boolean(existing?.completed)
+        };
+      });
+  }
+
+  function toggleSubtask(taskId, subtaskId, checked) {
+    const task = taskLists[currentTaskList]?.find(t => t.id == taskId);
+    if (!task) return;
+    task.subtasks = (task.subtasks || []).map(normalizeSubtask);
+    const subtask = task.subtasks.find(item => item.id == subtaskId);
+    if (!subtask) return;
+    subtask.completed = checked;
+    saveUserData();
+    renderTasks();
+  }
+
+  function toggleSubtaskList(taskId) {
+    const task = taskLists[currentTaskList]?.find(t => t.id == taskId);
+    if (!task) return;
+    task.collapsed = !task.collapsed;
+    saveUserData();
+    renderTasks();
+  }
+
   function addTask() {
     const taskInput = document.getElementById('taskInput');
     const severitySelect = document.getElementById('taskSeverity');
+    const subtaskInput = document.getElementById('subtaskInput');
     const text = taskInput.value.trim();
     if (!text) return;
     const severity = parseInt(severitySelect.value, 10) || 0;
+    const subtasks = parseSubtaskText(subtaskInput.value);
     const dateKey = document.getElementById('journalForm').dataset.date || formatLocalDate(new Date());
     if (!taskLists[currentTaskList]) taskLists[currentTaskList] = [];
 
@@ -2974,7 +2625,7 @@ initFCM();
         startDate: dateKey,
         completed: false,
         completions: {},
-        subtasks: [],
+        subtasks: subtasks.map(subtask => ({ ...subtask })),
         collapsed: false,
         severity
       };
@@ -2982,6 +2633,7 @@ initFCM();
     });
 
     taskInput.value = "";
+    subtaskInput.value = "";
     severitySelect.value = '0';
     saveUserData();
     renderTasks();
@@ -3195,6 +2847,36 @@ function matchesOriginalSchedule(task, d){
 
         taskContent.appendChild(taskRow);
 
+        task.subtasks = (task.subtasks || []).map(normalizeSubtask).filter(subtask => subtask.text);
+        if (task.subtasks.length > 0) {
+          const toggleBtn = document.createElement('button');
+          toggleBtn.type = 'button';
+          toggleBtn.className = 'toggle-subtasks-btn';
+          toggleBtn.textContent = task.collapsed ? `▸ ${task.subtasks.length}` : '▾ Subtasks';
+          toggleBtn.title = task.collapsed ? 'Show subtasks' : 'Hide subtasks';
+          toggleBtn.onclick = () => toggleSubtaskList(task.id);
+          taskRow.appendChild(toggleBtn);
+
+          if (!task.collapsed) {
+            const subtaskList = document.createElement('ul');
+            subtaskList.className = 'subtask-list';
+            task.subtasks.forEach(subtask => {
+              const subtaskItem = document.createElement('li');
+              subtaskItem.className = 'subtask-item';
+              if (subtask.completed) subtaskItem.classList.add('completed-task');
+              const subtaskCheckbox = document.createElement('input');
+              subtaskCheckbox.type = 'checkbox';
+              subtaskCheckbox.checked = Boolean(subtask.completed);
+              subtaskCheckbox.onchange = () => toggleSubtask(task.id, subtask.id, subtaskCheckbox.checked);
+              const subtaskText = document.createElement('span');
+              subtaskText.textContent = subtask.text;
+              subtaskItem.append(subtaskCheckbox, subtaskText);
+              subtaskList.appendChild(subtaskItem);
+            });
+            taskContent.appendChild(subtaskList);
+          }
+        }
+
         taskItem.appendChild(taskContent);
         taskItem.appendChild(controls);
 
@@ -3309,10 +2991,9 @@ function matchesOriginalSchedule(task, d){
       }
 
       document.getElementById('taskEditText').value = task.text;
-      document.getElementById('taskReminderId').value = task.id;
-      document.getElementById('taskReminderSeverity').value = task.severity || '0';
-      document.getElementById('taskReminderDate').value = task.reminderDate || '';
-      document.getElementById('taskReminderTime').value = task.reminderTime || '';
+      document.getElementById('taskDetailsId').value = task.id;
+      document.getElementById('taskDetailsSeverity').value = task.severity || '0';
+      document.getElementById('taskSubtasksEdit').value = (task.subtasks || []).map(normalizeSubtask).map(subtask => subtask.text).join('\n');
 
       const repeatSelect = document.getElementById('taskRepeat');
       repeatSelect.value = task.repeat || 'none';
@@ -3326,7 +3007,7 @@ function matchesOriginalSchedule(task, d){
         }
       }
 
-      document.getElementById('taskReminderForm').style.display = 'block';
+      document.getElementById('taskDetailsForm').style.display = 'block';
   }
 
   async function saveTaskDetails() {
@@ -3344,9 +3025,8 @@ function matchesOriginalSchedule(task, d){
 
       const task = taskLists[listName][taskIndex];
       task.text = document.getElementById('taskEditText').value.trim();
-      task.severity = parseInt(document.getElementById('taskReminderSeverity').value, 10) || 0;
-      task.reminderDate = document.getElementById('taskReminderDate').value;
-      task.reminderTime = document.getElementById('taskReminderTime').value;
+      task.severity = parseInt(document.getElementById('taskDetailsSeverity').value, 10) || 0;
+      task.subtasks = parseSubtaskText(document.getElementById('taskSubtasksEdit').value, task.subtasks);
       const newRepeat = document.getElementById('taskRepeat').value;
       const prevRepeat = task.repeat || 'none';
       task.repeat = newRepeat;
@@ -3367,17 +3047,17 @@ function matchesOriginalSchedule(task, d){
       }
 
       await saveJournal(false);
-      closeTaskReminderForm();
+      closeTaskDetailsForm();
       renderTasks();
   }
 
-  function closeTaskReminderForm() {
-    document.getElementById("taskReminderForm").style.display = "none";
+  function closeTaskDetailsForm() {
+    document.getElementById("taskDetailsForm").style.display = "none";
   }
 
   window._openTaskEditor = openTaskEditor;
   window._saveTaskDetails = saveTaskDetails;
-  window._closeTaskReminderForm = closeTaskReminderForm;
+  window._closeTaskDetailsForm = closeTaskDetailsForm;
   window._toggleWeeklyOptions = toggleWeeklyOptions;
 
   // Make functions available globally to be called from HTML
@@ -3388,17 +3068,12 @@ function matchesOriginalSchedule(task, d){
     closeGoalsForm, goToJournalFromGoals, changeToHabit, changeToJournal,
     showNewHabitForm, confirmAddHabit, cancelAddHabit, deleteHabit,
     saveHabitTracker, cancelHabitTracker, logoutFromGoogle, addTask,
-    toggleTask, deleteTask, switchTaskList, createNewList, deleteCurrentList,
-    toggleCompletedView, showPendingNotifications, closeMissedRemindersPopup, closeReminderPopup,
-    closePendingRemindersPopup, toggleReminderView
+    toggleTask, toggleSubtask, toggleSubtaskList, deleteTask, switchTaskList, createNewList, deleteCurrentList,
+    toggleCompletedView
   });
 
   initializeTaskControls();
   generateCalendar();
-  scheduleAllReminders();
-  scheduleAllTaskReminders();
-
-  document.getElementById('pendingBtn').addEventListener('click', showPendingNotifications);
   document.getElementById('logoutButton').addEventListener('click', _logoutFromGoogle);
 
   // Implement the habit functions
