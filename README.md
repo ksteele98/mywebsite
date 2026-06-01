@@ -1,40 +1,14 @@
 # mywebsite
 
-This project uses Firebase Cloud Messaging (FCM) for push notifications. Use **data-only** payloads so that your service worker's `onBackgroundMessage` handler runs. Avoid including a top-level `notification` object.
+Momentum Calendar is a Firebase-backed personal planning app for events, daily journal entries, habits, goals, task lists, and checklist subtasks.
 
-Example `curl` request:
+## Features
 
-```bash
-curl -X POST https://fcm.googleapis.com/v1/projects/YOUR_PROJECT_ID/messages:send \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": {
-      "token": "YOUR_FCM_TOKEN",
-      "data": {
-        "title": "Background Alert",
-        "body": "This came through the service worker 🎉"
-      }
-    }
-  }'
-```
+- Month and daily journal views for planning events and notes.
+- Habit tracking and goals pages.
+- Multiple task lists with severity levels.
+- Checklist subtasks on each task, with individual completion checkboxes.
 
-Ensure `firebase-messaging-sw.js` is served from the site root so it is reachable at:
+## Firebase Setup
 
-```
-https://ksteele98.github.io/mywebsite/firebase-messaging-sw.js
-```
-
-When the app receives a push while closed, this service worker's `onBackgroundMessage` callback displays the notification.
-
-On mobile devices install the PWA ("Add to Home Screen") and tap the **Enable Notifications** button once signed in. Notifications will then appear even when the app isn't open.
-
-## Reminders
-
-When creating an event you can optionally pick a **Reminder Date** and **Reminder Time**. The page schedules a local notification and stores the reminder in Firestore. After saving an event you'll see a browser alert confirming the reminder time.
-
-
-### Firebase Setup
-
-Deploy the Cloud Functions in `functions/`. The `sendReminders` scheduled function checks the `events` collection every five minutes and sends push notifications using each user's `fcmToken`.
-
+The app stores user data in Firestore under each signed-in user's document. The `functions/` package is currently a placeholder because push-notification features have been removed.
