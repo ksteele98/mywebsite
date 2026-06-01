@@ -656,54 +656,10 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    .audio-section button {
-      padding: 6px 12px;
-      margin-right: 10px;
-    }
-    .media-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
-      align-items: center;
-    }
-    .file-upload-input {
-      display: none;
-    }
-    .file-upload-label {
-      padding: 6px 12px;
-      background: #007bff;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-
-    .image-section img {
-      max-width: 100%;
-      margin: 10px 0;
-      display: block;
-    }
-
     .task-buttons {
       display: flex;
       flex-wrap: nowrap;
       gap: 10px;
-    }
-
-    .remove-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      font-size: 16px;
-      line-height: 20px;
-      cursor: pointer;
     }
 
     /* Popup for missed reminders */
@@ -800,15 +756,12 @@
     }
 
     /* ========== 3. Give buttons breathing space ========== */
-    .media-controls,
     .event-actions,
     .reminder-inputs,
     .time-inputs {
       gap:12px;                    /* modern browsers respect flex-gap */
       flex-wrap:wrap;              /* let them drop to a new row */
     }
-    .media-controls button,
-    .media-controls label,
     .event-actions button {
       flex:1 1 48%;                /* two per row on tiny screens */
       min-width:120px;             /* avoid micro-buttons */
@@ -854,9 +807,7 @@
       .habit-form  button,
       .task-reminder-form button,
       .task-buttons button,
-      .task-toggle  button,
-      .media-controls button,
-      .media-controls label{
+      .task-toggle  button{
         padding:6px 10px;
         font-size:13px;
       }
@@ -1060,25 +1011,6 @@
   <h4>Journal Entry</h4>
   <textarea id="journalText" class="journal-textarea" placeholder="Write your thoughts for this day..."></textarea>
 
-  <div class="audio-section">
-    <div style="position:relative;">
-      <audio id="audioPlayer" controls style="display:none; width:100%; margin:10px 0;"></audio>
-      <button id="removeAudioBtn" class="remove-btn" onclick="removeAudio()" style="display:none;">&#215;</button>
-    </div>
-  </div>
-
-  <div class="media-controls">
-    <button id="recordAudioBtn" onclick="toggleRecording()">Start Recording</button>
-    <label for="audioFileInput" class="file-upload-label">Upload Audio</label>
-    <input type="file" id="audioFileInput" accept="audio/*,video/mpeg" onchange="handleAudioUpload(event)" class="file-upload-input">
-    <label for="imageFileInput" class="file-upload-label">Upload Image</label>
-    <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageUpload(event)" class="file-upload-input">
-  </div>
-
-  <div class="image-section" style="position:relative;">
-    <img id="imagePreview" style="display:none; width:100%; margin:10px 0;" />
-    <button id="removeImageBtn" class="remove-btn" onclick="removeImage()" style="display:none;">&#215;</button>
-  </div>
   <div class="task-container" id="taskContainer">
     <div class="tasks-header">
       <h3>Tasks</h3>
@@ -1292,7 +1224,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
     collection,
     Timestamp
   } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-storage.js";
   // NEW: push-subscription flow -------------------------------
 
   /********************** 2) Firebase Config 
@@ -1314,12 +1245,9 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
   const analytics = getAnalytics(app);
   const auth = getAuth(app);
   const db   = getFirestore(app);
-  const storage = getStorage(app);
-
    // 🔓 make them globally visible for debugging
   window.app     = app;
   window.auth    = auth;
-  window.storage = storage;
 
 
   let userId = null;  // will store current Google user's uid here
@@ -1522,8 +1450,6 @@ box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 600px; max-height
       console.log("User signed out successfully");
       events = [];
       journalEntries = {};
-      journalAudios = {};
-      journalImages = {};
       taskLists = { personal: [], work: [] };
       habitTracker = {};
       globalHabits = [];
@@ -1626,13 +1552,6 @@ initFCM();
 
   let habitTracker = {};
   let globalHabits = [];
-  let journalAudios = {};
-  let journalImages = {};
-  let pendingAudioFile = null;
-  let pendingImageFile = null;
-  let mediaRecorder = null;
-  let recordedChunks = [];
-  let pendingAudioObjectUrl = null;
   let reminderTimeouts = {};
   let taskReminderTimeouts = {};
   let showPastReminders = false;
@@ -1654,8 +1573,6 @@ initFCM();
         const data = docSnap.data();
         events          = data.events          || [];
         journalEntries  = data.journalEntries  || {};
-        journalAudios   = data.journalAudios || {};
-        journalImages   = data.journalImages || {};
         taskLists       = data.taskLists       || { personal: [], work: [] };
         completedTasks  = data.completedTasks  || {};
         habitTracker    = data.habitTracker    || {};
@@ -1687,8 +1604,6 @@ initFCM();
       await setDoc(docRef, {
         events,
         journalEntries,
-        journalAudios,
-        journalImages,
         taskLists,
         completedTasks,
         habitTracker,
@@ -2005,23 +1920,6 @@ initFCM();
     const journalForm = document.getElementById('journalForm');
     const journalDate = document.getElementById('journalDate');
     const journalText = document.getElementById('journalText');
-    const audioPlayer = document.getElementById('audioPlayer');
-    const recordBtn = document.getElementById('recordAudioBtn');
-    const fileInput = document.getElementById('audioFileInput');
-    const imagePreview = document.getElementById('imagePreview');
-    const imageInput = document.getElementById('imageFileInput');
-    const removeAudioBtn = document.getElementById('removeAudioBtn');
-    const removeImageBtn = document.getElementById('removeImageBtn');
-
-    recordedChunks = [];
-    pendingAudioFile = null;
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
-    }
-    recordBtn.textContent = 'Start Recording';
-    fileInput.value = '';
-    imageInput.value = '';
-
     const displayDate = new Date(date + 'T00:00:00');
     journalDate.textContent = displayDate.toLocaleDateString();
     journalText.value = journalEntries[date] || '';
@@ -2033,26 +1931,6 @@ initFCM();
       journalForm.classList.add('today');
     } else {
       journalForm.classList.remove('today');
-    }
-
-    if (journalAudios[date]) {
-        audioPlayer.src = journalAudios[date];
-        audioPlayer.style.display = 'block';
-        removeAudioBtn.style.display = 'block';
-    } else {
-        audioPlayer.src = '';
-        audioPlayer.style.display = 'none';
-        removeAudioBtn.style.display = 'none';
-    }
-
-    if (journalImages[date]) {
-      imagePreview.src = journalImages[date];
-      imagePreview.style.display = 'block';
-      removeImageBtn.style.display = 'block';
-    } else {
-      imagePreview.src = '';
-      imagePreview.style.display = 'none';
-      removeImageBtn.style.display = 'none';
     }
 
     document.getElementById('prevDayButton').style.display = 'block';
@@ -2116,164 +1994,6 @@ initFCM();
     if (habitForm.style.display !== 'none') {
       _changeToHabit();
     }
-  }
-
-  /*******************************************************
-   10) Audio Recording/Upload
-  *******************************************************/
-  async function toggleRecording() {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      let options = { mimeType: 'audio/webm;codecs=opus' };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { mimeType: 'audio/webm' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options = {};
-        }
-      }
-      const mimeType = options.mimeType || 'audio/webm';
-      mediaRecorder = new MediaRecorder(stream, options);
-      recordedChunks = [];
-      mediaRecorder.ondataavailable = e => {
-        if (e.data && e.data.size > 0) {
-          recordedChunks.push(e.data);
-        }
-      };
-      mediaRecorder.onstop = () => {
-        if (recordedChunks.length === 0) {
-          alert('No audio was captured. Please try recording again.');
-          stream.getTracks().forEach(track => track.stop());
-          document.getElementById('recordAudioBtn').textContent = 'Start Recording';
-          return;
-        }
-        const blob = new Blob(recordedChunks, { type: mimeType });
-        if (pendingAudioObjectUrl) {
-          URL.revokeObjectURL(pendingAudioObjectUrl);
-        }
-        const url = URL.createObjectURL(blob);
-        pendingAudioObjectUrl = url;
-        const audioPlayer = document.getElementById('audioPlayer');
-        audioPlayer.src = url;
-        audioPlayer.style.display = 'block';
-        audioPlayer.load();
-        const extension = mimeType.includes('mp4') ? 'm4a' : 'webm';
-        pendingAudioFile = new File([blob], `journal.${extension}`, { type: mimeType });
-        document.getElementById('recordAudioBtn').textContent = 'Start Recording';
-        document.getElementById('removeAudioBtn').style.display = 'block';
-        stream.getTracks().forEach(track => track.stop());
-      };
-      mediaRecorder.start();
-      document.getElementById('recordAudioBtn').textContent = 'Stop Recording';
-    } catch (err) {
-      console.error('Error accessing microphone:', err);
-    }
-  }
-
-  function stopRecordingIfActive() {
-    if (!mediaRecorder || mediaRecorder.state !== 'recording') {
-      return Promise.resolve();
-    }
-
-    return new Promise((resolve) => {
-      const previousOnStop = mediaRecorder.onstop;
-      mediaRecorder.onstop = (event) => {
-        if (typeof previousOnStop === 'function') {
-          previousOnStop(event);
-        }
-        resolve();
-      };
-      mediaRecorder.stop();
-    });
-  }
-
-  function handleAudioUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('audio/') && file.type !== 'video/mpeg') {
-      alert('Please select an audio file');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Audio file size should be less than 10MB');
-      return;
-    }
-    pendingAudioFile = file;
-    if (pendingAudioObjectUrl) {
-      URL.revokeObjectURL(pendingAudioObjectUrl);
-      pendingAudioObjectUrl = null;
-    }
-    const url = URL.createObjectURL(file);
-    const audioPlayer = document.getElementById('audioPlayer');
-    audioPlayer.src = url;
-    audioPlayer.style.display = 'block';
-    audioPlayer.load();
-    document.getElementById('removeAudioBtn').style.display = 'block';
-  }
-
-  function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
-      return;
-    }
-    pendingImageFile = file;
-    const url = URL.createObjectURL(file);
-    const preview = document.getElementById('imagePreview');
-    preview.src = url;
-    preview.style.display = 'block';
-    document.getElementById('removeImageBtn').style.display = 'block';
-  }
-
-  function removeAudio() {
-    const audioPlayer = document.getElementById('audioPlayer');
-    const recordBtn = document.getElementById('recordAudioBtn');
-    const audioInput = document.getElementById('audioFileInput');
-    const date = document.getElementById('journalForm').dataset.date;
-    audioPlayer.src = '';
-    audioPlayer.style.display = 'none';
-    audioInput.value = '';
-    pendingAudioFile = null;
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
-    }
-    if (pendingAudioObjectUrl) {
-      URL.revokeObjectURL(pendingAudioObjectUrl);
-      pendingAudioObjectUrl = null;
-    }
-    delete journalAudios[date];
-    saveUserData();
-    document.getElementById('removeAudioBtn').style.display = 'none';
-    recordBtn.textContent = 'Start Recording';
-  }
-
-  async function removeImage() {
-    const preview = document.getElementById('imagePreview');
-    const imageInput = document.getElementById('imageFileInput');
-    const date = document.getElementById('journalForm').dataset.date;
-    preview.src = '';
-    preview.style.display = 'none';
-    imageInput.value = '';
-    pendingImageFile = null;
-    try {
-      if (journalImages[date]) {
-        const objRef = ref(storage, journalImages[date]);
-        await deleteObject(objRef);
-      }
-    } catch (err) {
-      console.error('Error deleting image:', err);
-    }
-    delete journalImages[date];
-    await saveUserData();
-    document.getElementById('removeImageBtn').style.display = 'none';
   }
 
   /*******************************************************
@@ -2599,7 +2319,6 @@ initFCM();
   /******************************************************* 11) Journal
   *******************************************************/
   async function saveJournal(closeAfterSave = true) {
-      await stopRecordingIfActive();
       const date = document.getElementById('journalForm').dataset.date;
       const text = document.getElementById('journalText').value.trim();
       if (!userId) {
@@ -2607,30 +2326,12 @@ initFCM();
           return;
       }
       try {
-          if (pendingImageFile) {
-              const imgRef = ref(storage, `journalImages/${userId}/${date}/${pendingImageFile.name}`);
-              await uploadBytes(imgRef, pendingImageFile);
-              journalImages[date] = await getDownloadURL(imgRef);
-              console.log("Image uploaded for date:", date);
-          }
-          if (pendingAudioFile) {
-              const audioRef = ref(storage, `journalAudios/${userId}/${date}/${pendingAudioFile.name}`);
-              await uploadBytes(audioRef, pendingAudioFile);
-              journalAudios[date] = await getDownloadURL(audioRef);
-              const audioPlayer = document.getElementById('audioPlayer');
-              audioPlayer.src = journalAudios[date];
-              audioPlayer.style.display = 'block';
-              audioPlayer.load();
-              console.log("Audio uploaded for date:", date);
-          }
           journalEntries[date] = text;
-          pendingAudioFile = null;
-          pendingImageFile = null;
           await saveUserData();
           generateCalendar();
           updateDailyEventsList(date);
           if (closeAfterSave) closeJournalForm();
-          console.log('✅ Journal saved with media synced');
+          console.log('✅ Journal saved');
       } catch (err) {
           console.error("Error in saveJournal:", err);
           alert("Error saving journal. Please try again. " + err.message);
@@ -3175,8 +2876,7 @@ function matchesOriginalSchedule(task, d){
   Object.assign(window, {
     loginWithGoogle, previousMonth, nextMonth, openJournal, openJournalMode,
     closeJournalForm, changeJournalDay, addEvent, saveEvent, closeEventForm,
-    deleteEvent, saveJournal, toggleRecording, handleAudioUpload,
-    handleImageUpload, removeAudio, removeImage, goToGoalsPage, saveGoals,
+    deleteEvent, saveJournal, goToGoalsPage, saveGoals,
     closeGoalsForm, goToJournalFromGoals, changeToHabit, changeToJournal,
     showNewHabitForm, confirmAddHabit, cancelAddHabit, deleteHabit,
     saveHabitTracker, cancelHabitTracker, logoutFromGoogle, addTask,
